@@ -1,6 +1,6 @@
 json[
-  {"id": "a7k2mx9p", "name": "내 폰"}
-  {"id": "3i6wy7jj", "name": "임현규","role": "admin"}
+  {"id": "a7k2mx9p", "name": "내 폰", "role": "admin"},
+  {"id": "3i6wy7jj", "name": "임현규", "role": "admin"},
   {"id": "vn9kse8r", "name": "팀원 갤럭시", "role": "viewer"},
   {"id": "cx71mp4r", "name": "현장 태블릿", "role": "viewer"}
 ]
