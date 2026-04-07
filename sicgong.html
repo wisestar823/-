@@ -367,22 +367,33 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   .step-side{width:185px;}
 }
 
-/* ── 배포버튼 ── */
+/* ── GitHub 파일 연동 ── */
+.gh-file-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .14s;white-space:nowrap;}
+.gh-file-btn.view{background:rgba(74,158,255,.15);color:#4a9eff;border:1px solid rgba(74,158,255,.25);}
+.gh-file-btn.view:hover{background:rgba(74,158,255,.28);}
+.gh-file-btn.dl{background:rgba(46,216,160,.12);color:#2ed8a0;border:1px solid rgba(46,216,160,.22);}
+.gh-file-btn.dl:hover{background:rgba(46,216,160,.25);}
+.gh-file-btn.del{background:rgba(240,64,64,.1);color:#f04040;border:1px solid rgba(240,64,64,.2);padding:3px 7px;}
+.gh-file-btn.del:hover{background:rgba(240,64,64,.2);}
+.gh-loading{display:flex;align-items:center;justify-content:center;padding:32px;color:var(--text-muted);font-size:13px;gap:10px;}
+.gh-spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:#4a9eff;border-radius:50%;animation:ghspin .7s linear infinite;flex-shrink:0;}
+@keyframes ghspin{to{transform:rotate(360deg);}}
+.gh-err{font-size:12px;color:#f04040;background:rgba(240,64,64,.08);border:1px solid rgba(240,64,64,.15);border-radius:6px;padding:8px 12px;margin:8px 12px;}
+.gh-badge{font-size:9px;background:rgba(74,158,255,.15);color:#4a9eff;border-radius:3px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+.ir-gh{display:flex;align-items:flex-start;gap:6px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.ir-gh:last-child{border-bottom:none;}
+.ir-gh .iname{flex:1;min-width:0;}
+.ir-gh .iname .n{font-size:12px;color:var(--text-dim);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ir-gh .iname .d{font-size:10px;color:var(--text-muted);margin-top:1px;}
+.ir-gh .ibtns{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+/* 항목 추가 모달 — GitHub URL */
+.gh-url-input{width:100%;background:#1c2030;border:1px solid #252a3a;border-radius:6px;padding:9px 12px;color:#e8eaf0;font-size:12px;font-family:inherit;outline:none;margin-top:6px;}
+.gh-url-input:focus{border-color:#4a9eff;}
+.gh-url-input::placeholder{color:#6b7280;}
+/* 배포버튼 */
 .export-btn{background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.3);border-radius:14px;padding:5px 13px;font-size:11px;font-weight:700;color:#e8a020;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;}
 .export-btn:hover{background:rgba(232,160,32,.28);}
-#export-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:20000;display:none;flex-direction:column;align-items:center;justify-content:center;}
-#export-overlay.show{display:flex;}
-.exp-box{background:#151820;border:1px solid #252a3a;border-radius:14px;padding:32px 36px;text-align:center;min-width:280px;max-width:90vw;}
-.exp-title{font-size:15px;font-weight:700;color:#e8eaf0;margin-bottom:6px;}
-.exp-sub{font-size:12px;color:#6b7280;margin-bottom:20px;line-height:1.6;}
-.exp-bar-wrap{width:100%;height:8px;background:#1c2030;border-radius:99px;overflow:hidden;margin-bottom:10px;}
-.exp-bar{height:100%;width:0%;background:linear-gradient(90deg,#2ed8a0,#4a9eff);border-radius:99px;transition:width .3s;}
-.exp-status{font-size:12px;color:#9ca3af;}
-#capture-block{position:fixed;inset:0;z-index:99998;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
-#capture-block.show{display:flex;}
-#capture-block .cb-icon{font-size:48px;}
-#capture-block .cb-msg{font-size:14px;font-weight:700;color:#fff;text-align:center;}
-#capture-block .cb-sub{font-size:12px;color:rgba(255,255,255,.5);text-align:center;}
+/* 인증화면 */
 #auth-screen{position:fixed;inset:0;z-index:99999;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
 #auth-screen.hidden{display:none;}
 #auth-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#0a0c10 0%,#0f1420 40%,#0a0f18 100%);z-index:0;}
@@ -394,7 +405,6 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 .auth-logo{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:3px;color:#fff;margin-bottom:4px;line-height:1;}
 .auth-logo span{color:#e8a020;}
 .auth-divider{width:40px;height:2px;background:linear-gradient(90deg,transparent,#e8a020,transparent);margin:14px auto 18px;}
-/* 대기 화면 */
 .auth-pending{text-align:center;}
 .auth-pending-icon{font-size:40px;margin-bottom:12px;}
 .auth-pending-title{font-size:14px;font-weight:700;color:#e8eaf0;margin-bottom:8px;}
@@ -403,42 +413,48 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 .auth-id-label{font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
 .auth-id-value{font-size:18px;font-weight:700;color:#e8a020;letter-spacing:4px;font-family:monospace;}
 .auth-id-copy{display:inline-flex;align-items:center;gap:5px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.2);border-radius:6px;padding:6px 14px;font-size:11px;color:#4a9eff;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .15s;}
-.auth-id-copy:hover{background:rgba(74,158,255,.2);}
 .auth-checking{display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px 0;}
 .auth-checking.show{display:flex;}
-.auth-spinner{width:28px;height:28px;border:2px solid rgba(255,255,255,.1);border-top-color:#e8a020;border-radius:50%;animation:aspin .7s linear infinite;}
-@keyframes aspin{to{transform:rotate(360deg);}}
+.auth-spinner{width:28px;height:28px;border:2px solid rgba(255,255,255,.1);border-top-color:#e8a020;border-radius:50%;animation:ghspin .7s linear infinite;}
 .auth-checking-txt{font-size:12px;color:#6b7280;}
 .auth-err-box{background:rgba(240,64,64,.08);border:1px solid rgba(240,64,64,.2);border-radius:8px;padding:12px 14px;margin-top:14px;display:none;}
 .auth-err-box.show{display:block;}
 .auth-err-txt{font-size:12px;color:#f04040;line-height:1.6;}
-.auth-retry{display:inline-flex;align-items:center;gap:5px;background:rgba(240,64,64,.1);border:1px solid rgba(240,64,64,.25);border-radius:6px;padding:6px 14px;font-size:11px;color:#f04040;cursor:pointer;font-family:inherit;margin-top:8px;transition:all .15s;}
-.auth-retry:hover{background:rgba(240,64,64,.2);}
+.auth-retry{display:inline-flex;align-items:center;gap:5px;background:rgba(240,64,64,.1);border:1px solid rgba(240,64,64,.25);border-radius:6px;padding:6px 14px;font-size:11px;color:#f04040;cursor:pointer;font-family:inherit;margin-top:8px;}
 .auth-footer{margin-top:20px;font-size:11px;color:#374151;}
+/* 캡처차단 */
+#capture-block{position:fixed;inset:0;z-index:99998;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+#capture-block.show{display:flex;}
+#capture-block .cb-icon{font-size:48px;}
+#capture-block .cb-msg{font-size:14px;font-weight:700;color:#fff;text-align:center;}
+#capture-block .cb-sub{font-size:12px;color:rgba(255,255,255,.5);text-align:center;}
+@media print{body{display:none!important;} @page{margin:0;}}
+/* 반응형 */
+@media(max-width:768px){.logo span{display:none;}.sw{flex:1;max-width:none;}main{padding:14px;}.grid{gap:10px;}}
+@media(max-width:599px){header{padding:0 10px;gap:8px;height:50px;}.logo{font-size:16px;}.logo span{display:none;}.hstats .spill:first-child{display:none;}.export-btn{padding:4px 9px;font-size:10px;}.tbar{padding:0 6px;}.tab{padding:9px 10px;font-size:11px;}main{padding:10px;}.mh{display:none;}.mt{font-size:16px;}.grid{grid-template-columns:1fr;gap:8px;}.ch{padding:10px 12px 8px;}.cbody{padding:6px 12px 10px;}#tab-add-content{padding:12px;}.ap-wrap{flex-direction:column;}.ap-history{width:100%;}#v-hdr{padding:0 10px;height:48px;}#v-name{font-size:12px;}#item-modal{border-radius:14px 14px 0 0;}#item-modal-bg{align-items:flex-end;}}
 </style>
 </head>
 <body>
 
-<!-- 오버레이 -->
-<div id="export-overlay"><div class="exp-box"><div class="exp-title">📤 배포용 HTML 생성 중...</div><div class="exp-sub">파일을 HTML에 내장합니다.</div><div class="exp-bar-wrap"><div class="exp-bar" id="exp-bar"></div></div><div class="exp-status" id="exp-status">준비 중...</div></div></div>
+<!-- 캡처차단 오버레이 -->
 <div id="capture-block"><div class="cb-icon">🚫</div><div class="cb-msg">화면 캡처 감지됨</div><div class="cb-sub">무단 캡처·복제 금지 · 더존하우징</div></div>
+
+<!-- 인증 화면 -->
 <div id="auth-screen">
   <div class="auth-bg-grid"></div>
   <div class="auth-box">
     <div class="auth-badge">🏗 시공관리 시스템</div>
-    <div class="auth-company">DOOJEON HOUSING</div>
+    <div class="auth-company">DUJON HOUSING</div>
     <div class="auth-logo">더존<span>하우징</span></div>
-    <div class="auth-divider"></div>
-    <!-- 인증 확인 중 -->
-    <div class="auth-checking" id="auth-checking">
+    <div class="auth-divider" style="width:40px;height:2px;background:linear-gradient(90deg,transparent,#e8a020,transparent);margin:14px auto 18px;"></div>
+    <div class="auth-checking show" id="auth-checking">
       <div class="auth-spinner"></div>
       <div class="auth-checking-txt">접근 권한 확인 중...</div>
     </div>
-    <!-- 대기 (미등록 기기) -->
     <div class="auth-pending" id="auth-pending" style="display:none;">
       <div class="auth-pending-icon">📱</div>
       <div class="auth-pending-title">등록되지 않은 기기입니다</div>
-      <div class="auth-pending-sub">아래 기기 ID를 관리자에게 전달하여<br>등록 요청하세요.</div>
+      <div class="auth-pending-sub">아래 기기 ID를 관리자에게 전달하여 등록 요청하세요.</div>
       <div class="auth-id-box">
         <div class="auth-id-label">내 기기 ID</div>
         <div class="auth-id-value" id="auth-device-id">--------</div>
@@ -452,6 +468,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     <div class="auth-footer">© 2026 더존하우징 · 시공관리 참고자료 시스템</div>
   </div>
 </div>
+
 <header>
   <div class="logo">시공관리<span>참고자료 2026</span></div>
   <div class="sw">
@@ -462,7 +479,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <div class="hstats">
     <div class="spill"><strong id="h-total">0</strong>&nbsp;자료</div>
     <div class="spill g"><strong id="h-conn">0</strong>&nbsp;파일연결</div>
-    <button class="export-btn" onclick="exportApp()">📤 배포</button>
+    <button class="export-btn" onclick="exportHTML()" title="현재 앱 HTML 다운로드">💾 저장</button>
   </div>
 </header>
 
@@ -671,6 +688,19 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 <div id="toast"></div>
 
 <script>
+// ── 누락 변수 복원 ──
+var addedItems=[];
+try{addedItems=JSON.parse(localStorage.getItem('sic_added2')||'[]');}catch(e){}
+var currentStep=1;
+var apItems=[];
+var apSelectedCat='structure';
+var customProcesses=[];
+try{customProcesses=JSON.parse(localStorage.getItem('sic_custom_processes')||'[]');}catch(e){}
+var viewerRecs=[];
+var viewerCurIdx=0;
+var viewerBlobUrl=null;
+
+
 // ═══════════════════════════════════════════════════════════════
 // IndexedDB — ArrayBuffer 방식으로 안정 저장
 // ═══════════════════════════════════════════════════════════════
@@ -908,9 +938,6 @@ const CATS=[
   {id:'mgmt',label:'현장관리',icon:'📊'},{id:'safety',label:'안전·품질',icon:'🦺'},
 ];
 
-let addedItems=[];
-try{addedItems=JSON.parse(localStorage.getItem('sic_added2')||'[]');}catch(e){}
-let currentStep=1;
 
 // ═══ 사이드바 ═══════════════════════════════════════════════════
 // 사이드바 제거됨
@@ -936,25 +963,41 @@ function render(query=''){
   const grid=document.getElementById('grid');
   const noR=document.getElementById('no-r');
   const q=query.trim().toLowerCase();
+  const GHBASE='https://wisestar823.github.io/-/files/';
 
-  // addedItems를 해당 카드에 병합
-  // 기본 공정 + 추가된 공정(customProcesses) 합치기
-  const allData = [...DATA, ...customProcesses.map(p=>({
-    ...p,
-    items: p.items.map((it,i)=>({...it, _origIdx:i}))
-  }))];
+  // 기본 공정 + 추가된 공정 병합
+  const allData=[...DATA,...customProcesses.map(p=>({...p,items:p.items.map((it,i)=>({...it,_origIdx:i}))}))];
 
+  // addedItems 병합
   const merged=allData.map(d=>{
     const extra=addedItems.filter(a=>a.cardId===d.id);
-    const baseItems=d.items.map((it,i)=>({...it,_origIdx: it._origIdx ?? i}));
-    if(!extra.length)return{...d,items:baseItems};
-    const extraItems=extra.map((a,i)=>({name:a.name,detail:a.detail||'',isNew:true,_origIdx:d.items.length+i,_aid:a.id}));
+    const baseItems=d.items.map((it,i)=>({...it,_origIdx:it._origIdx??i}));
+    if(!extra.length) return{...d,items:baseItems};
+    const extraItems=extra.map((a,i)=>({name:a.name,detail:a.detail||'',ghUrl:a.ghUrl||'',isNew:true,_origIdx:d.items.length+i,_aid:a.id}));
     return{...d,items:[...baseItems,...extraItems]};
   });
 
-  const filtered=merged.filter(d=>{
-    if(!q)return true;
-    if(d.title.toLowerCase().includes(q))return true;
+  // index.json 파일 목록 병합
+  const ghIndex=window.__GH_INDEX__||{};
+  const finalData=merged.map(d=>{
+    const ghFiles=ghIndex[d.id]||[];
+    if(!ghFiles.length) return d;
+    // ghFiles를 items로 변환 (중복 제거)
+    const existNames=new Set(d.items.map(i=>i.name));
+    const newItems=ghFiles
+      .filter(f=>!existNames.has(f.name))
+      .map((f,i)=>({name:f.name,detail:f.detail||'',ghUrl:GHBASE+f.file,isGh:true,_origIdx:d.items.length+i}));
+    // 기존 items에 ghUrl 연결
+    const updatedItems=d.items.map(it=>{
+      const match=ghFiles.find(f=>f.name===it.name);
+      return match?{...it,ghUrl:GHBASE+match.file}:it;
+    });
+    return{...d,items:[...updatedItems,...newItems]};
+  });
+
+  const filtered=finalData.filter(d=>{
+    if(!q) return true;
+    if(d.title.toLowerCase().includes(q)) return true;
     return d.items.some(i=>i.name.toLowerCase().includes(q)||(i.detail&&i.detail.toLowerCase().includes(q)));
   });
 
@@ -966,49 +1009,115 @@ function render(query=''){
 
   grid.innerHTML=filtered.map((d,idx)=>{
     const vis=d.items.filter(i=>{
-      if(!q)return true;
+      if(!q) return true;
       return i.name.toLowerCase().includes(q)||(i.detail&&i.detail.toLowerCase().includes(q))||d.title.toLowerCase().includes(q);
     });
 
     let connCount=0;
-    const rows=vis.map((item,ii)=>{
-      // 실제 인덱스 — _origIdx로 직접 참조 (indexOf 버그 방지)
-      const realIdx = item._origIdx ?? d.items.indexOf(item);
-      const key=fileKeyOf(d.id,realIdx);
-      const hasFile=connectedKeys.has(key);
-      if(hasFile)connCount++;
+    const rows=vis.map((item)=>{
+      const ext=extOf(item.ghUrl||item.name||'');
+      const canView=item.ghUrl&&(IMG_EXTS.has(ext)||PDF_EXTS.has(ext));
+      const hasLink=!!item.ghUrl;
+      if(hasLink) connCount++;
 
-      const fKey=encodeURIComponent(key);
-      const btn=hasFile
-        ? `<button class="btn-open has" onclick="openFile('${fKey}')">▶ 열기</button><button class="btn-open chg" title="파일 교체" onclick="changeFile('${fKey}','${encodeURIComponent(item.name)}')">🔄</button>`
-        : `<button class="btn-open nope" onclick="openItemUpload('${d.id}',${realIdx},'${encodeURIComponent(item.name)}')">↑ 파일 첨부</button>`;
+      const safeUrl=encodeURIComponent(item.ghUrl||'');
+      const safeName=encodeURIComponent(item.name||'');
 
-      return `<div class="ir">
+      let btns='';
+      if(canView){
+        btns+=`<button class="gh-file-btn view" onclick="openGhViewer('${item.ghUrl}','${item.name}')">▶ 열기</button>`;
+      } else if(hasLink){
+        btns+=`<button class="gh-file-btn dl" onclick="window.open('${item.ghUrl}','_blank')">⬇ 다운로드</button>`;
+      } else {
+        btns+=`<span style="font-size:10px;color:var(--text-muted);">파일 미연결</span>`;
+      }
+      if(item.isNew||item._aid){
+        btns+=`<button class="gh-file-btn del" onclick="deleteItem('${d.id}','${item._aid}')">✕</button>`;
+      }
+
+      return `<div class="ir-gh">
         <div class="iname">
-          <div class="n">${hl(item.name,q)}</div>
+          <div class="n">${hl(item.name,q)}${item.isGh?'<span class=\"gh-badge\">GH</span>':''}</div>
           ${item.detail?`<div class="d">${hl(item.detail,q)}</div>`:''}
         </div>
-        <div class="ibtns">
-          ${item.isNew?'<span class="new-b">NEW</span>':''}
-          ${btn}
-        </div>
+        <div class="ibtns">${btns}</div>
       </div>`;
     }).join('');
 
     return `<div class="card${connCount>0?' has-files':''}" style="animation-delay:${idx*18}ms" data-cid="${d.id}">
       <div class="ch">
         <div class="ci2" style="background:${d.color};color:${d.iconBg}">${d.icon}</div>
-        <div><div class="ct">${hl(d.title,q)}</div><div class="cs">${vis.length}개 자료</div></div>
-        ${connCount>0?`<div class="cfs">✓ ${connCount}개 연결</div>`:''}
+        <div><div class="ct">${hl(d.title,q)}</div><div class="cs">${vis.length}개 자료${connCount>0?' · '+connCount+'개 파일':''}</div></div>
+        ${connCount>0?`<div class="cfs">✓ ${connCount}</div>`:''}
       </div>
-      <div class="cbody">${rows}</div>
+      <div class="cbody">${rows||'<div style="font-size:12px;color:var(--text-muted);padding:8px 0;text-align:center;">항목 없음</div>'}</div>
       <div class="card-add-row">
-        <button class="card-add-btn" onclick="openAddModal('${d.id}','${encodeURIComponent(d.title)}','${encodeURIComponent(d.sheet)}')">
-          ＋ 항목 추가
-        </button>
+        <button class="card-add-btn" onclick="openAddModal('${d.id}','${encodeURIComponent(d.title)}','${encodeURIComponent(d.sheet||'')}')">＋ 항목 추가</button>
       </div>
     </div>`;
   }).join('');
+}
+
+// 항목 삭제
+function deleteItem(cardId, aid){
+  if(!confirm('이 항목을 삭제하시겠습니까?')) return;
+  addedItems = addedItems.filter(a => !(a.cardId===cardId && a.id===aid));
+  try{ localStorage.setItem('sic_added2', JSON.stringify(addedItems)); }catch(e){}
+  render(document.getElementById('searchInput').value);
+  showToast('🗑️ 항목 삭제됨');
+}
+
+// GitHub 파일 열기 (뷰어 or 새탭)
+function openGhFile(url, name){
+  const ext = extOf(name);
+  if(IMG_EXTS.has(ext) || PDF_EXTS.has(ext)){
+    openGhViewer(url, name);
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+// GitHub 파일 뷰어
+async function openGhViewer(url, name){
+  const ext = extOf(name);
+  document.getElementById('viewer').classList.add('open');
+  document.body.style.overflow='hidden';
+  document.getElementById('v-name').textContent = name;
+  document.getElementById('v-meta').textContent = ext.toUpperCase()+' · GitHub';
+  document.getElementById('v-filetabs').classList.remove('show');
+  document.getElementById('v-filetabs').innerHTML='';
+  const printBtn = document.getElementById('v-print-btn');
+  if(printBtn) printBtn.style.display='none';
+  showViewerPanel('v-loading');
+  document.getElementById('v-wm').style.display='none';
+
+  if(PDF_EXTS.has(ext)){
+    const iframe = document.getElementById('v-iframe');
+    iframe.onload = ()=>{
+      setTimeout(()=>{
+        document.getElementById('v-loading').style.display='none';
+        showViewerPanel('v-iframe');
+        buildWatermarkOverlay(document.getElementById('v-wm'));
+      }, 400);
+    };
+    iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=1';
+  } else if(IMG_EXTS.has(ext)){
+    try{
+      const res  = await fetch(url);
+      const blob = await res.blob();
+      const burl = URL.createObjectURL(blob);
+      if(viewerBlobUrl) URL.revokeObjectURL(viewerBlobUrl);
+      viewerBlobUrl = burl;
+      const canvas = document.getElementById('v-canvas');
+      canvas.style.cssText='display:block;max-width:100%;max-height:100%;margin:auto;';
+      await drawImageWatermark(burl, canvas);
+      showViewerPanel('v-scroll-img');
+    }catch(e){
+      document.getElementById('v-ns-title').textContent = '이미지 로드 실패';
+      document.getElementById('v-ns-sub').textContent = e.message;
+      showViewerPanel('v-notsup');
+    }
+  }
 }
 
 // ═══ 검색 ════════════════════════════════════════════════════════
@@ -1154,75 +1263,22 @@ function imClearFile(){
 }
 
 async function imSave(){
-  const nameVisible=document.getElementById('im-name').closest('.im-frow').style.display!=='none';
-  const btn=document.getElementById('im-save-btn');
-  btn.disabled=true; btn.textContent='저장 중...';
-
-  try{
-    if(nameVisible){
-      // ── 새 항목 추가 모드 ──
-      const name=document.getElementById('im-name').value.trim();
-      const detail=document.getElementById('im-detail').value.trim();
-      if(!name)return;
-
-      const d=DATA.find(x=>x.id===imCardId);
-      const existCount=d?d.items.length:0;
-      const addedForCard=addedItems.filter(a=>a.cardId===imCardId);
-      const newItemIdx=existCount+addedForCard.length;
-
-      const aid='a'+Date.now();
-      const newItem={id:aid, cardId:imCardId, name, detail, ts:new Date().toLocaleString('ko-KR')};
-      addedItems.push(newItem);
-      try{localStorage.setItem('sic_added2',JSON.stringify(addedItems));}catch(e){}
-
-      // 파일도 첨부됐으면 저장
-      if(imFiles.length>0){
-        const baseKey=fileKeyOf(imCardId, newItemIdx);
-        for(let fi=0;fi<imFiles.length;fi++){
-          await dbSave(baseKey+':'+fi, imFiles[fi].file);
-        }
-      }
-
-      await refreshKeys();
-      render(document.getElementById('searchInput').value);
-
-      // add-count는 customProcesses 전용으로 변경됨
-
-      showToast(`✅ "${name}" 항목 추가됨${imFiles.length>0?' + 파일 '+imFiles.length+'개':''}`)
-      closeItemModal();
-
-    } else {
-      // ── 기존 항목에 파일만 첨부 모드 ──
-      if(imFiles.length===0||imItemIdx<0){return;}
-      const baseKey=fileKeyOf(imCardId, imItemIdx);
-      // 기존 파일 개수 파악 후 이어서 저장
-      const existingAll=await dbGetAll();
-      const existingForKey=existingAll.filter(r=>r.key.startsWith(baseKey+':'));
-      let nextIdx=existingForKey.length;
-      for(const {file} of imFiles){
-        await dbSave(baseKey+':'+nextIdx, file);
-        nextIdx++;
-      }
-      await refreshKeys();
-      render(document.getElementById('searchInput').value);
-      showToast(`✅ 파일 ${imFiles.length}개 연결 완료`);
-      closeItemModal();
-    }
-  }catch(err){
-    console.error(err);
-    showToast('⚠️ 저장 실패: '+err.message);
-  }finally{
-    btn.disabled=false; btn.textContent='✅ 추가';
-  }
+  const name   = document.getElementById('im-name').value.trim();
+  const detail = document.getElementById('im-detail').value.trim();
+  const ghUrl  = (document.getElementById('im-ghurl')||{}).value?.trim()||'';
+  if(!name){ showToast('⚠️ 항목명을 입력하세요.'); return; }
+  const entry = {
+    id: 'ai_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    cardId: imTargetCardId,
+    name, detail, ghUrl,
+    ts: new Date().toLocaleString('ko-KR')
+  };
+  addedItems.push(entry);
+  try{ localStorage.setItem('sic_added2', JSON.stringify(addedItems)); }catch(e){}
+  closeItemModal();
+  render(document.getElementById('searchInput').value);
+  showToast('✅ 항목이 추가되었습니다!');
 }
-
-// ═══ 공정 추가 ══════════════════════════════════════════════════
-let apItems = [];          // 입력 중인 초기 항목 배열
-let apSelectedCat = 'structure';
-
-// localStorage에서 추가된 공정 불러오기
-let customProcesses = [];
-try{ customProcesses = JSON.parse(localStorage.getItem('sic_custom_processes') || '[]'); }catch(e){}
 
 function apPickIcon(el){
   document.querySelectorAll('.ap-icon-picker span').forEach(s=>s.classList.remove('picked'));
@@ -1382,7 +1438,7 @@ function phDoPrint(){
   const eC=()=>`<div style="width:100%;border:1.5px solid #333;box-sizing:border-box;"><div style="height:9mm;border-bottom:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:11pt;font-weight:700;letter-spacing:.6em;font-family:sans-serif;">사 진 대 지</div><div style="height:104mm;border-bottom:1.5px solid #333;"></div><div style="height:9mm;border-bottom:1.5px solid #333;display:flex;align-items:stretch;"><div style="width:18mm;flex-shrink:0;border-right:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700;font-family:sans-serif;">상&nbsp;태</div><div style="flex:1;border-right:1.5px solid #333;"></div><div style="width:18mm;flex-shrink:0;border-right:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700;font-family:sans-serif;">위&nbsp;치</div><div style="flex:1;"></div></div><div style="height:9mm;border-bottom:1.5px solid #333;display:flex;align-items:stretch;"><div style="width:18mm;flex-shrink:0;border-right:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700;font-family:sans-serif;">내&nbsp;용</div><div style="flex:1;"></div></div></div>`;
   const pairs=[];for(let i=0;i<phSlots.length;i+=2)pairs.push([phSlots[i],phSlots[i+1]||null]);
   const pages=pairs.map(p=>`<div class="a4"><div class="cards"><div class="cw" style="border-bottom:1.5px solid #333;">${cH(p[0])}</div><div class="gap"></div><div class="cw">${p[1]?cH(p[1]):eC()}</div></div></div>`).join('');
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><'+ 'style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}body{background:#666;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;padding:10mm 0;gap:10mm;}.a4{width:190mm;height:287mm;background:#fff;display:flex;flex-direction:column;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.5);flex-shrink:0;overflow:hidden;}.cards{width:190mm;height:287mm;display:flex;flex-direction:column;margin-top:5mm;}.cw{width:100%;height:131mm;flex-shrink:0;overflow:hidden;}.gap{width:100%;height:5mm;background:#fff;flex-shrink:0;}@page{size:A4 portrait;margin:0}@media print{body{background:#fff;padding:0;gap:0;}.a4{box-shadow:none;page-break-after:always;margin:0;}.cards{width:190mm;height:287mm;}}<'+'/style></head><body>${pages}<'+'script>window.onload=function(){var imgs=document.images,total=imgs.length,loaded=0;function tryPrint(){if(++loaded>=total)setTimeout(function(){window.print();},400);}if(total===0){setTimeout(function(){window.print();},400);return;}for(var i=0;i<total;i++){if(imgs[i].complete){tryPrint();}else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}}<\/script></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><'+'style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}body{background:#666;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;padding:10mm 0;gap:10mm;}.a4{width:190mm;height:287mm;background:#fff;display:flex;flex-direction:column;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.5);flex-shrink:0;overflow:hidden;}.cards{width:190mm;height:287mm;display:flex;flex-direction:column;margin-top:5mm;}.cw{width:100%;height:131mm;flex-shrink:0;overflow:hidden;}.gap{width:100%;height:5mm;background:#fff;flex-shrink:0;}@page{size:A4 portrait;margin:0}@media print{body{background:#fff;padding:0;gap:0;}.a4{box-shadow:none;page-break-after:always;margin:0;}.cards{width:190mm;height:287mm;}}<'+'/'+'style></head><body>${pages}<'+'script>window.onload=function(){var imgs=document.images,total=imgs.length,loaded=0;function tryPrint(){if(++loaded>=total)setTimeout(function(){window.print();},400);}if(total===0){setTimeout(function(){window.print();},400);return;}for(var i=0;i<total;i++){if(imgs[i].complete){tryPrint();}else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}}<\/script></body></html>`;
   const win=window.open('','_blank');if(!win){alert('팝업이 차단되었어요.');return;}
   win.document.open();win.document.write(html);win.document.close();
 }
@@ -1392,9 +1448,7 @@ function phDoPrint(){
 // ═══════════════════════════════════════════════════════════════
 const IMG_EXTS = new Set(['jpg','jpeg','png','gif','webp','bmp','svg']);
 const PDF_EXTS = new Set(['pdf']);
-let viewerRecs = [];       // 현재 열린 항목의 모든 파일 레코드
-let viewerCurIdx = 0;      // 현재 탭 인덱스
-let viewerBlobUrl = null;
+// viewerRecs/CurIdx/BlobUrl — 상단에서 선언됨
 
 // 워터마크 생성 (DOM 오버레이 방식 — PDF, 미지원 파일용)
 function buildWatermarkOverlay(container){
@@ -1638,6 +1692,124 @@ document.addEventListener('keydown', e=>{
   }
 });
 
+
+// ══ 설정 ═══════════════════════════════════════════════════════
+var ALLOWLIST_URL = 'https://wisestar823.github.io/-/allowlist.json';
+var GH_INDEX_URL  = 'https://wisestar823.github.io/-/index.json';
+var GH_BASE       = 'https://wisestar823.github.io/-/files/';
+
+// ══ GitHub index.json 로드 ══════════════════════════════════════
+async function loadGhIndex(){
+  try{
+    var res = await fetch(GH_INDEX_URL+'?t='+Date.now());
+    if(!res.ok) return;
+    window.__GH_INDEX__ = await res.json();
+    render(document.getElementById('searchInput').value);
+  }catch(e){ console.warn('index.json 로드 실패:', e.message); }
+}
+
+// ══ 기기 ID 인증 ════════════════════════════════════════════════
+function getDeviceId(){
+  var id=localStorage.getItem('sic_device_id');
+  if(!id){ id=Math.random().toString(36).slice(2,6)+Math.random().toString(36).slice(2,6); localStorage.setItem('sic_device_id',id); }
+  return id;
+}
+function copyDeviceId(){
+  var id=getDeviceId();
+  if(navigator.clipboard){ navigator.clipboard.writeText(id).then(function(){showToast('✅ ID 복사됨: '+id);}); }
+  else showToast('ID: '+id);
+}
+function retryAuth(){
+  document.getElementById('auth-err-box').classList.remove('show');
+  document.getElementById('auth-checking').classList.add('show');
+  document.getElementById('auth-pending').style.display='none';
+  setTimeout(checkDeviceAuth,500);
+}
+async function checkDeviceAuth(){
+  var deviceId=getDeviceId();
+  document.getElementById('auth-device-id').textContent=deviceId;
+  if(sessionStorage.getItem('sic_auth')===deviceId){ grantAccess(sessionStorage.getItem('sic_role')||'viewer'); return; }
+  document.getElementById('auth-checking').classList.add('show');
+  document.getElementById('auth-pending').style.display='none';
+  try{
+    var res=await fetch(ALLOWLIST_URL+'?t='+Date.now());
+    if(!res.ok) throw new Error('목록 불러오기 실패 ('+res.status+')');
+    var list=await res.json();
+    var found=null;
+    for(var i=0;i<list.length;i++){ if(list[i].id===deviceId){found=list[i];break;} }
+    document.getElementById('auth-checking').classList.remove('show');
+    if(found){
+      sessionStorage.setItem('sic_auth',deviceId);
+      sessionStorage.setItem('sic_role',found.role||'viewer');
+      grantAccess(found.role||'viewer');
+    }else{
+      document.getElementById('auth-pending').style.display='block';
+    }
+  }catch(err){
+    document.getElementById('auth-checking').classList.remove('show');
+    document.getElementById('auth-pending').style.display='block';
+    document.getElementById('auth-err-txt').textContent='오류: '+err.message;
+    document.getElementById('auth-err-box').classList.add('show');
+  }
+}
+function grantAccess(role){
+  document.getElementById('auth-screen').classList.add('hidden');
+  applyRole(role||'viewer');
+  loadGhIndex();
+}
+function applyRole(role){
+  if(role==='admin') return;
+  var eb=document.querySelector('.export-btn');if(eb)eb.style.display='none';
+  var at=document.getElementById('tab-add-btn');if(at)at.style.display='none';
+  var pt=document.getElementById('tab-ph-btn');if(pt)pt.style.display='none';
+  function h(){
+    document.querySelectorAll('.card-add-btn').forEach(function(b){if(b.closest('.card-add-row'))b.closest('.card-add-row').style.display='none';});
+    document.querySelectorAll('.gh-file-btn.del').forEach(function(b){b.style.display='none';});
+  }
+  h();
+  var g=document.getElementById('grid');
+  if(g) new MutationObserver(h).observe(g,{childList:true,subtree:true});
+}
+
+// 앱 시작
+if(location.protocol==='file:'){
+  document.getElementById('auth-screen').classList.add('hidden');
+  loadGhIndex();
+} else {
+  checkDeviceAuth();
+}
+
+// ══ HTML 저장 ══════════════════════════════════════════════════
+function exportHTML(){
+  var src='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  var blob=new Blob([src],{type:'text/html;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='sicgong_'+new Date().toISOString().slice(0,10)+'.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},3000);
+  showToast('✅ HTML 저장됨');
+}
+
+// ══ 캡처 차단 ══════════════════════════════════════════════════
+(function(){
+  function blk(){var e=document.getElementById('capture-block');if(e)e.classList.add('show');}
+  function unblk(){var e=document.getElementById('capture-block');if(e)e.classList.remove('show');}
+  document.addEventListener('keydown',function(e){
+    if(e.key==='PrintScreen'){e.preventDefault();blk();if(navigator.clipboard)navigator.clipboard.writeText('').catch(function(){});setTimeout(unblk,2000);return;}
+    if(e.metaKey&&e.shiftKey&&['3','4','5','6'].indexOf(e.key)>=0){e.preventDefault();blk();setTimeout(unblk,2000);return;}
+    if(e.ctrlKey&&(e.key==='p'||e.key==='P')){e.preventDefault();return;}
+    if(e.ctrlKey&&(e.key==='s'||e.key==='S')){e.preventDefault();return;}
+  },true);
+  document.addEventListener('visibilitychange',function(){if(document.hidden){blk();}else{setTimeout(unblk,800);}});
+  if(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia){
+    var _o=navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getDisplayMedia=function(opts){blk();return _o(opts).then(function(s){s.getTracks().forEach(function(t){t.addEventListener('ended',unblk);});return s;}).catch(function(e){unblk();throw e;});};
+  }
+  document.addEventListener('contextmenu',function(e){if(e.target.closest&&e.target.closest('#capture-block'))return;e.preventDefault();});
+  document.addEventListener('dragstart',function(e){if(e.target.tagName==='IMG')e.preventDefault();});
+})();
+
 // ═══ 초기화 ══════════════════════════════════════════════════════
 // renderHistory 초기화 제거됨
 
@@ -1657,167 +1829,6 @@ initDB()
     render();
     showToast('⚠️ 파일 저장 기능을 초기화할 수 없습니다.');
   });
-
-// ▼ 여기만 수정 ▼
-var ALLOWLIST_URL = 'https://wisestar823.github.io/-/allowlist.json';
-// ▲ 여기까지 ▲
-
-// 기기 고유 ID 생성/조회
-function getDeviceId(){
-  var id = localStorage.getItem('sic_device_id');
-  if(!id){
-    id = Math.random().toString(36).slice(2,6) + Math.random().toString(36).slice(2,6);
-    localStorage.setItem('sic_device_id', id);
-  }
-  return id;
-}
-
-function copyDeviceId(){
-  var id = getDeviceId();
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(id).then(function(){
-      showToast('✅ ID 복사됨: ' + id);
-    });
-  } else {
-    showToast('ID: ' + id);
-  }
-}
-
-function retryAuth(){
-  document.getElementById('auth-err-box').classList.remove('show');
-  document.getElementById('auth-checking').classList.add('show');
-  document.getElementById('auth-pending').style.display = 'none';
-  setTimeout(checkDeviceAuth, 500);
-}
-
-async function checkDeviceAuth(){
-  var deviceId = getDeviceId();
-  document.getElementById('auth-device-id').textContent = deviceId;
-
-  // 세션에 이미 인증됐으면 바로 진입
-  if(sessionStorage.getItem('sic_auth') === deviceId){
-    grantAccess(sessionStorage.getItem('sic_role') || 'viewer');
-    return;
-  }
-
-  document.getElementById('auth-checking').classList.add('show');
-  document.getElementById('auth-pending').style.display = 'none';
-
-  // ALLOWLIST_URL 미설정 시
-  if(!ALLOWLIST_URL || ALLOWLIST_URL.includes('깃허브아이디')){
-    showAuthMsg('ALLOWLIST_URL을 HTML 파일 안에 입력하세요.');
-    document.getElementById('auth-checking').classList.remove('show');
-    document.getElementById('auth-pending').style.display = 'block';
-    return;
-  }
-
-  try{
-    var res = await fetch(ALLOWLIST_URL + '?t=' + Date.now());
-    if(!res.ok) throw new Error('파일을 불러올 수 없습니다 ('+res.status+')');
-    var list = await res.json();
-
-    var found = null;
-    for(var i=0; i<list.length; i++){
-      if(list[i].id === deviceId){
-        found = list[i];
-        break;
-      }
-    }
-
-    document.getElementById('auth-checking').classList.remove('show');
-
-    if(found){
-      sessionStorage.setItem('sic_auth', deviceId);
-      sessionStorage.setItem('sic_role', found.role || 'viewer');
-      grantAccess(found.role || 'viewer');
-    } else {
-      document.getElementById('auth-pending').style.display = 'block';
-      showAuthMsg('등록되지 않은 기기입니다. 아래 ID를 관리자에게 전달하세요.');
-    }
-  } catch(err){
-    document.getElementById('auth-checking').classList.remove('show');
-    document.getElementById('auth-pending').style.display = 'block';
-    var errBox = document.getElementById('auth-err-box');
-    document.getElementById('auth-err-txt').textContent = '오류: ' + err.message + ' — 잠시 후 다시 시도하세요.';
-    errBox.classList.add('show');
-  }
-}
-
-function showAuthMsg(msg){
-  // auth-pending-sub 텍스트 업데이트
-  var sub = document.querySelector('.auth-pending-sub');
-  if(sub) sub.innerHTML = msg;
-}
-
-function grantAccess(role){
-  document.getElementById('auth-screen').classList.add('hidden');
-  applyRole(role || 'viewer');
-}
-
-function applyRole(role){
-  if(role === 'admin') return;
-  var eb=document.querySelector('.export-btn');if(eb)eb.style.display='none';
-  var at=document.getElementById('tab-add-btn');if(at)at.style.display='none';
-  var pt=document.getElementById('tab-ph-btn');if(pt)pt.style.display='none';
-  function h(){
-    document.querySelectorAll('.card-add-btn').forEach(function(b){if(b.closest('.card-add-row'))b.closest('.card-add-row').style.display='none';});
-    document.querySelectorAll('.btn-open.nope,.btn-open.chg').forEach(function(b){b.style.display='none';});
-  }
-  h();
-  var g=document.getElementById('grid');
-  if(g) new MutationObserver(h).observe(g,{childList:true,subtree:true});
-}
-
-// 앱 시작 시 인증
-checkDeviceAuth();
-
-
-async function exportApp(){
-  if(!db){showToast('⚠️ DB가 초기화되지 않았습니다.');return;}
-  var ov=document.getElementById('export-overlay'),bar=document.getElementById('exp-bar'),st=document.getElementById('exp-status');
-  ov.classList.add('show');bar.style.width='0%';st.textContent='파일 목록 불러오는 중...';
-  try{
-    var all=await dbGetAll(),emb={};
-    for(var i=0;i<all.length;i++){
-      var rec=all[i];bar.style.width=Math.round(i/Math.max(all.length,1)*60)+'%';st.textContent='변환 '+(i+1)+'/'+all.length+': '+rec.name;
-      var bytes=new Uint8Array(rec.buf),bin='',chunk=8192;
-      for(var j=0;j<bytes.length;j+=chunk)bin+=String.fromCharCode.apply(null,bytes.subarray(j,j+chunk));
-      emb[rec.key]={name:rec.name,size:rec.size,type:rec.type,b64:btoa(bin),savedAt:rec.savedAt};
-    }
-    bar.style.width='65%';st.textContent='HTML 생성 중...';
-    var src=await (await fetch(location.href)).text();
-    var ls={};['sic_added2','sic_custom_processes'].forEach(function(k){var v=localStorage.getItem(k);if(v)ls[k]=v;});
-    var ST='<'+'script',ET='<'+'/'+'script>';
-    var ic=ST+' id="__embedded_data__">window.__EMBEDDED_FILES__='+JSON.stringify(emb)+';window.__EMBEDDED_LS__='+JSON.stringify(ls)+';(function(){var l=window.__EMBEDDED_LS__||{};Object.keys(l).forEach(function(k){if(!localStorage.getItem(k))localStorage.setItem(k,l[k]);});})();'+ET;
-    var dov='var __oI=initDB;async function initDB(){await __oI();var em=window.__EMBEDDED_FILES__;if(em&&Object.keys(em).length>0){var al=await dbGetAll();if(al.length===0){for(var ky in em){var rc=em[ky],bn=atob(rc.b64),bf=new ArrayBuffer(bn.length),vw=new Uint8Array(bf);for(var ii=0;ii<bn.length;ii++)vw[ii]=bn.charCodeAt(ii);var tx=db.transaction("files","readwrite");tx.objectStore("files").put({key:ky,name:rc.name,size:rc.size,type:rc.type,buf:bf,savedAt:rc.savedAt});await new Promise(function(r,j){tx.oncomplete=r;tx.onerror=j;});}}}}';
-    src=src.replace(ST+'>',ic+'\n'+ST+'>');
-    src=src.replace('// ═══ 초기화',dov+'\n// ═══ 초기화');
-    bar.style.width='90%';st.textContent='다운로드 준비 중...';
-    var blob=new Blob([src],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download='시공관리_배포본_'+new Date().toISOString().slice(0,10)+'.html';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url);},3000);
-    bar.style.width='100%';st.textContent='✅ 완료!';
-    setTimeout(function(){ov.classList.remove('show');},1800);
-    showToast('✅ 배포 완료 ('+(blob.size/1048576).toFixed(1)+' MB)');
-  }catch(err){ov.classList.remove('show');console.error(err);showToast('⚠️ 배포 실패: '+err.message);}
-}
-
-(function(){
-  function blk(){var e=document.getElementById('capture-block');if(e)e.classList.add('show');}
-  function unblk(){var e=document.getElementById('capture-block');if(e)e.classList.remove('show');}
-  document.addEventListener('keydown',function(e){
-    if(e.key==='PrintScreen'){e.preventDefault();blk();if(navigator.clipboard)navigator.clipboard.writeText('').catch(function(){});setTimeout(unblk,2000);return;}
-    if(e.metaKey&&e.shiftKey&&['3','4','5','6'].indexOf(e.key)>=0){e.preventDefault();blk();setTimeout(unblk,2000);return;}
-    if(e.ctrlKey&&(e.key==='p'||e.key==='P')){e.preventDefault();return;}
-    if(e.ctrlKey&&(e.key==='s'||e.key==='S')){e.preventDefault();return;}
-  },true);
-  document.addEventListener('visibilitychange',function(){if(document.hidden){blk();}else{setTimeout(unblk,800);}});
-  if(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia){var _o=navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getDisplayMedia=function(opts){blk();return _o(opts).then(function(s){s.getTracks().forEach(function(t){t.addEventListener('ended',unblk);});return s;}).catch(function(e){unblk();throw e;});};}
-  document.addEventListener('contextmenu',function(e){if(e.target.closest&&e.target.closest('#capture-block'))return;e.preventDefault();});
-  document.addEventListener('dragstart',function(e){if(e.target.tagName==='IMG')e.preventDefault();});
-})();
-
 </script>
 </body>
 </html>
