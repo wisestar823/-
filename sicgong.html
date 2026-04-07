@@ -843,29 +843,27 @@ function render(query=''){
   const q=query.trim().toLowerCase();
   const GHBASE='https://wisestar823.github.io/-/files/';
 
-  // 기본 공정 + 추가된 공정 병합
-  const allData=[...DATA,...customProcesses.map(p=>({...p,items:p.items.map((it,i)=>({...it,_origIdx:i}))}))];
+  // 전역 파일 URL 레지스트리 (인덱스로 안전하게 참조)
+  window.__FILE_REGISTRY__ = [];
 
-  // addedItems 병합
+  const allData=[...DATA,...(customProcesses||[]).map(p=>({...p,items:p.items.map((it,i)=>({...it,_origIdx:i}))}))];
+
   const merged=allData.map(d=>{
-    const extra=addedItems.filter(a=>a.cardId===d.id);
+    const extra=(addedItems||[]).filter(a=>a.cardId===d.id);
     const baseItems=d.items.map((it,i)=>({...it,_origIdx:it._origIdx??i}));
     if(!extra.length) return{...d,items:baseItems};
     const extraItems=extra.map((a,i)=>({name:a.name,detail:a.detail||'',ghUrl:a.ghUrl||'',isNew:true,_origIdx:d.items.length+i,_aid:a.id}));
     return{...d,items:[...baseItems,...extraItems]};
   });
 
-  // index.json 파일 목록 병합
   const ghIndex=window.__GH_INDEX__||{};
   const finalData=merged.map(d=>{
     const ghFiles=ghIndex[d.id]||[];
     if(!ghFiles.length) return d;
-    // ghFiles를 items로 변환 (중복 제거)
     const existNames=new Set(d.items.map(i=>i.name));
     const newItems=ghFiles
       .filter(f=>!existNames.has(f.name))
       .map((f,i)=>({name:f.name,detail:f.detail||'',ghUrl:GHBASE+f.file,isGh:true,_origIdx:d.items.length+i}));
-    // 기존 items에 ghUrl 연결
     const updatedItems=d.items.map(it=>{
       const match=ghFiles.find(f=>f.name===it.name);
       return match?{...it,ghUrl:GHBASE+match.file}:it;
@@ -893,23 +891,24 @@ function render(query=''){
 
     let connCount=0;
     const rows=vis.map((item)=>{
-      const ext=extOf(item.ghUrl||item.name||'');
-      const canView=item.ghUrl&&(IMG_EXTS.has(ext)||PDF_EXTS.has(ext));
+      const ext=extOf(item.name||'');
       const hasLink=!!item.ghUrl;
+      const canView=hasLink&&(IMG_EXTS.has(ext)||PDF_EXTS.has(ext));
       if(hasLink) connCount++;
 
-      const safeUrl=encodeURIComponent(item.ghUrl||'');
-      const safeName=encodeURIComponent(item.name||'');
-
+      // URL을 전역 레지스트리에 저장하고 인덱스만 사용
       let btns='';
       if(canView){
-        btns+=`<button class="gh-file-btn view" onclick="openGhViewer('${item.ghUrl}','${item.name}')">▶ 열기</button>`;
+        const regIdx=window.__FILE_REGISTRY__.length;
+        window.__FILE_REGISTRY__.push({url:item.ghUrl, name:item.name});
+        btns=`<button class="gh-file-btn view" onclick="openByIdx(${regIdx})">▶ 열기</button>`;
       } else if(hasLink){
-        btns+=`<button class="gh-file-btn dl" onclick="window.open('${item.ghUrl}','_blank')">⬇ 다운로드</button>`;
+        const regIdx=window.__FILE_REGISTRY__.length;
+        window.__FILE_REGISTRY__.push({url:item.ghUrl, name:item.name});
+        btns=`<button class="gh-file-btn dl" onclick="dlByIdx(${regIdx})">⬇ 다운로드</button>`;
       } else {
-        btns+=`<span style="font-size:10px;color:var(--text-muted);opacity:.4;">—</span>`;
+        btns=`<span style="font-size:10px;color:var(--text-muted);opacity:.4;">—</span>`;
       }
-
 
       return `<div class="ir-gh">
         <div class="iname">
@@ -927,12 +926,23 @@ function render(query=''){
         ${connCount>0?`<div class="cfs">✓ ${connCount}</div>`:''}
       </div>
       <div class="cbody">${rows||'<div style="font-size:12px;color:var(--text-muted);padding:8px 0;text-align:center;">항목 없음</div>'}</div>
-
     </div>`;
   }).join('');
 }
 
-// 항목 삭제
+// 레지스트리 인덱스로 파일 열기
+function openByIdx(idx){
+  const entry=window.__FILE_REGISTRY__[idx];
+  if(!entry) return;
+  openGhViewer(entry.url, entry.name);
+}
+function dlByIdx(idx){
+  const entry=window.__FILE_REGISTRY__[idx];
+  if(!entry) return;
+  window.open(entry.url, '_blank');
+}
+
+
 function deleteItem(cardId, aid){
   if(!confirm('이 항목을 삭제하시겠습니까?')) return;
   addedItems = addedItems.filter(a => !(a.cardId===cardId && a.id===aid));
@@ -953,48 +963,67 @@ function openGhFile(url, name){
 
 // GitHub 파일 뷰어
 async function openGhViewer(url, name){
-  // 한글 파일명 URL 인코딩
-  url = url.split('/').map(function(part){ return encodeURIComponent(decodeURIComponent(part)); }).join('/');
-  const ext = extOf(name);
+  // URL 안전 인코딩 (한글 파일명 처리)
+  var parts = url.split('/');
+  var encodedUrl = parts.map(function(part){
+    try{ return encodeURIComponent(decodeURIComponent(part)); }
+    catch(e){ return encodeURIComponent(part); }
+  }).join('/');
+
+  var ext = extOf(name);
   document.getElementById('viewer').classList.add('open');
   document.body.style.overflow='hidden';
   document.getElementById('v-name').textContent = name;
   document.getElementById('v-meta').textContent = ext.toUpperCase()+' · GitHub';
   document.getElementById('v-filetabs').classList.remove('show');
   document.getElementById('v-filetabs').innerHTML='';
-  const printBtn = document.getElementById('v-print-btn');
+  var printBtn = document.getElementById('v-print-btn');
   if(printBtn) printBtn.style.display='none';
   showViewerPanel('v-loading');
   document.getElementById('v-wm').style.display='none';
+  if(viewerBlobUrl){ URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl=null; }
 
   if(PDF_EXTS.has(ext)){
-    const iframe = document.getElementById('v-iframe');
-    iframe.onload = ()=>{
-      setTimeout(()=>{
+    var iframe = document.getElementById('v-iframe');
+    iframe.onload = function(){
+      setTimeout(function(){
         document.getElementById('v-loading').style.display='none';
         showViewerPanel('v-iframe');
         buildWatermarkOverlay(document.getElementById('v-wm'));
-      }, 400);
+      }, 500);
     };
-    iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=1';
+    iframe.onerror = function(){
+      document.getElementById('v-ns-title').textContent = 'PDF 로드 실패';
+      document.getElementById('v-ns-sub').textContent = '파일 경로를 확인해주세요.';
+      showViewerPanel('v-notsup');
+    };
+    iframe.src = encodedUrl + '#toolbar=0&navpanes=0&scrollbar=1';
   } else if(IMG_EXTS.has(ext)){
-    // img 태그로 직접 표시 (CORS 문제 없음)
-    const scrollDiv = document.getElementById('v-scroll-img');
+    var scrollDiv = document.getElementById('v-scroll-img');
     scrollDiv.innerHTML = '';
-    const img = document.createElement('img');
-    img.style.cssText = 'max-width:100%;max-height:100%;display:block;margin:auto;border-radius:4px;';
+    scrollDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;overflow:auto;';
+    var img = document.createElement('img');
+    img.style.cssText = 'max-width:100%;max-height:85vh;display:block;margin:auto;border-radius:4px;';
     img.onload = function(){
       showViewerPanel('v-scroll-img');
+      // 워터마크 오버레이
+      buildWatermarkOverlay(document.getElementById('v-wm'));
     };
     img.onerror = function(){
       document.getElementById('v-ns-title').textContent = '이미지 로드 실패';
-      document.getElementById('v-ns-sub').textContent = '파일 경로를 확인해주세요: ' + url;
+      document.getElementById('v-ns-sub').textContent = '파일 경로: ' + encodedUrl;
       showViewerPanel('v-notsup');
     };
-    img.src = url;
+    img.src = encodedUrl;
     scrollDiv.appendChild(img);
+  } else {
+    document.getElementById('v-ns-icon').textContent = fileIcon(ext);
+    document.getElementById('v-ns-title').textContent = ext.toUpperCase()+' 파일 — 미리보기 불가';
+    document.getElementById('v-ns-sub').textContent = '다운로드 버튼을 이용해주세요.';
+    showViewerPanel('v-notsup');
   }
 }
+
 
 // ═══ 검색 ════════════════════════════════════════════════════════
 const si=document.getElementById('searchInput');
