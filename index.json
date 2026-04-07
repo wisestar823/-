@@ -1,99 +1,187 @@
-
 {
   "design": [
     {"name": "시방서", "detail": "설계 기준", "file": "도면검토/시방서.pdf"},
     {"name": "기준도면", "detail": "", "file": "도면검토/기준도면.pdf"},
     {"name": "현장도면", "detail": "", "file": "도면검토/현장도면.jpg"},
-    {"name": "설계도면", "detail": "", "file": "도면검토/설계도면.pdf"}
+    {"name": "설계도면", "detail": "", "file": "도면검토/설계도면.pdf"},
+    {"name": "관련참고자료", "detail": "2024 건설공사부 현장이슈 검토", "file": "도면검토/관련참고자료.pdf"},
+    {"name": "현장도면 샘플", "detail": "샘플도면", "file": "도면검토/현장도면샘플.pdf"}
   ],
   "civil": [
-    {"name": "토목공사 시방서", "detail": "", "file": "토목공사/토목시방서.pdf"},
-  {"name": "토목공사", "detail": "", "file": "토목공사/토목공사.pdf"},
-  {"name": "조경공사", "detail": "", "file": "토목공사/조경공사.pdf"}
+    {"name": "토목공사 시방서", "detail": "", "file": "토목공사/토목공사시방서.pdf"},
+    {"name": "토목공사", "detail": "", "file": "토목공사/토목공사.pdf"},
+    {"name": "조경공사", "detail": "", "file": "토목공사/조경공사.pdf"}
   ],
   "foundation": [
-    {"name": "기초공사", "detail": "", "file": "기초공사/기초공사.pdf"},
+    {"name": "기초공사 시방서", "detail": "", "file": "기초공사/기초공사시방서.pdf"},
     {"name": "구조도", "detail": "", "file": "기초공사/구조도.pdf"},
-    {"name": "기초 상세도", "detail": "", "file": "기초공사/기초상세도.pdf"}
+    {"name": "기초 상세도", "detail": "", "file": "기초공사/기초상세도.pdf"},
+    {"name": "기초공사", "detail": "", "file": "기초공사/기초공사.pdf"}
   ],
   "frame": [
-    {"name": "골조 도면", "detail": "", "file": "골조공사/골조도면.pdf"},
-    {"name": "RC골조 시방서", "detail": "", "file": "골조공사/RC골조시방서.pdf"}
+    {"name": "RC골조 시방서", "detail": "", "file": "골조공사/RC골조시방서.pdf"},
+    {"name": "목골조 시방서", "detail": "", "file": "골조공사/목골조시방서.pdf"},
+    {"name": "목골조공사", "detail": "", "file": "골조공사/목골조공사.pdf"},
+    {"name": "RC골조공사", "detail": "", "file": "골조공사/RC골조공사.pdf"}
   ],
   "interior": [
-    {"name": "내장공사 시방서", "detail": "", "file": "내장공사/내장시방서.pdf"}
+    {"name": "내장공사 시방서", "detail": "", "file": "내장공사/내장공사시방서.pdf"},
+    {"name": "내장공사", "detail": "", "file": "내장공사/내장공사.pdf"},
+    {"name": "천장전산볼트보강예시", "detail": "", "file": "내장공사/천장전산볼트보강예시.pdf"},
+    {"name": "파워바 시방서", "detail": "", "file": "내장공사/파워바시방서.pdf"},
+    {"name": "파워바 도면", "detail": "", "file": "내장공사/파워바도면.pdf"},
+    {"name": "파워바 상세도면", "detail": "", "file": "내장공사/파워바상세도면.pdf"},
+    {"name": "이중스터드내화", "detail": "", "file": "내장공사/이중스터드내화.pdf"},
+    {"name": "바닥내화", "detail": "", "file": "내장공사/바닥내화.pdf"},
+    {"name": "내화구조인정서", "detail": "", "file": "내장공사/내화구조인정서.pdf"},
+    {"name": "차음구조인정서", "detail": "", "file": "내장공사/차음구조인정서.pdf"},
+    {"name": "층간소음 완충재 소닉스", "detail": "층간소음 방음재", "file": "내장공사/층간소음완충재소닉스.pdf"}
   ],
   "exterior": [
-    {"name": "외장공사 시방서", "detail": "", "file": "외장공사/외장시방서.pdf"}
+    {"name": "외장공사 시방서", "detail": "", "file": "외장공사/외장공사시방서.pdf"},
+    {"name": "세라믹사이딩", "detail": "", "file": "외장공사/세라믹사이딩.pdf"},
+    {"name": "조적벽돌", "detail": "", "file": "외장공사/조적벽돌.pdf"},
+    {"name": "조적(앵글) 시공상세도", "detail": "앵글보강상세", "file": "외장공사/조적앵글시공상세도.pdf"},
+    {"name": "파벽돌", "detail": "", "file": "외장공사/파벽돌.pdf"},
+    {"name": "스터코", "detail": "", "file": "외장공사/스터코.pdf"},
+    {"name": "석재", "detail": "", "file": "외장공사/석재.pdf"}
   ],
   "insulation": [
-    {"name": "단열 기준", "detail": "", "file": "단열공사/단열기준.pdf"}
+    {"name": "단열 기준", "detail": "", "file": "단열공사/단열기준.pdf"},
+    {"name": "단열공사 전반", "detail": "인슐레이션 R7내단열", "file": "단열공사/단열공사전반.pdf"},
+    {"name": "연질품", "detail": "", "file": "단열공사/연질품.pdf"},
+    {"name": "경질품", "detail": "", "file": "단열공사/경질품.pdf"},
+    {"name": "스카이텍", "detail": "", "file": "단열공사/스카이텍.pdf"},
+    {"name": "PF보드", "detail": "PF보드 단열", "file": "단열공사/PF보드.pdf"},
+    {"name": "PF보드 프라이머 시공", "detail": "퍼백시공시", "file": "단열공사/PF보드프라이머시공.pdf"},
+    {"name": "PF보드 화스너 시공기준", "detail": "화스너시공", "file": "단열공사/PF보드화스너시공기준.pdf"},
+    {"name": "실위데크 시공사례", "detail": "시공 사례", "file": "단열공사/실위데크시공사례.pdf"}
   ],
   "metal": [
-    {"name": "금속공사 시방서", "detail": "", "file": "금속공사/금속시방서.pdf"}
+    {"name": "금속공사 시방서", "detail": "", "file": "금속공사/금속공사시방서.pdf"},
+    {"name": "후레싱공사·금속작업", "detail": "금속공사 전반", "file": "금속공사/후레싱공사금속작업.pdf"},
+    {"name": "징크공사", "detail": "", "file": "금속공사/징크공사.pdf"},
+    {"name": "세면기하지", "detail": "", "file": "금속공사/세면기하지.pdf"},
+    {"name": "커튼월", "detail": "", "file": "금속공사/커튼월.pdf"},
+    {"name": "난간공사", "detail": "", "file": "금속공사/난간공사.pdf"},
+    {"name": "잡철공사", "detail": "", "file": "금속공사/잡철공사.pdf"}
   ],
   "roof": [
-    {"name": "지붕 상세도", "detail": "", "file": "지붕공사/지붕상세도.pdf"}
+    {"name": "지붕 상세도", "detail": "", "file": "지붕공사/지붕상세도.pdf"},
+    {"name": "싱글", "detail": "", "file": "지붕공사/싱글.pdf"},
+    {"name": "징크", "detail": "", "file": "지붕공사/징크.pdf"},
+    {"name": "세라믹싱글", "detail": "", "file": "지붕공사/세라믹싱글.pdf"},
+    {"name": "기와 시공지침서", "detail": "기와 시공", "file": "지붕공사/기와시공지침서.pdf"},
+    {"name": "기와 시공사진", "detail": "시공서진첨", "file": "지붕공사/기와시공사진.jpg"}
   ],
   "window": [
-    {"name": "창호 사양서", "detail": "", "file": "창호공사/창호사양서.pdf"}
+    {"name": "창호 사양서", "detail": "", "file": "창호공사/창호사양서.pdf"},
+    {"name": "창호시공기준", "detail": "일반 창호", "file": "창호공사/창호시공기준.pdf"},
+    {"name": "살라만더 시방서", "detail": "창호 시방서", "file": "창호공사/살라만더시방서.pdf"},
+    {"name": "삼익 디크닉 시방서", "detail": "시공매뉴얼", "file": "창호공사/삼익디크닉시방서.pdf"},
+    {"name": "LX창호 시방서", "detail": "LX창호", "file": "창호공사/LX창호시방서.pdf"},
+    {"name": "RC창호 시공기준", "detail": "", "file": "창호공사/RC창호시공기준.pdf"},
+    {"name": "천창 시공", "detail": "", "file": "창호공사/천창시공.pdf"}
   ],
   "hvac": [
-    {"name": "난방 설비 도면", "detail": "", "file": "난방설비/난방도면.pdf"}
+    {"name": "난방 설비 도면", "detail": "", "file": "난방설비/난방설비도면.pdf"},
+    {"name": "보일러설비·난방배관", "detail": "난방배관 전반", "file": "난방설비/보일러설비난방배관.pdf"},
+    {"name": "수도배관", "detail": "", "file": "난방설비/수도배관.pdf"},
+    {"name": "외부수도", "detail": "", "file": "난방설비/외부수도.pdf"},
+    {"name": "소방설비", "detail": "", "file": "난방설비/소방설비.pdf"}
   ],
   "electric": [
     {"name": "전기 도면", "detail": "", "file": "전기통신소방/전기도면.pdf"},
-    {"name": "소방 도면", "detail": "", "file": "전기통신소방/소방도면.pdf"}
+    {"name": "소방 도면", "detail": "", "file": "전기통신소방/소방도면.pdf"},
+    {"name": "임시전기", "detail": "", "file": "전기통신소방/임시전기.pdf"},
+    {"name": "지중전기", "detail": "", "file": "전기통신소방/지중전기.pdf"},
+    {"name": "내선공사", "detail": "", "file": "전기통신소방/내선공사.pdf"},
+    {"name": "통신공사", "detail": "", "file": "전기통신소방/통신공사.pdf"},
+    {"name": "IOT공사", "detail": "", "file": "전기통신소방/IOT공사.pdf"},
+    {"name": "3상전기", "detail": "", "file": "전기통신소방/3상전기.pdf"},
+    {"name": "옥내 미러 미디어 관리", "detail": "", "file": "전기통신소방/옥내미러미디어관리.pdf"}
   ],
   "waterproof": [
-    {"name": "방수 시방서", "detail": "", "file": "방수타일/방수시방서.pdf"}
+    {"name": "방수 시방서", "detail": "", "file": "방수타일/방수시방서.pdf"},
+    {"name": "타일 실내 실외방수", "detail": "", "file": "방수타일/타일실내실외방수.pdf"},
+    {"name": "상부방수", "detail": "", "file": "방수타일/상부방수.pdf"},
+    {"name": "RC외벽방수", "detail": "", "file": "방수타일/RC외벽방수.pdf"},
+    {"name": "조적욕조", "detail": "", "file": "방수타일/조적욕조.pdf"},
+    {"name": "폴리우레아 시공 소개서", "detail": "J&J 소개서", "file": "방수타일/폴리우레아시공소개서.pdf"},
+    {"name": "폴리우레아의 규격서", "detail": "", "file": "방수타일/폴리우레아규격서.pdf"}
   ],
   "painting": [
-    {"name": "도장 시방서", "detail": "", "file": "도장도배필름/도장시방서.pdf"}
+    {"name": "도장 시방서", "detail": "", "file": "도장도배필름/도장시방서.pdf"},
+    {"name": "도장공사", "detail": "", "file": "도장도배필름/도장공사.pdf"},
+    {"name": "필름 도배공사", "detail": "", "file": "도장도배필름/필름도배공사.pdf"}
   ],
   "furniture": [
-    {"name": "가구 사양서", "detail": "", "file": "가구공사/가구사양서.pdf"}
+    {"name": "가구 사양서", "detail": "", "file": "가구공사/가구사양서.pdf"},
+    {"name": "가구공사", "detail": "", "file": "가구공사/가구공사.pdf"}
   ],
   "cleanup": [
-    {"name": "준공청소 체크리스트", "detail": "", "file": "준공청소/체크리스트.pdf"}
+    {"name": "준공청소 체크리스트", "detail": "", "file": "준공청소/준공청소체크리스트.pdf"},
+    {"name": "준공청소", "detail": "", "file": "준공청소/준공청소.pdf"}
   ],
   "rain": [
-    {"name": "우천시 관리 기준", "detail": "", "file": "우천시관리/관리기준.pdf"}
+    {"name": "우천시 관리 기준", "detail": "", "file": "우천시관리/우천시관리기준.pdf"},
+    {"name": "우천시 매뉴얼", "detail": "", "file": "우천시관리/우천시매뉴얼.pdf"}
   ],
   "winter": [
-    {"name": "동절기 관리 기준", "detail": "", "file": "동절기관리/관리기준.pdf"}
+    {"name": "동절기 관리 기준", "detail": "", "file": "동절기관리/동절기관리기준.pdf"},
+    {"name": "동절기 온도관리 기록지", "detail": "기록지", "file": "동절기관리/동절기온도관리기록지.pdf"},
+    {"name": "동절기 온도관리 기록지(엑셀)", "detail": "기록지 엑셀", "file": "동절기관리/동절기온도관리기록지엑셀.pdf"},
+    {"name": "동절기공사 관리요령", "detail": "", "file": "동절기관리/동절기공사관리요령.pdf"}
   ],
   "protection": [
-    {"name": "보양 관리 기준", "detail": "", "file": "보양관리/관리기준.pdf"}
+    {"name": "보양 관리 기준", "detail": "", "file": "보양관리/보양관리기준.pdf"},
+    {"name": "마감재 보양방법 사진", "detail": "", "file": "보양관리/마감재보양방법사진.jpg"}
   ],
   "thermal": [
-    {"name": "열관류율 기준표", "detail": "", "file": "열관류율/기준표.pdf"}
+    {"name": "열관류율 기준표", "detail": "", "file": "열관류율/열관류율기준표.pdf"},
+    {"name": "위치별열관유율표", "detail": "", "file": "열관류율/위치별열관유율표.pdf"},
+    {"name": "지역별 열관유율표", "detail": "", "file": "열관류율/지역별열관유율표.pdf"}
   ],
   "site": [
-    {"name": "현장 관리 지침", "detail": "", "file": "현장관리/관리지침.pdf"}
+    {"name": "현장 관리 지침", "detail": "", "file": "현장관리/현장관리지침.pdf"},
+    {"name": "현장관리 자료", "detail": "", "file": "현장관리/현장관리자료.pdf"},
+    {"name": "CS·갈등관리 교육자료", "detail": "", "file": "현장관리/CS갈등관리교육자료.pdf"},
+    {"name": "시공지침서 공통공사", "detail": "", "file": "현장관리/시공지침서공통공사.pdf"},
+    {"name": "협력업체 리스트", "detail": "2026.01.17", "file": "현장관리/협력업체리스트.pdf"},
+    {"name": "더존종합건설 통장사본", "detail": "수주 후 발행", "file": "현장관리/더존종합건설통장사본.pdf"},
+    {"name": "더존종합건설 사업자사본", "detail": "수주 후 발행", "file": "현장관리/더존종합건설사업자사본.pdf"},
+    {"name": "더존하우징 통경사본", "detail": "협력사", "file": "현장관리/더존하우징통장사본.pdf"}
   ],
   "safetycard": [
-    {"name": "안전관리 계획서", "detail": "", "file": "안전관리/안전계획서.pdf"}
+    {"name": "안전관리 계획서", "detail": "", "file": "안전관리/안전관리계획서.pdf"},
+    {"name": "안전사고사례", "detail": "공사사고 사례", "file": "안전관리/안전관리사고사례.pdf"}
   ],
   "material": [
-    {"name": "자재 관리 기준", "detail": "", "file": "자재폐기물관리/자재기준.pdf"}
+    {"name": "자재·폐기 기준", "detail": "", "file": "자재폐기물관리/자재폐기기준.pdf"},
+    {"name": "자재관리요령", "detail": "", "file": "자재폐기물관리/자재관리요령.pdf"},
+    {"name": "목재등급표", "detail": "", "file": "자재폐기물관리/목재등급표.pdf"},
+    {"name": "폐기물관리요령", "detail": "", "file": "자재폐기물관리/폐기물관리요령.pdf"}
   ],
   "penalty": [
-    {"name": "패널티 기준표", "detail": "", "file": "패널티기준/기준표.pdf"}
+    {"name": "직영관리패널티 기준표", "detail": "", "file": "패널티기준/직영관리패널티기준표.pdf"},
+    {"name": "책임소장 패널티 기준표", "detail": "2026.01.11", "file": "패널티기준/책임소장패널티기준표.pdf"},
+    {"name": "업체 패널티 기준표", "detail": "2026.11.1", "file": "패널티기준/업체패널티기준표.pdf"}
   ],
   "quality": [
-    {"name": "품질시험 계획서", "detail": "", "file": "품질시험계획/계획서.pdf"}
+    {"name": "품질관리 계획서", "detail": "", "file": "품질시험계획/품질관리계획서.pdf"},
+    {"name": "품질시험계획서", "detail": "소규모환경건설", "file": "품질시험계획/품질시험계획서.pdf"},
+    {"name": "소규모 건설공사 품질관리 가이드", "detail": "", "file": "품질시험계획/소규모건설공사품질관리가이드.pdf"}
   ],
   "railroad": [
-    {"name": "철도인접지역 검토서", "detail": "", "file": "철도인접지역/검토서.pdf"}
+    {"name": "철도인접지역 검토서", "detail": "", "file": "철도인접지역/철도인접지역검토서.pdf"},
+    {"name": "철도지역 허가시 검토사항", "detail": "인허가 검토", "file": "철도인접지역/철도지역허가시검토사항.pdf"}
   ],
   "ending": [
-    {"name": "엔딩 공사완료보고서", "detail": "", "file": "엔딩/공사완료보고서.pdf"},
-    {"name": "엔딩 체크리스트", "detail": "", "file": "엔딩/체크리스트.pdf"}
+    {"name": "공사완료보고서", "detail": "", "file": "엔딩/공사완료보고서.pdf"}
   ],
-"education": [
-  {"name": "교육 자료", "file": "소장교육자료/교육자료.pdf"},
-  {"name": "안전 교육", "file": "소장교육자료/안전교육.pdf"},
-  {"name": "품질 교육", "file": "소장교육자료/품질교육.pdf"}
-]
+  "education": [
+    {"name": "교육 자료", "detail": "2026년4월", "file": "소장교육자료/교육자료.pdf"},
+    {"name": "안전 교육", "detail": "", "file": "소장교육자료/안전교육.pdf"},
+    {"name": "품질 교육", "detail": "", "file": "소장교육자료/품질교육.pdf"}
+  ]
 }
