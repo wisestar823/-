@@ -464,6 +464,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 
 <div class="tbar">
   <div class="tab active" id="tab-view-btn" onclick="switchTab('view')">📋 자료 보기</div>
+  <div class="tab" id="tab-add-btn" onclick="switchTab('add')">➕ 공정 추가 <span class="tbadge" id="add-count" style="display:none">0</span></div>
   <div class="tab" id="tab-ph-btn" onclick="switchTab('photo')">📷 사진대지</div>
 </div>
 
@@ -503,6 +504,79 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     <div id="v-wm"></div>
   </div>
   <div id="v-filetabs"></div>
+</div>
+
+<!-- ══ 공정 추가 TAB ══ -->
+<div id="tab-add-content">
+  <div class="ap-wrap">
+
+    <!-- 좌: 폼 -->
+    <div class="ap-form">
+      <div class="fptit">🏗️ 새 공정 추가</div>
+      <div class="fpsub">26개 기본 공정 외에 새 공정을 추가합니다.<br>추가된 공정은 대시보드에 바로 표시됩니다.</div>
+
+      <!-- 공정명 + 아이콘 -->
+      <div class="ap-row2">
+        <div class="frow" style="flex:1;margin-bottom:0;">
+          <label class="fl">공정명 <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="ap-title" placeholder="예: 조적공사, 철골공사..." oninput="apOnInput()">
+        </div>
+        <div class="frow" style="width:80px;margin-bottom:0;">
+          <label class="fl">아이콘</label>
+          <input type="text" id="ap-icon" placeholder="🔨" maxlength="2" style="text-align:center;font-size:20px;" oninput="apOnInput()">
+        </div>
+      </div>
+      <div class="ap-icon-picker" id="ap-icon-picker">
+        <span onclick="apPickIcon(this)">🔨</span><span onclick="apPickIcon(this)">🪛</span>
+        <span onclick="apPickIcon(this)">⚙️</span><span onclick="apPickIcon(this)">🏗️</span>
+        <span onclick="apPickIcon(this)">🧱</span><span onclick="apPickIcon(this)">🪟</span>
+        <span onclick="apPickIcon(this)">🚪</span><span onclick="apPickIcon(this)">🏠</span>
+        <span onclick="apPickIcon(this)">🏢</span><span onclick="apPickIcon(this)">🌡️</span>
+        <span onclick="apPickIcon(this)">💧</span><span onclick="apPickIcon(this)">⚡</span>
+        <span onclick="apPickIcon(this)">🔥</span><span onclick="apPickIcon(this)">🧹</span>
+        <span onclick="apPickIcon(this)">📐</span><span onclick="apPickIcon(this)">📦</span>
+        <span onclick="apPickIcon(this)">🛡️</span><span onclick="apPickIcon(this)">🦺</span>
+        <span onclick="apPickIcon(this)">📊</span><span onclick="apPickIcon(this)">✅</span>
+      </div>
+
+      <!-- 카테고리 -->
+      <div class="frow">
+        <label class="fl">카테고리</label>
+        <div class="ap-cats" id="ap-cats">
+          <button class="ap-cat active" data-cat="structure" onclick="apSelectCat(this)">🏗️ 구조·골조</button>
+          <button class="ap-cat" data-cat="exterior" onclick="apSelectCat(this)">🏠 외장·지붕</button>
+          <button class="ap-cat" data-cat="interior" onclick="apSelectCat(this)">🪟 내장·마감</button>
+          <button class="ap-cat" data-cat="mep" onclick="apSelectCat(this)">⚡ 설비·전기</button>
+          <button class="ap-cat" data-cat="mgmt" onclick="apSelectCat(this)">📊 현장관리</button>
+          <button class="ap-cat" data-cat="safety" onclick="apSelectCat(this)">🦺 안전·품질</button>
+          <button class="ap-cat" data-cat="design" onclick="apSelectCat(this)">📐 설계·도면</button>
+        </div>
+      </div>
+
+      <!-- 초기 항목들 -->
+      <div class="frow">
+        <label class="fl">초기 항목 <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(선택 — 나중에 카드에서도 추가 가능)</span></label>
+        <div id="ap-items-list"></div>
+        <div class="ap-item-add-row">
+          <input type="text" id="ap-item-input" placeholder="항목명 입력 후 Enter 또는 + 버튼" onkeydown="if(event.key==='Enter')apAddItem()">
+          <button class="btn btn-suc" onclick="apAddItem()" style="padding:9px 14px;font-size:13px;">＋</button>
+        </div>
+      </div>
+
+      <div class="brow" style="margin-top:8px;">
+        <button class="btn btn-acc" id="ap-save-btn" onclick="apSave()" disabled>✅ 공정 추가</button>
+      </div>
+    </div>
+
+    <!-- 우: 추가된 공정 목록 -->
+    <div class="ap-history">
+      <div class="hist-tit" style="margin-bottom:12px;">추가된 공정 목록</div>
+      <div id="ap-hist-list">
+        <div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0;">아직 추가된 공정이 없습니다</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ══ 공정 추가 TAB ══ -->
@@ -1142,8 +1216,8 @@ function fallbackImgViewer(encodedUrl, sd){
       for(var c=-1;c<cols;c++){
         var ox=(r%2===0)?0:colStep*0.5;
         var x=c*colStep+ox, y=r*rowStep;
-        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+y+'px;transform:rotate(-32deg);font-size:12px;font-weight:700;color:rgba(180,180,180,0.35);white-space:nowrap;user-select:none;pointer-events:none;">더존하우징</span>';
-        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+(y+16)+'px;transform:rotate(-32deg);font-size:9px;font-weight:500;color:rgba(180,180,180,0.22);white-space:nowrap;user-select:none;pointer-events:none;">DUJON HOUSING</span>';
+        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+y+'px;transform:rotate(-32deg);font-size:24px;font-weight:700;color:rgba(0,0,0,0.45);white-space:nowrap;user-select:none;pointer-events:none;">더존하우징</span>';
+        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+(y+30)+'px;transform:rotate(-32deg);font-size:18px;font-weight:500;color:rgba(0,0,0,0.32);white-space:nowrap;user-select:none;pointer-events:none;">DUJON HOUSING</span>';
       }
     }
     wm.innerHTML=wmHtml;
@@ -1589,12 +1663,12 @@ function drawImageWatermark(srcUrl, canvas){
       const text = '더존하우징';
       const subText = 'DUJON HOUSING';
       const angle = -32 * Math.PI / 180;
-      const fontSize = Math.max(18, Math.round(w / 35));
+      const fontSize = Math.max(36, Math.round(w / 18));
       const spacing = fontSize * 8;
 
       ctx.save();
       ctx.globalAlpha = 0.32;
-      ctx.fillStyle = '#444444';
+      ctx.fillStyle = '#000000';
       ctx.font = `700 ${fontSize}px 'Noto Sans KR', sans-serif`;
       ctx.letterSpacing = '4px';
 
@@ -1789,6 +1863,99 @@ document.addEventListener('keydown', e=>{
   }
 });
 
+
+
+// ══ 공정 추가 기능 ══════════════════════════════════════════════
+
+function apPickIcon(el){
+  document.querySelectorAll('.ap-icon-picker span').forEach(s=>s.classList.remove('picked'));
+  el.classList.add('picked');
+  document.getElementById('ap-icon').value = el.textContent;
+  apOnInput();
+}
+
+function apOnInput(){
+  const title = document.getElementById('ap-title').value.trim();
+  document.getElementById('ap-save-btn').disabled = !title;
+}
+
+function apAddItem(){
+  const inp = document.getElementById('ap-item-input');
+  const val = inp.value.trim();
+  if(!val) return;
+  apItems.push({name:val, detail:''});
+  inp.value = '';
+  apRenderItems();
+}
+
+function apRemoveItem(idx){
+  apItems.splice(idx,1);
+  apRenderItems();
+}
+
+function apRenderItems(){
+  const wrap = document.getElementById('ap-items-list');
+  if(!apItems.length){ wrap.innerHTML='<div style="font-size:11px;color:var(--text-muted);padding:4px 0;">항목이 없습니다. 아래에서 추가하세요.</div>'; return; }
+  wrap.innerHTML = '<div class="ap-items-wrap">' +
+    apItems.map((it,i)=>`<span class="ap-item-tag">${it.name}<span class="rm" onclick="apRemoveItem(${i})">×</span></span>`).join('') +
+  '</div>';
+}
+
+function apSave(){
+  const title = document.getElementById('ap-title').value.trim();
+  const icon  = document.getElementById('ap-icon').value.trim() || '🔨';
+  const cat   = apSelectedCat;
+  const id    = 'custom_' + Date.now();
+  // 랜덤 컬러 (고정 팔레트)
+  const palette = ['#4a9eff20','#e8a02020','#2ed8a020','#a070ff20','#ff806020','#ff407020','#60a0ff20','#8060ff20','#40c0e020','#ff603020'];
+  const bgColors = ['#4a9eff','#e8a020','#2ed8a0','#a070ff','#ff8060','#ff4070','#60a0ff','#8060ff','#40c0e0','#ff6030'];
+  const ci = Math.floor(Math.random() * palette.length);
+  const newProc = {
+    id, cat, title, icon,
+    color: palette[ci], iconBg: bgColors[ci],
+    items: apItems.map((it,i)=>({...it, _origIdx:i})),
+    ts: new Date().toLocaleString('ko-KR')
+  };
+  customProcesses.push(newProc);
+  try{ localStorage.setItem('sic_custom_processes', JSON.stringify(customProcesses)); }catch(e){}
+  // 배지 업데이트
+  const badge = document.getElementById('add-count');
+  badge.style.display=''; badge.textContent = customProcesses.length;
+  // 히스토리 갱신
+  apRenderHistory();
+  // 대시보드 갱신
+  render(document.getElementById('searchInput').value);
+  // 폼 초기화
+  document.getElementById('ap-title').value='';
+  document.getElementById('ap-icon').value='';
+  document.querySelectorAll('.ap-icon-picker span').forEach(s=>s.classList.remove('picked'));
+  apItems=[];
+  apRenderItems();
+  document.getElementById('ap-save-btn').disabled=true;
+  showToast(`✅ "${title}" 공정이 추가되었습니다!`);
+}
+
+function apRenderHistory(){
+  const list = document.getElementById('ap-hist-list');
+  if(!customProcesses.length){
+    list.innerHTML='<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:20px 0;">아직 추가된 공정이 없습니다</div>';
+    return;
+  }
+  list.innerHTML = customProcesses.slice().reverse().map(p=>`
+    <div class="ap-hist-card">
+      <div class="ap-hist-title"><span>${p.icon}</span>${p.title}</div>
+      <div class="ap-hist-meta">${p.items.length}개 항목 · ${p.ts}</div>
+      <span class="ap-hist-del" onclick="apDeleteProcess('${p.id}')" title="삭제">🗑</span>
+    </div>`).join('');
+}
+
+// 공정추가 초기화
+apRenderItems();
+apRenderHistory();
+if(customProcesses.length){
+  const badge=document.getElementById('add-count');
+  if(badge){badge.style.display=''; badge.textContent=customProcesses.length;}
+}
 
 // ══ 설정 ════════════════════════════════════════════════════════
 var ALLOWLIST_URL = 'https://wisestar823.github.io/-/allowlist.json';
