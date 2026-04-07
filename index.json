@@ -10,7 +10,7 @@
     {"name": "토목공사 시방서", "detail": "", "file": "토목공사/토목시방서.pdf"},
   {"name": "토목공사", "detail": "", "file": "토목공사/토목공사.pdf"},
   {"name": "조경공사", "detail": "", "file": "토목공사/조경공사.pdf"}
-  ]
+  ],
   "foundation": [
     {"name": "기초공사", "detail": "", "file": "기초공사/기초공사.pdf"},
     {"name": "구조도", "detail": "", "file": "기초공사/구조도.pdf"},
