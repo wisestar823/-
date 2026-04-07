@@ -1079,10 +1079,76 @@ function ghImgViewer(encodedUrl, name){
 
   var sd=document.getElementById('v-scroll-img');
   sd.innerHTML='';
-  sd.style.cssText='display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;';
+  sd.style.cssText='display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;position:relative;';
+
+  // Canvas 워터마크 시도 (crossOrigin 필요)
+  var img=new Image();
+  img.crossOrigin='anonymous';
+
+  img.onload=function(){
+    // Canvas에 워터마크 번인 시도
+    try{
+      var canvas=document.getElementById('v-canvas');
+      canvas.style.cssText='display:block;max-width:100%;max-height:85vh;margin:auto;border-radius:4px;';
+      drawImageWatermark(encodedUrl, canvas).then(function(){
+        showViewerPanel('v-scroll-img');
+      }).catch(function(){
+        // Canvas 실패 시 → img 태그 + DOM 오버레이 워터마크
+        fallbackImgViewer(encodedUrl, sd);
+      });
+    }catch(e){
+      fallbackImgViewer(encodedUrl, sd);
+    }
+  };
+
+  img.onerror=function(){
+    document.getElementById('v-ns-icon').textContent='🖼';
+    document.getElementById('v-ns-title').textContent='이미지를 불러올 수 없습니다';
+    document.getElementById('v-ns-sub').textContent='파일 경로를 확인해주세요.';
+    showViewerPanel('v-notsup');
+  };
+
+  // crossOrigin 테스트용 로드
+  img.src=encodedUrl;
+
+  // 3초 내 로드 안 되면 폴백
+  setTimeout(function(){
+    if(document.getElementById('v-loading').style.display!=='none'){
+      fallbackImgViewer(encodedUrl, sd);
+    }
+  }, 3000);
+}
+
+// 폴백: img 태그 + DOM 오버레이 워터마크
+function fallbackImgViewer(encodedUrl, sd){
+  sd.innerHTML='';
+  sd.style.cssText='display:flex;align-items:center;justify-content:center;overflow:auto;padding:12px;position:relative;';
+
+  var wrapper=document.createElement('div');
+  wrapper.style.cssText='position:relative;display:inline-block;max-width:100%;';
+
   var img=document.createElement('img');
-  img.style.cssText='max-width:100%;max-height:85vh;display:block;margin:auto;border-radius:4px;';
-  img.onload=function(){showViewerPanel('v-scroll-img');};
+  img.style.cssText='max-width:100%;max-height:85vh;display:block;border-radius:4px;';
+  img.onload=function(){
+    showViewerPanel('v-scroll-img');
+    // DOM 오버레이 워터마크
+    var wm=document.createElement('div');
+    wm.style.cssText='position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:4px;';
+    var wmHtml='';
+    var W=img.offsetWidth||300, H=img.offsetHeight||300;
+    var colStep=180, rowStep=100;
+    var cols=Math.ceil(W/colStep)+2, rows=Math.ceil(H/rowStep)+3;
+    for(var r=-1;r<rows;r++){
+      for(var c=-1;c<cols;c++){
+        var ox=(r%2===0)?0:colStep*0.5;
+        var x=c*colStep+ox, y=r*rowStep;
+        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+y+'px;transform:rotate(-32deg);font-size:12px;font-weight:700;color:rgba(180,180,180,0.35);white-space:nowrap;user-select:none;pointer-events:none;">더존하우징</span>';
+        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+(y+16)+'px;transform:rotate(-32deg);font-size:9px;font-weight:500;color:rgba(180,180,180,0.22);white-space:nowrap;user-select:none;pointer-events:none;">DUJON HOUSING</span>';
+      }
+    }
+    wm.innerHTML=wmHtml;
+    wrapper.appendChild(wm);
+  };
   img.onerror=function(){
     document.getElementById('v-ns-icon').textContent='🖼';
     document.getElementById('v-ns-title').textContent='이미지를 불러올 수 없습니다';
@@ -1090,8 +1156,10 @@ function ghImgViewer(encodedUrl, name){
     showViewerPanel('v-notsup');
   };
   img.src=encodedUrl;
-  sd.appendChild(img);
+  wrapper.appendChild(img);
+  sd.appendChild(wrapper);
 }
+
 
 
 // ═══ 검색 ════════════════════════════════════════════════════════
