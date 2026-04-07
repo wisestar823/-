@@ -1026,10 +1026,23 @@ function render(query=''){
 
 // GitHub 파일 열기
 function safeUrl(url){
-  return url.split('/').map(function(p){
-    try{return encodeURIComponent(decodeURIComponent(p));}
-    catch(e){return encodeURIComponent(p);}
+  // https://도메인/경로 에서 경로 부분만 인코딩
+  var qIdx = url.indexOf('?');
+  var base = qIdx >= 0 ? url.slice(0, qIdx) : url;
+  var query = qIdx >= 0 ? url.slice(qIdx) : '';
+  // https:// 이후 첫 번째 슬래시까지는 도메인 → 건드리지 않음
+  var protoEnd = base.indexOf('//') + 2;
+  var firstSlash = base.indexOf('/', protoEnd);
+  if(firstSlash < 0) return url;
+  var origin = base.slice(0, firstSlash);  // https://wisestar823.github.io
+  var path   = base.slice(firstSlash);     // /-/files/도면검토/현장도면.jpg
+  // 경로의 각 세그먼트만 인코딩
+  var encodedPath = path.split('/').map(function(seg){
+    if(!seg) return seg;
+    try{ return encodeURIComponent(decodeURIComponent(seg)); }
+    catch(e){ return encodeURIComponent(seg); }
   }).join('/');
+  return origin + encodedPath + query;
 }
 function ghOpen(ri){
   var entry=window.__FR__[ri];
