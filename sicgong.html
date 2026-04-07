@@ -824,14 +824,8 @@ const DATA=[
     {name:'소규모 건설공사 품질관리 가이드',detail:'리플릿'}]},
   {id:'railroad',cat:'safety',title:'철도인접지역 검토',icon:'🚆',color:'#6040a020',iconBg:'#6040a0',sheet:'철도인접지역검토',items:[
     {name:'철도지역 허가시 검토사항',detail:'인허가 검토'}]},
-  {id:'ending',cat:'mgmt',title:'엔딩',icon:'🏁',color:'#e8a02020',iconBg:'#e8a020',sheet:'엔딩',items:[
-    {name:'엔딩 체크리스트',detail:'준공 전 최종 점검'},
-    {name:'엔딩 사진',detail:''},
-    {name:'엔딩 보고서',detail:''}]},
-  {id:'education',cat:'mgmt',title:'소장 교육자료',icon:'📚',color:'#4a9eff20',iconBg:'#4a9eff',sheet:'소장교육',items:[
-    {name:'교육 자료',detail:'소장 필수 교육'},
-    {name:'안전 교육',detail:''},
-    {name:'품질 교육',detail:''}]},
+  {id:'ending',cat:'mgmt',title:'엔딩',icon:'🏁',color:'#e8a02020',iconBg:'#e8a020',sheet:'엔딩',items:[]},
+  {id:'education',cat:'mgmt',title:'소장 교육자료',icon:'📚',color:'#4a9eff20',iconBg:'#4a9eff',sheet:'소장교육',items:[]},
 ];
 
 const CATS=[
@@ -985,14 +979,46 @@ function ghOpen(ri){
   var enc=safeUrl(entry.url);
   var ext=entry.ext;
   if(PDF_EXTS.has(ext)){
-    // PDF: 새 탭으로 열기 (iframe보다 안정적)
-    window.open(enc,'_blank');
+    ghPdfViewer(enc, entry.name);
   } else if(IMG_EXTS.has(ext)){
-    // 이미지: 인앱 뷰어
     ghImgViewer(enc, entry.name);
   } else {
     window.open(enc,'_blank');
   }
+}
+
+// PDF 인앱 뷰어 (워터마크 포함)
+function ghPdfViewer(encodedUrl, name){
+  document.getElementById('viewer').classList.add('open');
+  document.body.style.overflow='hidden';
+  document.getElementById('v-name').textContent=name;
+  document.getElementById('v-meta').textContent='PDF · GitHub';
+  document.getElementById('v-filetabs').classList.remove('show');
+  document.getElementById('v-filetabs').innerHTML='';
+  var pb=document.getElementById('v-print-btn');
+  if(pb) pb.style.display='none';
+  showViewerPanel('v-loading');
+
+  var iframe=document.getElementById('v-iframe');
+  var wm=document.getElementById('v-wm');
+  wm.style.display='none';
+  wm.innerHTML='';
+
+  iframe.onload=function(){
+    setTimeout(function(){
+      document.getElementById('v-loading').style.display='none';
+      showViewerPanel('v-iframe');
+      // PDF 위에 DOM 오버레이 워터마크
+      buildWatermarkOverlay(wm);
+    },600);
+  };
+  iframe.onerror=function(){
+    document.getElementById('v-ns-icon').textContent='📄';
+    document.getElementById('v-ns-title').textContent='PDF를 불러올 수 없습니다';
+    document.getElementById('v-ns-sub').textContent='파일 경로를 확인해주세요.';
+    showViewerPanel('v-notsup');
+  };
+  iframe.src=encodedUrl+'#toolbar=0&navpanes=0&scrollbar=1';
 }
 function ghDl(ri){
   var entry=window.__FR__[ri];
@@ -1077,8 +1103,8 @@ function fallbackImgViewer(encodedUrl, sd){
       for(var c=-1;c<cols;c++){
         var ox=(r%2===0)?0:colStep*0.5;
         var x=c*colStep+ox, y=r*rowStep;
-        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+y+'px;transform:rotate(-32deg);font-size:24px;font-weight:700;color:rgba(0,0,0,0.45);white-space:nowrap;user-select:none;pointer-events:none;">더존하우징</span>';
-        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+(y+30)+'px;transform:rotate(-32deg);font-size:18px;font-weight:500;color:rgba(0,0,0,0.32);white-space:nowrap;user-select:none;pointer-events:none;">DUJON HOUSING</span>';
+        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+y+'px;transform:rotate(-32deg);font-size:12px;font-weight:700;color:rgba(0,0,0,0.45);white-space:nowrap;user-select:none;pointer-events:none;">더존하우징</span>';
+        wmHtml+='<span style="position:absolute;left:'+x+'px;top:'+(y+16)+'px;transform:rotate(-32deg);font-size:9px;font-weight:500;color:rgba(0,0,0,0.32);white-space:nowrap;user-select:none;pointer-events:none;">DUJON HOUSING</span>';
       }
     }
     wm.innerHTML=wmHtml;
@@ -1449,7 +1475,7 @@ function drawImageWatermark(srcUrl, canvas){
       const text = '더존하우징';
       const subText = 'DUJON HOUSING';
       const angle = -32 * Math.PI / 180;
-      const fontSize = Math.max(36, Math.round(w / 18));
+      const fontSize = Math.max(18, Math.round(w / 35));
       const spacing = fontSize * 8;
 
       ctx.save();
