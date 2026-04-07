@@ -83,5 +83,8 @@
   ],
   "railroad": [
     {"name": "철도인접지역 검토서", "detail": "", "file": "철도인접지역/검토서.pdf"}
+  ],
+  "ending": [
+    {"name": "엔딩", "detail": "", "file": "엔딩/공사완료보고서.pdf"}
   ]
 }
