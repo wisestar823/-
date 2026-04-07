@@ -3,6 +3,7 @@
   "design": [
     {"name": "시방서", "detail": "설계 기준", "file": "도면검토/시방서.pdf"},
     {"name": "기준도면", "detail": "", "file": "도면검토/기준도면.pdf"},
+    {"name": "기준도면", "detail": "", "file": "도면검토/현장도면.pdf"},
     {"name": "설계도면", "detail": "", "file": "도면검토/설계도면.pdf"}
   ],
   "civil": [
