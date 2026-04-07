@@ -978,21 +978,21 @@ async function openGhViewer(url, name){
     };
     iframe.src = url + '#toolbar=0&navpanes=0&scrollbar=1';
   } else if(IMG_EXTS.has(ext)){
-    try{
-      const res  = await fetch(url);
-      const blob = await res.blob();
-      const burl = URL.createObjectURL(blob);
-      if(viewerBlobUrl) URL.revokeObjectURL(viewerBlobUrl);
-      viewerBlobUrl = burl;
-      const canvas = document.getElementById('v-canvas');
-      canvas.style.cssText='display:block;max-width:100%;max-height:100%;margin:auto;';
-      await drawImageWatermark(burl, canvas);
+    // img 태그로 직접 표시 (CORS 문제 없음)
+    const scrollDiv = document.getElementById('v-scroll-img');
+    scrollDiv.innerHTML = '';
+    const img = document.createElement('img');
+    img.style.cssText = 'max-width:100%;max-height:100%;display:block;margin:auto;border-radius:4px;';
+    img.onload = function(){
       showViewerPanel('v-scroll-img');
-    }catch(e){
+    };
+    img.onerror = function(){
       document.getElementById('v-ns-title').textContent = '이미지 로드 실패';
-      document.getElementById('v-ns-sub').textContent = e.message;
+      document.getElementById('v-ns-sub').textContent = '파일 경로를 확인해주세요: ' + url;
       showViewerPanel('v-notsup');
-    }
+    };
+    img.src = url;
+    scrollDiv.appendChild(img);
   }
 }
 
