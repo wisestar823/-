@@ -420,6 +420,140 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 /* 반응형 */
 @media(max-width:768px){.logo span{display:none;}.sw{flex:1;max-width:none;}main{padding:14px;}.grid{gap:10px;}}
 @media(max-width:599px){header{padding:0 10px;gap:8px;height:50px;}.logo{font-size:16px;}.logo span{display:none;}.hstats .spill:first-child{display:none;}.tbar{padding:0 6px;}.tab{padding:9px 10px;font-size:11px;}main{padding:10px;}.mh{display:none;}.mt{font-size:16px;}.grid{grid-template-columns:1fr;gap:8px;}.ch{padding:10px 12px 8px;}.cbody{padding:6px 12px 10px;}#v-hdr{padding:0 10px;height:48px;}#v-name{font-size:12px;}#item-modal{border-radius:14px 14px 0 0;}#item-modal-bg{align-items:flex-end;}}
+
+/* ── 경계말뚝 탭 ── */
+#tab-stake-content{display:none;padding:14px;min-height:calc(100vh - 108px);background:var(--bg);}
+.sk-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px;}
+.sk-hdr{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.sk-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.sk-blue{background:#4a9eff}.sk-teal{background:#06c8d8}.sk-green{background:#10d98a}.sk-orange{background:#f5a623}
+/* 검색창 */
+.sk-search-wrap{position:relative;margin-bottom:8px;}
+.sk-search-inp{width:100%;padding:12px 44px 12px 14px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s;}
+.sk-search-inp:focus{border-color:#4a9eff;}
+.sk-search-inp::placeholder{color:var(--text-muted);}
+.sk-search-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:8px;border:none;background:#4a9eff;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+/* 주소 결과 */
+.sk-addr-list{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;margin-bottom:10px;overflow:hidden;display:none;max-height:220px;overflow-y:auto;}
+.sk-addr-list.show{display:block;}
+.sk-addr-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.sk-addr-item:last-child{border:none;}
+.sk-addr-item:hover{background:rgba(74,158,255,.1);}
+.sk-addr-main{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.sk-addr-pnu{font-size:9px;color:#4a9eff;margin-top:2px;font-family:monospace;}
+/* 선택된 주소 */
+.sk-sel-addr{background:rgba(6,200,216,.08);border:1px solid rgba(6,200,216,.3);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:none;}
+.sk-sel-addr.show{display:block;}
+.sk-sel-lbl{font-size:9px;color:#06c8d8;letter-spacing:1px;font-family:monospace;margin-bottom:4px;}
+.sk-sel-addr-txt{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.sk-sel-pnu{font-size:10px;color:var(--text-muted);font-family:monospace;}
+.sk-sel-chg{font-size:10px;color:#4a9eff;cursor:pointer;text-decoration:underline;margin-top:4px;display:inline-block;}
+/* 입력 */
+.sk-ig{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.sk-il{font-size:10px;color:var(--text-muted);font-weight:600;letter-spacing:.3px;font-family:monospace;}
+.sk-il em{color:#06c8d8;font-style:normal;}
+.sk-inp{width:100%;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;transition:border-color .2s;font-family:monospace;-moz-appearance:textfield;}
+.sk-inp::-webkit-outer-spin-button,.sk-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.sk-inp:focus{border-color:#4a9eff;}
+/* 버튼 */
+.sk-btn-main{width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#4a9eff,#2060e0);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;}
+.sk-btn-main:active{transform:scale(.98);opacity:.9;}
+.sk-btn-main:disabled{opacity:.4;cursor:not-allowed;}
+.sk-btn-row{display:flex;gap:8px;margin-bottom:10px;}
+.sk-btn-sub{flex:1;padding:9px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
+.sk-btn-sub:hover{background:var(--border);color:var(--text);}
+/* 경계점 테이블 */
+.sk-pt-wrap{overflow-x:auto;margin-bottom:10px;}
+.sk-pt-table{width:100%;border-collapse:collapse;font-size:12px;}
+.sk-pt-table th{background:var(--surface3);color:var(--text-muted);padding:8px 10px;text-align:center;font-size:10px;letter-spacing:.5px;font-weight:700;}
+.sk-pt-table td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--border);font-family:monospace;font-size:11px;}
+.sk-pt-table tr:last-child td{border:none;}
+.sk-pt-table tr{cursor:pointer;transition:background .15s;}
+.sk-pt-table tr:hover td{background:rgba(255,255,255,.03);}
+.sk-pt-table tr.sk-alive td{background:rgba(16,217,138,.04);}
+.sk-pt-table tr.sk-lost td{background:rgba(240,74,74,.04);}
+.sk-pt-num{font-weight:700;color:#06c8d8;width:36px;}
+.sk-pt-x{color:#10d98a;}.sk-pt-y{color:#f5a623;}
+.sk-sdot{width:10px;height:10px;border-radius:50%;margin:0 auto;}
+.sk-s-alive{background:#10d98a;box-shadow:0 0 6px rgba(16,217,138,.5);}
+.sk-s-lost{background:#f04a4a;box-shadow:0 0 6px rgba(240,74,74,.4);}
+.sk-s-none{background:var(--border2);}
+/* 점 선택 */
+.sk-sel-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
+.sk-sel-btn{padding:8px 4px;border-radius:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--surface2);transition:all .15s;color:var(--text-muted);}
+.sk-sel-btn.sk-alive{border-color:#059669;color:#10d98a;background:rgba(16,217,138,.08);}
+.sk-sel-btn.sk-lost{border-color:rgba(240,74,74,.4);color:#f04a4a;background:rgba(240,74,74,.06);}
+.sk-sel-btn.sk-sel-base{border-color:#06c8d8!important;background:rgba(6,200,216,.15)!important;color:#06c8d8!important;}
+.sk-sel-btn.sk-sel-target{border-color:#f5a623!important;background:rgba(245,166,35,.12)!important;color:#f5a623!important;}
+.sk-num-badge{font-family:monospace;font-size:13px;display:block;margin-bottom:2px;}
+.sk-xy{font-size:8px;color:inherit;opacity:.7;display:block;font-family:monospace;}
+/* 요약 */
+.sk-summary{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:10px;display:none;}
+.sk-summary.show{display:block;}
+.sk-ss-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);}
+.sk-ss-row:last-child{border:none;}
+.sk-ss-lbl{font-size:11px;color:var(--text-muted);}
+.sk-ss-val{font-size:11px;font-weight:700;font-family:monospace;}
+/* 결과 */
+.sk-res-main{background:linear-gradient(135deg,rgba(16,217,138,.1),rgba(6,200,216,.06));border:1px solid rgba(16,217,138,.25);border-radius:14px;padding:18px;margin-bottom:12px;}
+.sk-res-nav{background:linear-gradient(135deg,rgba(74,158,255,.1),rgba(155,125,248,.06));border:1px solid rgba(74,158,255,.25);border-radius:14px;padding:18px;margin-bottom:12px;}
+.sk-res-tit{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.sk-rt-green{color:#10d98a;}.sk-rt-blue{color:#4a9eff;}.sk-rt-soft{color:var(--text-muted);}
+.sk-cg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.sk-ci{background:rgba(0,0,0,.2);border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,.04);}
+.sk-ci-lbl{font-size:9px;color:var(--text-muted);margin-bottom:5px;letter-spacing:.5px;}
+.sk-ci-val{font-family:monospace;font-size:14px;font-weight:600;color:#10d98a;}
+.sk-ci-sub{font-size:10px;color:var(--text-muted);margin-top:3px;}
+/* 나침반 */
+.sk-compass-wrap{display:flex;justify-content:center;margin:14px 0;}
+.sk-compass{width:130px;height:130px;position:relative;}
+.sk-c-ring{width:130px;height:130px;border-radius:50%;border:1.5px solid var(--border2);position:absolute;background:radial-gradient(circle at center,var(--surface2) 55%,var(--bg) 100%);}
+.sk-c-lbl{position:absolute;font-size:10px;font-weight:700;font-family:monospace;}
+.sk-c-lbl.cn{top:5px;left:50%;transform:translateX(-50%);color:#f04a4a;}
+.sk-c-lbl.cs{bottom:5px;left:50%;transform:translateX(-50%);color:var(--text-muted);}
+.sk-c-lbl.ce{right:5px;top:50%;transform:translateY(-50%);color:var(--text-muted);}
+.sk-c-lbl.cw{left:5px;top:50%;transform:translateY(-50%);color:var(--text-muted);}
+.sk-c-needle{position:absolute;width:3px;border-radius:2px;top:50%;left:50%;transform-origin:bottom center;background:linear-gradient(to top,#4a9eff,#90c0ff);box-shadow:0 0 10px rgba(74,158,255,.6);}
+.sk-c-center{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--text);top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;}
+/* 이동안내 */
+.sk-nav-big{text-align:center;padding:14px 10px;}
+.sk-nav-icon{font-size:48px;margin-bottom:6px;line-height:1;}
+.sk-nav-deg{font-family:monospace;font-size:28px;font-weight:600;color:#4a9eff;}
+.sk-nav-deg-lbl{font-size:10px;color:var(--text-muted);margin-bottom:14px;}
+.sk-nav-dist-wrap{display:flex;align-items:baseline;justify-content:center;gap:4px;padding-top:14px;border-top:1px solid var(--border);}
+.sk-nav-dist-num{font-family:monospace;font-size:36px;font-weight:600;color:#f5a623;}
+.sk-nav-dist-unit{font-size:15px;color:var(--text-muted);}
+.sk-nav-dist-lbl{font-size:10px;color:var(--text-muted);margin-top:3px;}
+.sk-instr{font-size:13px;line-height:1.9;color:var(--text);background:rgba(0,0,0,.2);border-radius:10px;padding:14px;margin-top:12px;}
+/* 지도 */
+.sk-map-row{display:flex;gap:8px;}
+.sk-map-btn{flex:1;padding:10px 6px;border:none;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px;}
+.sk-mb-g{background:#4285f4;color:#fff;}.sk-mb-n{background:#03c75a;color:#fff;}.sk-mb-k{background:#fee500;color:#3c1e1e;}
+/* 복사 */
+.sk-copy-row{display:flex;gap:8px;margin-top:10px;}
+.sk-copy-inp{flex:1;padding:8px 10px;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;font-size:11px;outline:none;}
+.sk-copy-btn{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:11px;font-weight:600;color:#10d98a;cursor:pointer;white-space:nowrap;}
+.sk-copy-btn.copied{background:#059669;color:#fff;border-color:#059669;}
+/* 로딩/에러 */
+.sk-loading{display:none;align-items:center;gap:10px;background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.25);border-radius:10px;padding:13px 16px;margin-bottom:12px;}
+.sk-loading.show{display:flex;}
+.sk-spin{width:20px;height:20px;border:2px solid var(--border2);border-top-color:#4a9eff;border-radius:50%;animation:skspin .8s linear infinite;flex-shrink:0;}
+@keyframes skspin{to{transform:rotate(360deg);}}
+.sk-loading-txt{font-size:12px;color:#4a9eff;}
+.sk-err{display:none;background:rgba(240,74,74,.08);border:1px solid rgba(240,74,74,.25);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12px;color:#f04a4a;line-height:1.6;}
+.sk-err.show{display:block;}
+.sk-empty{text-align:center;padding:44px 20px;}
+.sk-empty-icon{font-size:40px;margin-bottom:10px;opacity:.4;}
+.sk-empty-txt{font-size:13px;color:var(--text-muted);}
+/* 이력 */
+.sk-hist-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.sk-hist-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
+.sk-hist-name{font-size:13px;font-weight:700;color:var(--text);}
+.sk-hist-time{font-size:10px;color:var(--text-muted);font-family:monospace;}
+.sk-hist-det{font-family:monospace;font-size:10px;color:var(--text-muted);margin-bottom:3px;}
+.sk-hist-res{font-size:11px;color:#10d98a;font-weight:600;}
+.sk-hist-del{padding:3px 7px;background:rgba(240,74,74,.1);border:1px solid rgba(240,74,74,.2);border-radius:4px;color:#f04a4a;font-size:10px;cursor:pointer;}
+@media(max-width:599px){.sk-cg{grid-template-columns:1fr;}.sk-map-row{flex-direction:column;}}
 </style>
 </head>
 <body>
@@ -465,6 +599,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 <div class="tbar">
   <div class="tab active" id="tab-view-btn" onclick="switchTab('view')">📋 자료 보기</div>
   <div class="tab" id="tab-ph-btn" onclick="switchTab('photo')">📷 사진대지</div>
+  <div class="tab" id="tab-stake-btn" onclick="switchTab('stake')">📐 경계말뚝</div>
 </div>
 
 <!-- ══ VIEW TAB ══ -->
@@ -533,6 +668,164 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
       <button class="ph-sh-btn gray" onclick="phCloseSh()">닫기</button>
     </div>
   </div>
+</div>
+
+<!-- ══ 경계말뚝 복원 TAB ══ -->
+<div id="tab-stake-content">
+
+  <!-- 서브탭 -->
+  <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;">
+    <button class="sk-btn-sub" id="sk-sub-search" onclick="skSubTab('search')" style="background:var(--accent2);color:#000;border-color:transparent;">🔍 주소검색</button>
+    <button class="sk-btn-sub" id="sk-sub-result" onclick="skSubTab('result')">📍 결과</button>
+    <button class="sk-btn-sub" id="sk-sub-hist" onclick="skSubTab('hist')">📁 이력</button>
+  </div>
+
+  <!-- 서브탭: 주소검색 -->
+  <div id="sk-panel-search">
+    <div class="sk-card">
+      <div class="sk-hdr"><span class="sk-dot sk-blue"></span>필지 주소 검색</div>
+      <div class="sk-search-wrap">
+        <input class="sk-search-inp" id="sk-addr-inp" type="text"
+          placeholder="지번 주소 입력 (예: 역삼동 123-4, 원박리 267)"
+          oninput="skOnInput()" onkeydown="if(event.key==='Enter') skSearch()">
+        <button class="sk-search-btn" onclick="skSearch()">🔍</button>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px;">
+        💡 동·리 이름 + 지번으로 검색하세요
+      </div>
+      <div class="sk-addr-list" id="sk-addr-list"></div>
+      <div class="sk-sel-addr" id="sk-sel-addr">
+        <div class="sk-sel-lbl">✅ 선택된 필지</div>
+        <div class="sk-sel-addr-txt" id="sk-sel-txt">—</div>
+        <div class="sk-sel-pnu" id="sk-sel-pnu">PNU: —</div>
+        <span class="sk-sel-chg" onclick="skReset()">다시 검색</span>
+      </div>
+    </div>
+
+    <div class="sk-loading" id="sk-loading">
+      <div class="sk-spin"></div>
+      <div class="sk-loading-txt" id="sk-loading-txt">조회 중...</div>
+    </div>
+    <div class="sk-err" id="sk-err"></div>
+
+    <button class="sk-btn-main" id="sk-fetch-btn" onclick="skFetchLot()" disabled>🌐 경계점 좌표 자동 조회</button>
+
+    <!-- 경계점 목록 -->
+    <div id="sk-pt-section" style="display:none;margin-top:14px;">
+      <div class="sk-card" style="padding:0;overflow:hidden;">
+        <div style="padding:14px 18px 0;">
+          <div class="sk-hdr"><span class="sk-dot sk-green"></span>경계점 목록 <span id="sk-pt-badge" style="font-size:9px;background:rgba(16,217,138,.15);color:#10d98a;padding:2px 7px;border-radius:4px;font-family:monospace;margin-left:4px;"></span></div>
+          <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px;">행 탭 → <span style="color:#10d98a;">●살아있음</span> / <span style="color:#f04a4a;">●소실</span> 상태 지정</div>
+        </div>
+        <div class="sk-pt-wrap" style="padding:0 18px 14px;">
+          <table class="sk-pt-table">
+            <thead><tr><th>점번</th><th>X좌표(m)</th><th>Y좌표(m)</th><th>상태</th></tr></thead>
+            <tbody id="sk-pt-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-hdr"><span class="sk-dot sk-blue"></span>기지점 · 소실점 선택</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
+          <span style="color:#06c8d8;">●</span> 첫 번째 탭 = 기지점 &nbsp; <span style="color:#f5a623;">●</span> 두 번째 탭 = 소실점
+        </div>
+        <div class="sk-sel-grid" id="sk-sel-grid"></div>
+        <div class="sk-summary" id="sk-summary">
+          <div class="sk-ss-row"><span class="sk-ss-lbl">기지점</span><span class="sk-ss-val" id="sk-ss-base" style="color:#06c8d8;">—</span></div>
+          <div class="sk-ss-row"><span class="sk-ss-lbl">소실점</span><span class="sk-ss-val" id="sk-ss-target" style="color:#f5a623;">—</span></div>
+        </div>
+      </div>
+
+      <div class="sk-btn-row">
+        <button class="sk-btn-sub" onclick="skClearSel()">↺ 선택 초기화</button>
+        <button class="sk-btn-sub" onclick="skSaveLot()">💾 필지 저장</button>
+      </div>
+      <button class="sk-btn-main" onclick="skCalc()">🔄 좌표 계산 실행</button>
+    </div>
+
+    <div style="margin-top:12px;padding:11px 14px;background:rgba(232,160,32,.06);border:1px solid rgba(232,160,32,.2);border-radius:8px;font-size:11px;color:var(--text-muted);">
+      📌 <strong style="color:var(--accent);">브이월드 연속지적도 API</strong> 사용 중 · 참조용 도면 기준<br>
+      법적 수치 필요 시 경계점좌표등록부 민원 발급 후 확인
+    </div>
+  </div>
+
+  <!-- 서브탭: 결과 -->
+  <div id="sk-panel-result" style="display:none;">
+    <div class="sk-empty" id="sk-res-empty">
+      <div class="sk-empty-icon">📐</div>
+      <div class="sk-empty-txt">주소검색 탭에서<br>계산을 먼저 실행하세요</div>
+    </div>
+    <div id="sk-res-content" style="display:none;">
+      <div class="sk-res-main">
+        <div class="sk-res-tit sk-rt-green">✅ 소실점 WGS84 좌표</div>
+        <div class="sk-cg">
+          <div class="sk-ci"><div class="sk-ci-lbl">위도 LATITUDE</div><div class="sk-ci-val" id="sk-r-lat">—</div><div class="sk-ci-sub">북위 (°N)</div></div>
+          <div class="sk-ci"><div class="sk-ci-lbl">경도 LONGITUDE</div><div class="sk-ci-val" id="sk-r-lng">—</div><div class="sk-ci-sub">동경 (°E)</div></div>
+        </div>
+        <div class="sk-copy-row">
+          <input class="sk-copy-inp" id="sk-r-copy" readonly>
+          <button class="sk-copy-btn" id="sk-copy-btn" onclick="skDoCopy()">복사</button>
+        </div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-hdr"><span class="sk-dot sk-blue"></span>지도에서 소실점 확인</div>
+        <div class="sk-map-row">
+          <a class="sk-map-btn sk-mb-g" id="sk-bG" href="#" target="_blank">🗺 구글</a>
+          <a class="sk-map-btn sk-mb-n" id="sk-bN" href="#" target="_blank">N 네이버</a>
+          <a class="sk-map-btn sk-mb-k" id="sk-bK" href="#" target="_blank">🟡 카카오</a>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:7px;">※ 위성사진 ±1~3m 오차 · 시각 확인용</div>
+      </div>
+
+      <div class="sk-res-nav">
+        <div class="sk-res-tit sk-rt-blue">🧭 현장 이동 안내</div>
+        <div class="sk-compass-wrap">
+          <div class="sk-compass">
+            <div class="sk-c-ring"></div>
+            <div class="sk-c-lbl cn">N</div><div class="sk-c-lbl cs">S</div>
+            <div class="sk-c-lbl ce">E</div><div class="sk-c-lbl cw">W</div>
+            <div class="sk-c-needle" id="sk-needle"></div>
+            <div class="sk-c-center"></div>
+          </div>
+        </div>
+        <div class="sk-nav-big">
+          <div class="sk-nav-icon" id="sk-r-icon">—</div>
+          <div class="sk-nav-deg" id="sk-r-deg">—°</div>
+          <div class="sk-nav-deg-lbl">정북 기준 시계방향 방위각</div>
+          <div class="sk-nav-dist-wrap">
+            <div class="sk-nav-dist-num" id="sk-r-dist">—</div>
+            <div class="sk-nav-dist-unit">m</div>
+          </div>
+          <div class="sk-nav-dist-lbl">직선 이동 거리</div>
+        </div>
+        <div class="sk-instr" id="sk-r-instr">—</div>
+      </div>
+
+      <div class="sk-card">
+        <div class="sk-hdr"><span class="sk-dot sk-teal"></span>기지점 WGS84 (참고)</div>
+        <div class="sk-cg">
+          <div class="sk-ci"><div class="sk-ci-lbl">위도</div><div class="sk-ci-val" style="color:#06c8d8;font-size:12px;" id="sk-r-klat">—</div></div>
+          <div class="sk-ci"><div class="sk-ci-lbl">경도</div><div class="sk-ci-val" style="color:#06c8d8;font-size:12px;" id="sk-r-klng">—</div></div>
+        </div>
+        <div class="sk-map-row" style="margin-top:10px;">
+          <a class="sk-map-btn sk-mb-g" id="sk-bKG" href="#" target="_blank" style="font-size:10px;">구글 (기지점)</a>
+          <a class="sk-map-btn sk-mb-n" id="sk-bKN" href="#" target="_blank" style="font-size:10px;">네이버 (기지점)</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 서브탭: 이력 -->
+  <div id="sk-panel-hist" style="display:none;">
+    <div class="sk-btn-row">
+      <button class="sk-btn-sub" onclick="skSubTab('search')">🔍 새 필지 검색</button>
+      <button class="sk-btn-sub" onclick="skClearHist()">🗑 전체 삭제</button>
+    </div>
+    <div id="sk-hist-content"></div>
+  </div>
+
 </div>
 
 <!-- ══ 항목 추가 모달 (카드에서) ══ -->
@@ -824,8 +1117,11 @@ const DATA=[
     {name:'소규모 건설공사 품질관리 가이드',detail:'리플릿'}]},
   {id:'railroad',cat:'safety',title:'철도인접지역 검토',icon:'🚆',color:'#6040a020',iconBg:'#6040a0',sheet:'철도인접지역검토',items:[
     {name:'철도지역 허가시 검토사항',detail:'인허가 검토'}]},
-  {id:'ending',cat:'mgmt',title:'엔딩',icon:'🏁',color:'#e8a02020',iconBg:'#e8a020',sheet:'엔딩',items:[]},
+
   {id:'education',cat:'mgmt',title:'소장 교육자료',icon:'📚',color:'#4a9eff20',iconBg:'#4a9eff',sheet:'소장교육',items:[]},
+  {id:'ending',cat:'mgmt',title:'엔딩',icon:'🏁',color:'#e8a02020',iconBg:'#e8a020',sheet:'엔딩',items:[
+    {name:'공사완료보고서',detail:'준공 후 최종 보고'},
+    {name:'엔딩 체크리스트',detail:'준공 전 최종 점검'}]},
 ];
 
 const CATS=[
@@ -1137,13 +1433,354 @@ si.addEventListener('input',e=>{
 
 // ═══ TAB ════════════════════════════════════════════════════════
 function switchTab(t){
-  ['view','photo'].forEach(id=>{
-    document.getElementById(`tab-${id==='photo'?'ph':id}-btn`).classList.toggle('active',t===id);
-    const el=document.getElementById(`tab-${id==='photo'?'ph':id}-content`);
-    if(t===id){el.style.display=id==='photo'?'flex':'block';}
-    else el.style.display='none';
+  const tabs={view:{btn:'tab-view-btn',el:'tab-view-content',display:'block'},
+               photo:{btn:'tab-ph-btn',el:'tab-ph-content',display:'flex'},
+               stake:{btn:'tab-stake-btn',el:'tab-stake-content',display:'block'}};
+  Object.entries(tabs).forEach(([id,cfg])=>{
+    document.getElementById(cfg.btn).classList.toggle('active',t===id);
+    const el=document.getElementById(cfg.el);
+    el.style.display=(t===id)?cfg.display:'none';
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+// 경계말뚝 복원 — 브이월드 API 연동
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  const SK_KEY='A512471A-C75B-3644-BCCA-B3DC1D95254D';
+  const SK_BASE='https://api.vworld.kr';
+
+  // proj4 TM→WGS84
+  if(typeof proj4!=='undefined'){
+    proj4.defs("EPSG:5186","+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m +no_defs");
+  }
+
+  let skPoints=[], skLotMeta={}, skPNU='', skBase=null, skTarget=null, skTimer=null;
+
+  /* ── 서브탭 ── */
+  window.skSubTab=function(t){
+    ['search','result','hist'].forEach(id=>{
+      document.getElementById('sk-panel-'+id).style.display=t===id?'block':'none';
+      const btn=document.getElementById('sk-sub-'+id);
+      if(btn){btn.style.background=t===id?'var(--accent2)':'';btn.style.color=t===id?'#000':'';}
+    });
+    if(t==='hist') skRenderHist();
+  };
+
+  /* ── 주소 검색 ── */
+  window.skOnInput=function(){
+    clearTimeout(skTimer);
+    const q=document.getElementById('sk-addr-inp').value.trim();
+    if(q.length<2){document.getElementById('sk-addr-list').classList.remove('show');return;}
+    skTimer=setTimeout(skSearch,600);
+  };
+
+  window.skSearch=async function(){
+    const q=document.getElementById('sk-addr-inp').value.trim();
+    if(!q)return;
+    skShowLoading('주소 검색 중...');
+    skHideErr();
+    try{
+      const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=parcel&format=json&errorFormat=json&key=${SK_KEY}`;
+      const res=await fetch(url);
+      const data=await res.json();
+      skShowLoading(false);
+      const items=data.response?.result?.items;
+      if(!items?.length){
+        // 타입 변경해서 재시도
+        const url2=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=address&format=json&errorFormat=json&key=${SK_KEY}`;
+        const res2=await fetch(url2);
+        const data2=await res2.json();
+        const items2=data2.response?.result?.items;
+        if(!items2?.length){skShowErr('검색 결과 없음. 동·리 이름과 지번을 확인해주세요.\n예) 역삼동 123-4, 원박리 267');return;}
+        skRenderResults(items2);return;
+      }
+      skRenderResults(items);
+    }catch(e){
+      skShowLoading(false);
+      skShowErr('검색 오류: '+e.message+'\n브이월드 서비스URL에 wisestar823.github.io 등록 필요');
+    }
+  };
+
+  function skRenderResults(items){
+    const el=document.getElementById('sk-addr-list');
+    el.innerHTML=items.map(item=>{
+      const title=item.title||item.address?.parcel||'주소 없음';
+      const id=item.id||'';
+      const x=item.point?.x||'',y=item.point?.y||'';
+      return `<div class="sk-addr-item" onclick="skSelectAddr('${title.replace(/'/g,"\\'")}','${id}','${x}','${y}')">
+        <div class="sk-addr-main">${title}</div>
+        ${item.address?.parcel?`<div style="font-size:10px;color:var(--text-muted);">${item.address.parcel}</div>`:''}
+        ${id?`<div class="sk-addr-pnu">PNU: ${id}</div>`:''}
+      </div>`;
+    }).join('');
+    el.classList.add('show');
+  }
+
+  window.skSelectAddr=async function(title,pnu,x,y){
+    document.getElementById('sk-addr-list').classList.remove('show');
+    document.getElementById('sk-addr-inp').value=title;
+    if(pnu&&pnu.length>=10){
+      skPNU=pnu.slice(0,19);
+      skShowSelected(title,skPNU);
+    } else if(x&&y){
+      skShowLoading('PNU 조회 중...');
+      try{
+        const url=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&geomFilter=POINT(${x} ${y})&format=json&size=1`;
+        const res=await fetch(url);
+        const data=await res.json();
+        skShowLoading(false);
+        const p=data.response?.result?.featureCollection?.features?.[0]?.properties?.pnu;
+        if(p){skPNU=p;skShowSelected(title,p);}
+        else skShowErr('PNU를 가져올 수 없습니다. 검색어를 더 구체적으로 입력하세요.');
+      }catch(e){skShowLoading(false);skShowErr('PNU 조회 실패');}
+    } else skShowErr('위치 정보를 가져올 수 없습니다.');
+  };
+
+  function skShowSelected(title,pnu){
+    document.getElementById('sk-sel-txt').textContent=title;
+    document.getElementById('sk-sel-pnu').textContent='PNU: '+pnu;
+    document.getElementById('sk-sel-addr').classList.add('show');
+    document.getElementById('sk-fetch-btn').disabled=false;
+    showToast('✅ 필지 선택됨');
+  }
+
+  window.skReset=function(){
+    skPNU='';
+    document.getElementById('sk-sel-addr').classList.remove('show');
+    document.getElementById('sk-addr-inp').value='';
+    document.getElementById('sk-fetch-btn').disabled=true;
+    document.getElementById('sk-pt-section').style.display='none';
+  };
+
+  /* ── 연속지적도 경계점 조회 ── */
+  window.skFetchLot=async function(){
+    if(!skPNU){showToast('⚠️ 먼저 주소를 검색하고 선택하세요');return;}
+    skHideErr();
+    skShowLoading('연속지적도 API에서 경계점 조회 중...');
+    try{
+      const url=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&attrFilter=pnu:=:${skPNU}&format=json&size=1&page=1`;
+      const res=await fetch(url);
+      const data=await res.json();
+      let features=data.response?.result?.featureCollection?.features;
+      if(!features?.length){
+        const url2=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&attrFilter=pnu:LIKE:${skPNU.slice(0,10)}%25&format=json&size=1&page=1`;
+        const res2=await fetch(url2);
+        const data2=await res2.json();
+        features=data2.response?.result?.featureCollection?.features;
+        if(!features?.length)throw new Error('경계점 데이터 없음. PNU: '+skPNU);
+      }
+      skShowLoading(false);
+      skProcessFeature(features[0]);
+    }catch(e){
+      skShowLoading(false);
+      skShowErr(e.message||'API 조회 실패. 브이월드 서비스URL 설정을 확인하세요.');
+    }
+  };
+
+  function skProcessFeature(feature){
+    const props=feature.properties;
+    const geom=feature.geometry;
+    skLotMeta={pnu:props.pnu||skPNU,addr:props.addr||document.getElementById('sk-sel-txt').textContent};
+    let coords=[];
+    if(geom.type==='Polygon')coords=geom.coordinates[0];
+    else if(geom.type==='MultiPolygon')coords=geom.coordinates[0][0];
+    if(coords.length>1)coords=coords.slice(0,-1);
+    const isWGS=Math.abs(coords[0][0])<135;
+    skPoints=coords.map((c,i)=>{
+      let lng,lat,x,y;
+      if(isWGS){
+        lng=c[0];lat=c[1];
+        if(typeof proj4!=='undefined'){
+          const tm=proj4("EPSG:4326","EPSG:5186",[lng,lat]);
+          x=tm[1];y=tm[0];
+        } else {x=0;y=0;}
+      } else {x=c[1];y=c[0];if(typeof proj4!=='undefined'){const w=proj4("EPSG:5186","EPSG:4326",[y,x]);lng=w[0];lat=w[1];}else{lng=0;lat=0;}}
+      return{num:i+1,x:parseFloat(x.toFixed(3)),y:parseFloat(y.toFixed(3)),lat,lng,status:'none'};
+    });
+    skRenderPoints();
+    document.getElementById('sk-pt-section').style.display='block';
+    showToast('✅ '+skPoints.length+'개 경계점 조회 완료');
+  }
+
+  function skRenderPoints(){
+    document.getElementById('sk-pt-badge').textContent=skPoints.length+'개';
+    document.getElementById('sk-pt-body').innerHTML=skPoints.map((p,i)=>`
+      <tr id="skpr${i}" onclick="skToggle(${i})">
+        <td class="sk-pt-num">${p.num}</td>
+        <td class="sk-pt-x">${p.x.toFixed(2)}</td>
+        <td class="sk-pt-y">${p.y.toFixed(2)}</td>
+        <td><div class="sk-sdot sk-s-none" id="sksd${i}"></div></td>
+      </tr>`).join('');
+    skRenderSelGrid();
+    skBase=null;skTarget=null;
+    document.getElementById('sk-summary').classList.remove('show');
+  }
+
+  function skRenderSelGrid(){
+    document.getElementById('sk-sel-grid').innerHTML=skPoints.map((p,i)=>`
+      <div class="sk-sel-btn ${p.status==='alive'?'sk-alive':p.status==='lost'?'sk-lost':''}" id="skpsb${i}" onclick="skSelPt(${i})">
+        <span class="sk-num-badge">${p.num}번</span>
+        <span class="sk-xy">${p.status==='alive'?'●기지':p.status==='lost'?'●소실':'미지정'}</span>
+      </div>`).join('');
+  }
+
+  window.skToggle=function(i){
+    const s=skPoints[i].status;
+    const next=s==='none'?'alive':s==='alive'?'lost':'none';
+    skPoints[i].status=next;
+    document.getElementById('skpr'+i).className=next==='alive'?'sk-alive':next==='lost'?'sk-lost':'';
+    document.getElementById('sksd'+i).className='sk-sdot '+(next==='alive'?'sk-s-alive':next==='lost'?'sk-s-lost':'sk-s-none');
+    skRenderSelGrid();
+  };
+
+  window.skSelPt=function(i){
+    if(skBase===null){skBase=i;document.getElementById('skpsb'+i).classList.add('sk-sel-base');skUpdSummary();}
+    else if(skTarget===null&&i!==skBase){skTarget=i;document.getElementById('skpsb'+i).classList.add('sk-sel-target');skUpdSummary();showToast('✅ 선택 완료 → 계산 실행');}
+    else skClearSel();
+  };
+
+  window.skClearSel=function(){
+    skBase=null;skTarget=null;
+    document.querySelectorAll('.sk-sel-btn').forEach(b=>b.classList.remove('sk-sel-base','sk-sel-target'));
+    document.getElementById('sk-summary').classList.remove('show');
+  };
+
+  function skUpdSummary(){
+    const pb=skBase!==null?skPoints[skBase]:null;
+    const pt=skTarget!==null?skPoints[skTarget]:null;
+    document.getElementById('sk-ss-base').textContent=pb?`${pb.num}번 (X:${pb.x} Y:${pb.y})`:'선택 대기';
+    document.getElementById('sk-ss-target').textContent=pt?`${pt.num}번 (X:${pt.x} Y:${pt.y})`:'선택 대기';
+    document.getElementById('sk-summary').classList.add('show');
+  }
+
+  /* ── 계산 ── */
+  window.skCalc=function(){
+    if(skBase===null||skTarget===null){showToast('⚠️ 기지점과 소실점을 모두 선택하세요');return;}
+    const kb=skPoints[skBase],kt=skPoints[skTarget];
+    const dist=Math.sqrt((kt.x-kb.x)**2+(kt.y-kb.y)**2);
+    const bearing=skBearing(kb.x,kb.y,kt.x,kt.y);
+    const dir=skDirInfo(bearing);
+    // 결과 표시
+    document.getElementById('sk-r-lat').textContent=kt.lat.toFixed(7)+'°';
+    document.getElementById('sk-r-lng').textContent=kt.lng.toFixed(7)+'°';
+    document.getElementById('sk-r-copy').value=kt.lat.toFixed(7)+', '+kt.lng.toFixed(7);
+    const tl=kt.lat.toFixed(6),tln=kt.lng.toFixed(6),kl=kb.lat.toFixed(6),kln=kb.lng.toFixed(6);
+    document.getElementById('sk-bG').href=`https://maps.google.com/?q=${tl},${tln}`;
+    document.getElementById('sk-bN').href=`https://map.naver.com/p/search/${tl},${tln}`;
+    document.getElementById('sk-bK').href=`https://map.kakao.com/link/map/${tl},${tln}`;
+    document.getElementById('sk-bKG').href=`https://maps.google.com/?q=${kl},${kln}`;
+    document.getElementById('sk-bKN').href=`https://map.naver.com/p/search/${kl},${kln}`;
+    document.getElementById('sk-r-klat').textContent=kb.lat.toFixed(7)+'°';
+    document.getElementById('sk-r-klng').textContent=kb.lng.toFixed(7)+'°';
+    document.getElementById('sk-r-icon').textContent=dir.icon;
+    document.getElementById('sk-r-deg').textContent=bearing.toFixed(2)+'°';
+    document.getElementById('sk-r-dist').textContent=dist.toFixed(3);
+    document.getElementById('sk-r-instr').innerHTML=
+      `<strong style="color:#06c8d8;">${kb.num}번 경계점</strong>에 서서<br>`+
+      `정북 기준 <strong style="color:#f5a623;">${bearing.toFixed(2)}°</strong> 방향 (${dir.text})으로<br>`+
+      `<strong style="color:#f5a623;">${dist.toFixed(3)}m</strong> 이동하면<br>`+
+      `<strong style="color:#10d98a;">${kt.num}번 경계점 (소실점)</strong> 위치입니다.`;
+    skRenderNeedle(bearing);
+    // 이력 저장
+    const h=JSON.parse(localStorage.getItem('sk_hist')||'[]');
+    h.unshift({id:Date.now(),addr:skLotMeta.addr,pnu:skLotMeta.pnu,base:kb.num,target:kt.num,
+      dist:dist.toFixed(3),bearing:bearing.toFixed(2),dir:dir.text,
+      tLat:kt.lat.toFixed(7),tLng:kt.lng.toFixed(7),
+      time:new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})});
+    localStorage.setItem('sk_hist',JSON.stringify(h.slice(0,30)));
+    document.getElementById('sk-res-empty').style.display='none';
+    document.getElementById('sk-res-content').style.display='block';
+    skSubTab('result');
+    showToast('✅ 계산 완료');
+  };
+
+  /* ── 수학 ── */
+  function skBearing(x1,y1,x2,y2){let b=90-Math.atan2(x2-x1,y2-y1)*(180/Math.PI);return((b%360)+360)%360;}
+  function skDirInfo(d){
+    if(d<22.5||d>=337.5)return{icon:'⬆️',text:'북쪽 (N)'};
+    if(d<67.5)return{icon:'↗️',text:'북동쪽 (NE)'};
+    if(d<112.5)return{icon:'➡️',text:'동쪽 (E)'};
+    if(d<157.5)return{icon:'↘️',text:'남동쪽 (SE)'};
+    if(d<202.5)return{icon:'⬇️',text:'남쪽 (S)'};
+    if(d<247.5)return{icon:'↙️',text:'남서쪽 (SW)'};
+    if(d<292.5)return{icon:'⬅️',text:'서쪽 (W)'};
+    return{icon:'↖️',text:'북서쪽 (NW)'};
+  }
+  function skRenderNeedle(deg){
+    const n=document.getElementById('sk-needle'),len=44;
+    n.style.cssText=`width:3px;height:${len}px;margin-left:-1.5px;margin-top:-${len}px;transform:rotate(${deg}deg)`;
+  }
+
+  /* ── 복사 ── */
+  window.skDoCopy=function(){
+    navigator.clipboard.writeText(document.getElementById('sk-r-copy').value).then(()=>{
+      const b=document.getElementById('sk-copy-btn');b.textContent='✓ 복사됨';b.classList.add('copied');
+      setTimeout(()=>{b.textContent='복사';b.classList.remove('copied');},2000);
+    });
+  };
+
+  /* ── 필지 저장 ── */
+  window.skSaveLot=function(){
+    if(!skPoints.length){showToast('⚠️ 조회된 필지 없음');return;}
+    const lots=JSON.parse(localStorage.getItem('sk_lots')||'[]');
+    lots.unshift({id:Date.now(),meta:skLotMeta,points:skPoints,
+      saved:new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})});
+    localStorage.setItem('sk_lots',JSON.stringify(lots.slice(0,20)));
+    showToast('💾 필지 저장 완료');
+  };
+
+  /* ── 이력 ── */
+  function skRenderHist(){
+    const h=JSON.parse(localStorage.getItem('sk_hist')||'[]');
+    const el=document.getElementById('sk-hist-content');
+    if(!h.length){el.innerHTML='<div class="sk-empty"><div class="sk-empty-icon">📁</div><div class="sk-empty-txt">저장된 이력이 없습니다</div></div>';return;}
+    el.innerHTML=h.map(item=>`
+      <div class="sk-hist-item">
+        <div class="sk-hist-top">
+          <div class="sk-hist-name">${item.addr||item.pnu} · ${item.base}→${item.target}번</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <div class="sk-hist-time">${item.time}</div>
+            <div class="sk-hist-del" onclick="skDelHist(${item.id})">삭제</div>
+          </div>
+        </div>
+        <div class="sk-hist-det">방위각: ${item.bearing}° · 거리: ${item.dist}m · ${item.dir}</div>
+        <div class="sk-hist-res">📍 ${item.tLat}, ${item.tLng}</div>
+        <div class="sk-map-row" style="margin-top:8px;">
+          <a class="sk-map-btn sk-mb-g" href="https://maps.google.com/?q=${item.tLat},${item.tLng}" target="_blank" style="font-size:10px;">구글 지도</a>
+          <a class="sk-map-btn sk-mb-n" href="https://map.naver.com/p/search/${item.tLat},${item.tLng}" target="_blank" style="font-size:10px;">네이버 지도</a>
+        </div>
+      </div>`).join('');
+  }
+
+  window.skDelHist=function(id){
+    let h=JSON.parse(localStorage.getItem('sk_hist')||'[]');
+    localStorage.setItem('sk_hist',JSON.stringify(h.filter(x=>x.id!==id)));
+    skRenderHist();showToast('🗑 삭제됨');
+  };
+  window.skClearHist=function(){
+    if(!confirm('모든 이력을 삭제할까요?'))return;
+    localStorage.removeItem('sk_hist');skRenderHist();showToast('🗑 전체 삭제');
+  };
+
+  /* ── UI 유틸 ── */
+  function skShowLoading(v){
+    const el=document.getElementById('sk-loading');
+    el.classList.toggle('show',!!v);
+    if(v&&typeof v==='string')document.getElementById('sk-loading-txt').textContent=v;
+  }
+  function skShowErr(msg){const e=document.getElementById('sk-err');e.textContent=msg;e.classList.add('show');}
+  function skHideErr(){document.getElementById('sk-err').classList.remove('show');}
+
+  // proj4 로드 (없으면 CDN)
+  if(typeof proj4==='undefined'){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js';
+    s.onload=function(){proj4.defs("EPSG:5186","+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=600000 +ellps=GRS80 +units=m +no_defs");};
+    document.head.appendChild(s);
+  }
+
+})(); // 경계말뚝 모듈 끝
 
 // ═══════════════════════════════════════════════════════════════
 // 항목별 파일 첨부 모달 (카드 내 "↑ 파일 첨부" 버튼)
