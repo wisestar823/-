@@ -803,6 +803,11 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
         <div class="sk-instr" id="sk-r-instr">—</div>
       </div>
 
+      <!-- AR 유도 버튼 -->
+      <button onclick="arStart()" style="width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#10d98a,#059669);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        📷 AR 현장 유도 시작
+      </button>
+
       <div class="sk-card">
         <div class="sk-hdr"><span class="sk-dot sk-teal"></span>기지점 WGS84 (참고)</div>
         <div class="sk-cg">
@@ -882,6 +887,107 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     </div>
   </div>
 </div>
+
+<!-- ══ AR 유도 전체화면 ══ -->
+<div id="ar-fullscreen" style="display:none;position:fixed;inset:0;z-index:9000;background:#000;">
+  <!-- 카메라 -->
+  <video id="ar-video" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+  <div id="ar-cam-fallback" style="position:absolute;inset:0;background:linear-gradient(160deg,#0a0f1a,#0d1525);display:none;"></div>
+  <!-- 어두운 오버레이 -->
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.32);pointer-events:none;z-index:1;"></div>
+
+  <!-- 상단 HUD -->
+  <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:max(env(safe-area-inset-top,0px),12px) 14px 0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 14px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.5px;">📐 경계말뚝 AR 유도</div>
+      <button onclick="arClose()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:15px;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;gap:7px;">
+      <div style="flex:1;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:9px;color:rgba(255,255,255,.45);letter-spacing:.5px;margin-bottom:2px;">목표방위</div>
+        <div id="ar-h-target" style="font-size:17px;font-weight:700;font-family:monospace;color:#f5a623;">—°</div>
+      </div>
+      <div style="flex:1;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:9px;color:rgba(255,255,255,.45);letter-spacing:.5px;margin-bottom:2px;">현재방향</div>
+        <div id="ar-h-current" style="font-size:17px;font-weight:700;font-family:monospace;color:#4a9eff;">—°</div>
+      </div>
+      <div style="flex:1;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:9px;color:rgba(255,255,255,.45);letter-spacing:.5px;margin-bottom:2px;">편차</div>
+        <div id="ar-h-diff" style="font-size:17px;font-weight:700;font-family:monospace;color:#10d98a;">—°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 중앙 화살표 -->
+  <div style="position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+    <!-- 조준링 -->
+    <div style="width:180px;height:180px;position:relative;display:flex;align-items:center;justify-content:center;">
+      <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.18);animation:arRing 2s ease-in-out infinite;"></div>
+      <div style="position:absolute;inset:22px;border-radius:50%;border:1px solid rgba(255,255,255,.08);"></div>
+      <!-- 화살표 래퍼 (회전) -->
+      <div id="ar-arrow-wrap" style="width:110px;height:110px;display:flex;align-items:center;justify-content:center;transition:transform .15s cubic-bezier(.25,.46,.45,.94);">
+        <svg id="ar-arrow-svg" viewBox="0 0 100 100" style="width:86px;height:86px;transition:filter .3s,color .3s;filter:drop-shadow(0 0 16px #10d98a);color:#10d98a;" fill="currentColor">
+          <polygon points="50,8 78,55 62,55 62,92 38,92 38,55 22,55"/>
+        </svg>
+        <!-- 도달 아이콘 -->
+        <div id="ar-arrived" style="display:none;position:absolute;flex-direction:column;align-items:center;gap:4px;">
+          <div style="font-size:50px;">🎯</div>
+          <div style="font-size:14px;font-weight:700;color:#10d98a;text-shadow:0 0 16px #10d98a;">방향 일치!</div>
+        </div>
+      </div>
+    </div>
+    <!-- 거리 뱃지 -->
+    <div style="margin-top:22px;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:10px 26px;text-align:center;">
+      <div id="ar-dist-num" style="font-size:34px;font-weight:700;font-family:monospace;color:#f5a623;line-height:1;">—</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;">이동 거리 (m)</div>
+    </div>
+  </div>
+
+  <!-- 수평계 (우측) -->
+  <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:10;">
+    <div style="width:54px;height:54px;border-radius:50%;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.18);position:relative;display:flex;align-items:center;justify-content:center;">
+      <div style="position:absolute;width:70%;height:1px;background:rgba(255,255,255,.2);"></div>
+      <div style="position:absolute;width:1px;height:70%;background:rgba(255,255,255,.2);"></div>
+      <div id="ar-level-dot" style="width:13px;height:13px;border-radius:50%;background:#10d98a;position:absolute;transition:transform .08s linear;box-shadow:0 0 8px #10d98a;"></div>
+    </div>
+    <div style="font-size:8px;color:rgba(255,255,255,.35);text-align:center;margin-top:3px;letter-spacing:.5px;">LEVEL</div>
+  </div>
+
+  <!-- 나침반 (좌측) -->
+  <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);z-index:10;">
+    <div style="width:62px;height:62px;border-radius:50%;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.18);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+      <div id="ar-compass-dial" style="position:absolute;inset:0;transition:transform .1s linear;">
+        <div style="position:absolute;top:5px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:900;color:#f04a4a;font-family:monospace;">N</div>
+        <div style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);font-size:8px;color:rgba(255,255,255,.35);">S</div>
+        <div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:8px;color:rgba(255,255,255,.35);">E</div>
+        <div style="position:absolute;left:5px;top:50%;transform:translateY(-50%);font-size:8px;color:rgba(255,255,255,.35);">W</div>
+      </div>
+      <div id="ar-compass-target" style="position:absolute;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:10px solid #f5a623;top:4px;left:50%;transform:translateX(-50%);transform-origin:4px 24px;transition:transform .1s linear;"></div>
+      <div style="width:5px;height:5px;border-radius:50%;background:#fff;position:absolute;z-index:2;"></div>
+    </div>
+    <div style="font-size:8px;color:rgba(255,255,255,.35);text-align:center;margin-top:3px;letter-spacing:.5px;">COMPASS</div>
+  </div>
+
+  <!-- 하단 상태 -->
+  <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:0 14px max(env(safe-area-inset-bottom,0px),16px);">
+    <div style="background:rgba(0,0,0,.78);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;text-align:center;">
+      <div id="ar-status-msg" style="font-size:14px;font-weight:600;color:#fff;line-height:1.5;">센서 초기화 중...</div>
+      <div id="ar-status-sub" style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;">기지점에 서서 폰을 수평으로 드세요</div>
+    </div>
+  </div>
+
+  <!-- iOS 권한 버튼 -->
+  <div id="ar-perm-overlay" style="display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.9);align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:32px;text-align:center;">
+    <div style="font-size:52px;">🧭</div>
+    <div style="font-size:17px;font-weight:700;color:#fff;">센서 권한 필요</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.5);line-height:1.7;">나침반 사용을 위해<br>기기 방향 감지 권한이 필요합니다</div>
+    <button id="ar-perm-btn" style="padding:14px 36px;background:#4a9eff;border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">권한 허용</button>
+  </div>
+</div>
+
+<style>
+@keyframes arRing{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.04);opacity:1;}}
+</style>
 
 <div id="toast"></div>
 
@@ -1444,10 +1550,11 @@ function switchTab(t){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 경계말뚝 복원 — 브이월드 API 연동
+// 경계말뚝 복원 — 브이월드 JSONP 방식 (CORS 완전 우회)
 // ═══════════════════════════════════════════════════════════════
 (function(){
   const SK_KEY='A512471A-C75B-3644-BCCA-B3DC1D95254D';
+  const SK_DOMAIN='wisestar823.github.io';
   const SK_BASE='https://api.vworld.kr';
 
   // proj4 TM→WGS84
@@ -1456,6 +1563,33 @@ function switchTab(t){
   }
 
   let skPoints=[], skLotMeta={}, skPNU='', skBase=null, skTarget=null, skTimer=null;
+  let _cbIdx=0; // JSONP 콜백 인덱스
+
+  /* ── JSONP 핵심 함수 ── */
+  function jsonp(url, cb){
+    const cbName='_skCb'+(_cbIdx++);
+    const timeout=setTimeout(()=>{
+      delete window[cbName];
+      if(document.getElementById('_sk_'+cbName)) document.getElementById('_sk_'+cbName).remove();
+      cb(null,'타임아웃 — 브이월드 서버 응답 없음');
+    },10000);
+    window[cbName]=function(data){
+      clearTimeout(timeout);
+      delete window[cbName];
+      if(document.getElementById('_sk_'+cbName)) document.getElementById('_sk_'+cbName).remove();
+      cb(data,null);
+    };
+    const s=document.createElement('script');
+    s.id='_sk_'+cbName;
+    s.onerror=function(){
+      clearTimeout(timeout);
+      delete window[cbName];
+      s.remove();
+      cb(null,'스크립트 로드 실패');
+    };
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cbName+'&domain='+SK_DOMAIN;
+    document.head.appendChild(s);
+  }
 
   /* ── 서브탭 ── */
   window.skSubTab=function(t){
@@ -1475,31 +1609,32 @@ function switchTab(t){
     skTimer=setTimeout(skSearch,600);
   };
 
-  window.skSearch=async function(){
+  window.skSearch=function(){
     const q=document.getElementById('sk-addr-inp').value.trim();
     if(!q)return;
     skShowLoading('주소 검색 중...');
     skHideErr();
-    try{
-      const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=parcel&format=json&errorFormat=json&key=${SK_KEY}`;
-      const res=await fetch(url);
-      const data=await res.json();
+    // JSONP 방식으로 검색 API 호출
+    const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=parcel&format=json&key=${SK_KEY}`;
+    jsonp(url,function(data,err){
       skShowLoading(false);
-      const items=data.response?.result?.items;
+      if(err){skShowErr('검색 오류: '+err);return;}
+      const items=data?.response?.result?.items;
       if(!items?.length){
-        // 타입 변경해서 재시도
-        const url2=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=address&format=json&errorFormat=json&key=${SK_KEY}`;
-        const res2=await fetch(url2);
-        const data2=await res2.json();
-        const items2=data2.response?.result?.items;
-        if(!items2?.length){skShowErr('검색 결과 없음. 동·리 이름과 지번을 확인해주세요.\n예) 역삼동 123-4, 원박리 267');return;}
-        skRenderResults(items2);return;
+        // address 타입으로 재시도
+        const url2=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=address&format=json&key=${SK_KEY}`;
+        skShowLoading('재검색 중...');
+        jsonp(url2,function(data2,err2){
+          skShowLoading(false);
+          if(err2){skShowErr('검색 오류: '+err2);return;}
+          const items2=data2?.response?.result?.items;
+          if(!items2?.length){skShowErr('검색 결과 없음\n예) 역삼동 123-4, 원박리 267');return;}
+          skRenderResults(items2);
+        });
+        return;
       }
       skRenderResults(items);
-    }catch(e){
-      skShowLoading(false);
-      skShowErr('검색 오류: '+e.message+'\n브이월드 서비스URL에 wisestar823.github.io 등록 필요');
-    }
+    });
   };
 
   function skRenderResults(items){
@@ -1508,7 +1643,7 @@ function switchTab(t){
       const title=item.title||item.address?.parcel||'주소 없음';
       const id=item.id||'';
       const x=item.point?.x||'',y=item.point?.y||'';
-      return `<div class="sk-addr-item" onclick="skSelectAddr('${title.replace(/'/g,"\\'")}','${id}','${x}','${y}')">
+      return `<div class="sk-addr-item" onclick="skSelectAddr('${title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${id}','${x}','${y}')">
         <div class="sk-addr-main">${title}</div>
         ${item.address?.parcel?`<div style="font-size:10px;color:var(--text-muted);">${item.address.parcel}</div>`:''}
         ${id?`<div class="sk-addr-pnu">PNU: ${id}</div>`:''}
@@ -1517,23 +1652,23 @@ function switchTab(t){
     el.classList.add('show');
   }
 
-  window.skSelectAddr=async function(title,pnu,x,y){
+  window.skSelectAddr=function(title,pnu,x,y){
     document.getElementById('sk-addr-list').classList.remove('show');
     document.getElementById('sk-addr-inp').value=title;
     if(pnu&&pnu.length>=10){
       skPNU=pnu.slice(0,19);
       skShowSelected(title,skPNU);
     } else if(x&&y){
+      // 좌표로 PNU 조회 (JSONP)
       skShowLoading('PNU 조회 중...');
-      try{
-        const url=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&geomFilter=POINT(${x} ${y})&format=json&size=1`;
-        const res=await fetch(url);
-        const data=await res.json();
+      const url=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&geomFilter=POINT(${x} ${y})&format=json&size=1`;
+      jsonp(url,function(data,err){
         skShowLoading(false);
-        const p=data.response?.result?.featureCollection?.features?.[0]?.properties?.pnu;
+        if(err){skShowErr('PNU 조회 실패: '+err);return;}
+        const p=data?.response?.result?.featureCollection?.features?.[0]?.properties?.pnu;
         if(p){skPNU=p;skShowSelected(title,p);}
-        else skShowErr('PNU를 가져올 수 없습니다. 검색어를 더 구체적으로 입력하세요.');
-      }catch(e){skShowLoading(false);skShowErr('PNU 조회 실패');}
+        else skShowErr('PNU를 가져올 수 없습니다.');
+      });
     } else skShowErr('위치 정보를 가져올 수 없습니다.');
   };
 
@@ -1553,29 +1688,35 @@ function switchTab(t){
     document.getElementById('sk-pt-section').style.display='none';
   };
 
-  /* ── 연속지적도 경계점 조회 ── */
-  window.skFetchLot=async function(){
+  /* ── 연속지적도 경계점 조회 (JSONP) ── */
+  window.skFetchLot=function(){
     if(!skPNU){showToast('⚠️ 먼저 주소를 검색하고 선택하세요');return;}
     skHideErr();
     skShowLoading('연속지적도 API에서 경계점 조회 중...');
-    try{
-      const url=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&attrFilter=pnu:=:${skPNU}&format=json&size=1&page=1`;
-      const res=await fetch(url);
-      const data=await res.json();
-      let features=data.response?.result?.featureCollection?.features;
+    const url=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&attrFilter=pnu:=:${skPNU}&format=json&size=1&page=1`;
+    jsonp(url,function(data,err){
+      if(err){
+        skShowLoading(false);
+        skShowErr('경계점 조회 실패: '+err);
+        return;
+      }
+      let features=data?.response?.result?.featureCollection?.features;
       if(!features?.length){
+        // PNU 앞 10자리로 재시도
         const url2=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&attrFilter=pnu:LIKE:${skPNU.slice(0,10)}%25&format=json&size=1&page=1`;
-        const res2=await fetch(url2);
-        const data2=await res2.json();
-        features=data2.response?.result?.featureCollection?.features;
-        if(!features?.length)throw new Error('경계점 데이터 없음. PNU: '+skPNU);
+        skShowLoading('재조회 중...');
+        jsonp(url2,function(data2,err2){
+          skShowLoading(false);
+          if(err2){skShowErr('경계점 조회 실패: '+err2);return;}
+          const features2=data2?.response?.result?.featureCollection?.features;
+          if(!features2?.length){skShowErr('경계점 데이터 없음\nPNU: '+skPNU);return;}
+          skProcessFeature(features2[0]);
+        });
+        return;
       }
       skShowLoading(false);
       skProcessFeature(features[0]);
-    }catch(e){
-      skShowLoading(false);
-      skShowErr(e.message||'API 조회 실패. 브이월드 서비스URL 설정을 확인하세요.');
-    }
+    });
   };
 
   function skProcessFeature(feature){
@@ -1781,6 +1922,142 @@ function switchTab(t){
   }
 
 })(); // 경계말뚝 모듈 끝
+
+// ═══════════════════════════════════════════════════════════════
+// AR 유도 모듈
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  let arBearing=0, arDist=0, arSensorOn=false;
+
+  /* ── 시작 ── */
+  window.arStart=function(){
+    // skCalc 결과에서 방위각·거리 가져오기
+    const degEl=document.getElementById('sk-r-deg');
+    const distEl=document.getElementById('sk-r-dist');
+    if(!degEl||degEl.textContent==='—°'){showToast('⚠️ 먼저 계산을 실행하세요');return;}
+    arBearing=parseFloat(degEl.textContent);
+    arDist=parseFloat(distEl.textContent);
+
+    document.getElementById('ar-h-target').textContent=arBearing.toFixed(1)+'°';
+    document.getElementById('ar-dist-num').textContent=arDist.toFixed(2);
+
+    document.getElementById('ar-fullscreen').style.display='block';
+    arStartCamera();
+    arRequestSensor();
+  };
+
+  /* ── 닫기 ── */
+  window.arClose=function(){
+    // 카메라 정지
+    const v=document.getElementById('ar-video');
+    if(v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null;}
+    // 센서 정지
+    window.removeEventListener('deviceorientation',arOnOrientation,true);
+    arSensorOn=false;
+    document.getElementById('ar-fullscreen').style.display='none';
+  };
+
+  /* ── 카메라 ── */
+  function arStartCamera(){
+    const v=document.getElementById('ar-video');
+    if(!navigator.mediaDevices?.getUserMedia){
+      document.getElementById('ar-cam-fallback').style.display='block';
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}})
+      .then(s=>{v.srcObject=s;v.style.display='block';document.getElementById('ar-cam-fallback').style.display='none';})
+      .catch(()=>{v.style.display='none';document.getElementById('ar-cam-fallback').style.display='block';});
+  }
+
+  /* ── 센서 권한 ── */
+  function arRequestSensor(){
+    if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+      const ov=document.getElementById('ar-perm-overlay');
+      ov.style.display='flex';
+      document.getElementById('ar-perm-btn').onclick=()=>{
+        DeviceOrientationEvent.requestPermission().then(s=>{
+          ov.style.display='none';
+          if(s==='granted'){window.addEventListener('deviceorientation',arOnOrientation,true);arSensorOn=true;}
+          else{document.getElementById('ar-status-msg').textContent='⚠️ 센서 권한 거부됨';}
+        }).catch(()=>ov.style.display='none');
+      };
+    } else {
+      window.addEventListener('deviceorientation',arOnOrientation,true);
+      arSensorOn=true;
+    }
+  }
+
+  /* ── 센서 처리 ── */
+  function arOnOrientation(e){
+    if(e.alpha===null)return;
+    const heading=e.webkitCompassHeading!=null?e.webkitCompassHeading:(360-e.alpha)%360;
+    let diff=arBearing-heading;
+    if(diff>180)diff-=360;
+    if(diff<-180)diff+=360;
+
+    // 수평계
+    const gx=e.gamma||0,gy=e.beta||0;
+    const mx=Math.max(-22,Math.min(22,gx));
+    const my=Math.max(-22,Math.min(22,gy));
+    const dot=document.getElementById('ar-level-dot');
+    dot.style.transform=`translate(calc(-50% + ${mx}px), calc(-50% + ${my}px))`;
+    const lv=Math.abs(gx)<6&&Math.abs(gy)<6;
+    dot.style.background=lv?'#10d98a':'#f04a4a';
+    dot.style.boxShadow=lv?'0 0 8px #10d98a':'0 0 8px #f04a4a';
+
+    // 나침반
+    document.getElementById('ar-compass-dial').style.transform=`rotate(${-heading}deg)`;
+    document.getElementById('ar-compass-target').style.transform=`translateX(-50%) rotate(${arBearing-heading}deg)`;
+
+    // HUD
+    document.getElementById('ar-h-current').textContent=Math.round(heading)+'°';
+    document.getElementById('ar-h-diff').textContent=(diff>=0?'+':'')+diff.toFixed(1)+'°';
+
+    // 화살표
+    arUpdateArrow(diff);
+  }
+
+  /* ── 화살표 업데이트 ── */
+  function arUpdateArrow(diff){
+    const wrap=document.getElementById('ar-arrow-wrap');
+    const svg=document.getElementById('ar-arrow-svg');
+    const arrived=document.getElementById('ar-arrived');
+    const msg=document.getElementById('ar-status-msg');
+    const sub=document.getElementById('ar-status-sub');
+    const diffEl=document.getElementById('ar-h-diff');
+    const abs=Math.abs(diff);
+
+    wrap.style.transform=`rotate(${diff}deg)`;
+
+    if(abs<=5){
+      svg.style.display='none';
+      arrived.style.display='flex';
+      svg.style.color='#10d98a';svg.style.filter='drop-shadow(0 0 16px #10d98a)';
+      diffEl.style.color='#10d98a';
+      msg.innerHTML='<span style="color:#10d98a">✅ 방향 일치!</span> 이 방향으로 전진';
+      sub.textContent=arDist.toFixed(2)+'m 직진하면 소실점 위치';
+    } else {
+      arrived.style.display='none';
+      svg.style.display='block';
+      if(abs<=20){
+        svg.style.color='#f5d020';svg.style.filter='drop-shadow(0 0 14px #f5d020)';
+        diffEl.style.color='#10d98a';
+        msg.textContent=diff>0?'↻ 오른쪽으로 조금 돌아주세요':'↺ 왼쪽으로 조금 돌아주세요';
+        sub.textContent=`편차 ${abs.toFixed(1)}° — 거의 맞습니다`;
+      } else if(abs<=60){
+        svg.style.color='#f5a623';svg.style.filter='drop-shadow(0 0 14px #f5a623)';
+        diffEl.style.color='#f5a623';
+        msg.textContent=diff>0?'→ 오른쪽으로 돌아주세요':'← 왼쪽으로 돌아주세요';
+        sub.textContent=`편차 ${abs.toFixed(1)}° — 화살표 방향으로 몸을 돌리세요`;
+      } else {
+        svg.style.color='#f04a4a';svg.style.filter='drop-shadow(0 0 14px #f04a4a)';
+        diffEl.style.color='#f04a4a';
+        msg.textContent=diff>0?'→→ 크게 오른쪽으로 돌아주세요':'←← 크게 왼쪽으로 돌아주세요';
+        sub.textContent=`편차 ${abs.toFixed(1)}° — 반대 방향입니다`;
+      }
+    }
+  }
+})(); // AR 모듈 끝
 
 // ═══════════════════════════════════════════════════════════════
 // 항목별 파일 첨부 모달 (카드 내 "↑ 파일 첨부" 버튼)
