@@ -528,7 +528,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 /* 지도 */
 .sk-map-row{display:flex;gap:8px;}
 .sk-map-btn{flex:1;padding:10px 6px;border:none;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px;}
-.sk-mb-g{background:#4285f4;color:#fff;}.sk-mb-n{background:#03c75a;color:#fff;}.sk-mb-k{background:#fee500;color:#3c1e1e;}
+.sk-mb-n{background:#03c75a;color:#fff;width:100%;justify-content:center;}
 /* 복사 */
 .sk-copy-row{display:flex;gap:8px;margin-top:10px;}
 .sk-copy-inp{flex:1;padding:8px 10px;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:monospace;font-size:11px;outline:none;}
@@ -772,9 +772,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
       <div class="sk-card">
         <div class="sk-hdr"><span class="sk-dot sk-blue"></span>지도에서 소실점 확인</div>
         <div class="sk-map-row">
-          <a class="sk-map-btn sk-mb-g" id="sk-bG" href="#" target="_blank">🗺 구글</a>
-          <a class="sk-map-btn sk-mb-n" id="sk-bN" href="#" target="_blank">N 네이버</a>
-          <a class="sk-map-btn sk-mb-k" id="sk-bK" href="#" target="_blank">🟡 카카오</a>
+          <a class="sk-map-btn sk-mb-n" id="sk-bN" href="#" target="_blank" style="max-width:200px;margin:0 auto;">N 네이버지도</a>
         </div>
         <div style="font-size:10px;color:var(--text-muted);margin-top:7px;">※ 위성사진 ±1~3m 오차 · 시각 확인용</div>
       </div>
@@ -815,8 +813,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
           <div class="sk-ci"><div class="sk-ci-lbl">경도</div><div class="sk-ci-val" style="color:#06c8d8;font-size:12px;" id="sk-r-klng">—</div></div>
         </div>
         <div class="sk-map-row" style="margin-top:10px;">
-          <a class="sk-map-btn sk-mb-g" id="sk-bKG" href="#" target="_blank" style="font-size:10px;">구글 (기지점)</a>
-          <a class="sk-map-btn sk-mb-n" id="sk-bKN" href="#" target="_blank" style="font-size:10px;">네이버 (기지점)</a>
+          <a class="sk-map-btn sk-mb-n" id="sk-bKN" href="#" target="_blank" style="font-size:10px;max-width:200px;margin:0 auto;">N 네이버 (기지점)</a>
         </div>
       </div>
     </div>
@@ -1831,10 +1828,7 @@ function switchTab(t){
     document.getElementById('sk-r-lng').textContent=kt.lng.toFixed(7)+'°';
     document.getElementById('sk-r-copy').value=kt.lat.toFixed(7)+', '+kt.lng.toFixed(7);
     const tl=kt.lat.toFixed(6),tln=kt.lng.toFixed(6),kl=kb.lat.toFixed(6),kln=kb.lng.toFixed(6);
-    document.getElementById('sk-bG').href=`https://maps.google.com/?q=${tl},${tln}`;
     document.getElementById('sk-bN').href=`https://map.naver.com/p/search/${tl},${tln}`;
-    document.getElementById('sk-bK').href=`https://map.kakao.com/link/map/${tl},${tln}`;
-    document.getElementById('sk-bKG').href=`https://maps.google.com/?q=${kl},${kln}`;
     document.getElementById('sk-bKN').href=`https://map.naver.com/p/search/${kl},${kln}`;
     document.getElementById('sk-r-klat').textContent=kb.lat.toFixed(7)+'°';
     document.getElementById('sk-r-klng').textContent=kb.lng.toFixed(7)+'°';
@@ -1912,8 +1906,7 @@ function switchTab(t){
         <div class="sk-hist-det">방위각: ${item.bearing}° · 거리: ${item.dist}m · ${item.dir}</div>
         <div class="sk-hist-res">📍 ${item.tLat}, ${item.tLng}</div>
         <div class="sk-map-row" style="margin-top:8px;">
-          <a class="sk-map-btn sk-mb-g" href="https://maps.google.com/?q=${item.tLat},${item.tLng}" target="_blank" style="font-size:10px;">구글 지도</a>
-          <a class="sk-map-btn sk-mb-n" href="https://map.naver.com/p/search/${item.tLat},${item.tLng}" target="_blank" style="font-size:10px;">네이버 지도</a>
+          <a class="sk-map-btn sk-mb-n" href="https://map.naver.com/p/search/${item.tLat},${item.tLng}" target="_blank" style="font-size:10px;max-width:200px;margin:0 auto;">N 네이버지도</a>
         </div>
       </div>`).join('');
   }
