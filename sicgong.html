@@ -1614,27 +1614,28 @@ function switchTab(t){
     if(!q)return;
     skShowLoading('주소 검색 중...');
     skHideErr();
-    // JSONP 방식으로 검색 API 호출
-    const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=parcel&format=json&key=${SK_KEY}`;
-    jsonp(url,function(data,err){
-      skShowLoading(false);
-      if(err){skShowErr('검색 오류: '+err);return;}
-      const items=data?.response?.result?.items;
-      if(!items?.length){
-        // address 타입으로 재시도
-        const url2=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=address&format=json&key=${SK_KEY}`;
-        skShowLoading('재검색 중...');
-        jsonp(url2,function(data2,err2){
-          skShowLoading(false);
-          if(err2){skShowErr('검색 오류: '+err2);return;}
-          const items2=data2?.response?.result?.items;
-          if(!items2?.length){skShowErr('검색 결과 없음\n예) 역삼동 123-4, 원박리 267');return;}
-          skRenderResults(items2);
-        });
+
+    // parcel → address → place 순서로 시도
+    const types=['parcel','address','place'];
+    let tryIdx=0;
+
+    function tryNext(){
+      if(tryIdx>=types.length){
+        skShowLoading(false);
+        skShowErr('검색 결과 없음\n시·군 이름을 포함해보세요\n예) 논산시 원박리 267, 강남구 역삼동 123');
         return;
       }
-      skRenderResults(items);
-    });
+      const t=types[tryIdx++];
+      const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=${t}&format=json&key=${SK_KEY}`;
+      jsonp(url,function(data,err){
+        if(err){skShowLoading(false);skShowErr('검색 오류: '+err);return;}
+        const items=data?.response?.result?.items;
+        if(!items?.length){tryNext();return;}
+        skShowLoading(false);
+        skRenderResults(items);
+      });
+    }
+    tryNext();
   };
 
   function skRenderResults(items){
