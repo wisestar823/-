@@ -1615,40 +1615,51 @@ function switchTab(t){
     skShowLoading('주소 검색 중...');
     skHideErr();
 
-    // parcel → address → place 순서로 시도
-    const types=['parcel','address','place'];
-    let tryIdx=0;
+    // 1순위: parcel 타입 (지번 주소 정확 검색)
+    const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=parcel&format=json&key=${SK_KEY}`;
+    jsonp(url,function(data,err){
+      if(err){skShowLoading(false);skShowErr('검색 오류: '+err);return;}
+      const items=data?.response?.result?.items;
 
-    function tryNext(){
-      if(tryIdx>=types.length){
+      // parcel 결과가 있으면 바로 표시
+      if(items?.length){
         skShowLoading(false);
-        skShowErr('검색 결과 없음\n시·군 이름을 포함해보세요\n예) 논산시 원박리 267, 강남구 역삼동 123');
+        skHideErr();
+        skRenderResults(items);
         return;
       }
-      const t=types[tryIdx++];
-      const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=${t}&format=json&key=${SK_KEY}`;
-      jsonp(url,function(data,err){
-        if(err){skShowLoading(false);skShowErr('검색 오류: '+err);return;}
-        const items=data?.response?.result?.items;
-        if(!items?.length){tryNext();return;}
+
+      // 2순위: address 타입으로 재시도
+      const url2=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=address&format=json&key=${SK_KEY}`;
+      jsonp(url2,function(data2,err2){
         skShowLoading(false);
-        skRenderResults(items);
+        if(err2){skShowErr('검색 오류: '+err2);return;}
+        const items2=data2?.response?.result?.items;
+        if(items2?.length){
+          skHideErr();
+          skRenderResults(items2);
+          return;
+        }
+        // 둘 다 없으면 안내
+        skShowErr('검색 결과 없음\n시·군 이름을 앞에 붙여보세요\n예) 논산시 원박리 267  /  강남구 역삼동 123');
       });
-    }
-    tryNext();
+    });
   };
 
   function skRenderResults(items){
     const el=document.getElementById('sk-addr-list');
     el.innerHTML=items.map(item=>{
-      const title=item.title||item.address?.parcel||'주소 없음';
+      const parcel=item.address?.parcel||'';
+      const title=parcel||item.title||'주소 없음';
+      const sub=(parcel&&item.title&&item.title!==parcel)?item.title:'';
       const id=item.id||'';
       const x=item.point?.x||'',y=item.point?.y||'';
-      return `<div class="sk-addr-item" onclick="skSelectAddr('${title.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${id}','${x}','${y}')">
-        <div class="sk-addr-main">${title}</div>
-        ${item.address?.parcel?`<div style="font-size:10px;color:var(--text-muted);">${item.address.parcel}</div>`:''}
-        ${id?`<div class="sk-addr-pnu">PNU: ${id}</div>`:''}
-      </div>`;
+      const safe=title.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      return '<div class="sk-addr-item" onclick="skSelectAddr(\'' +safe+ '\',\'' +id+ '\',\'' +x+ '\',\'' +y+ '\')">'
+        +'<div class="sk-addr-main">'+title+'</div>'
+        +(sub?'<div style="font-size:10px;color:var(--text-muted);">'+sub+'</div>':'')
+        +(id?'<div class="sk-addr-pnu">PNU: '+id+'</div>':'')
+        +'</div>';
     }).join('');
     el.classList.add('show');
   }
