@@ -1616,7 +1616,7 @@ function switchTab(t){
     skHideErr();
 
     // 1순위: parcel 타입 (지번 주소 정확 검색)
-    const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=parcel&format=json&key=${SK_KEY}`;
+    const url=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=ADDRESS&format=json&key=${SK_KEY}`;
     jsonp(url,function(data,err){
       if(err){skShowLoading(false);skShowErr('검색 오류: '+err);return;}
       const items=data?.response?.result?.items;
@@ -1630,7 +1630,7 @@ function switchTab(t){
       }
 
       // 2순위: address 타입으로 재시도
-      const url2=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=address&format=json&key=${SK_KEY}`;
+      const url2=`${SK_BASE}/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=10&page=1&query=${encodeURIComponent(q)}&type=ROAD&format=json&key=${SK_KEY}`;
       jsonp(url2,function(data2,err2){
         skShowLoading(false);
         if(err2){skShowErr('검색 오류: '+err2);return;}
