@@ -2269,6 +2269,29 @@ function apDeleteProcess(id){
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 function addAnother(){closeModal();}
 
+// ═══ 공정 추가 탭 렌더 ═══════════════════════════════════════════
+function apRenderItems(){
+  const wrap=document.getElementById('ap-items-wrap');
+  if(!wrap)return;
+  if(!window.apItems||!window.apItems.length){wrap.innerHTML='<span style="font-size:11px;color:var(--text-muted);padding:4px 0;">항목을 추가하면 여기에 표시됩니다</span>';return;}
+  wrap.innerHTML=window.apItems.map((it,i)=>`
+    <div class="ap-item-tag">${it}<span class="rm" onclick="apRemoveItem(${i})">×</span></div>
+  `).join('');
+}
+function apRenderHistory(){
+  const wrap=document.getElementById('ap-history-wrap');
+  if(!wrap)return;
+  if(!customProcesses.length){wrap.innerHTML='<div style="font-size:11px;color:var(--text-muted);">추가된 공정이 없습니다</div>';return;}
+  wrap.innerHTML=customProcesses.map(p=>`
+    <div class="ap-hist-card">
+      <div class="ap-hist-title">${p.icon||'📋'} ${p.title}</div>
+      <div class="ap-hist-meta">${p.items?.length||0}개 항목 · ${p.cat||''}</div>
+      <div class="ap-hist-del" onclick="apDeleteProcess('${p.id}')">×</div>
+    </div>
+  `).join('');
+}
+if(!window.apItems) window.apItems=[];
+
 // ═══ 토스트 ══════════════════════════════════════════════════════
 function showToast(msg){
   const t=document.getElementById('toast');
