@@ -2378,28 +2378,36 @@ function switchTab(t){
     if(!canvas._eventsSet){
       canvas._eventsSet=true;
       // 탭으로 거리 측정
+      // 탭 감지: touchstart → touchend, 이동 10px 이내 + 300ms 이내
       let _drawTapStart={x:0,y:0,t:0};
-      canvas.addEventListener('click',e=>{
-        const rect=canvas.getBoundingClientRect();
-        skDrawHandleTap(e.clientX-rect.left,e.clientY-rect.top,false);
-      });
       canvas.addEventListener('touchstart',e2=>{
-        if(e2.touches.length===1){_drawTapStart={x:e2.touches[0].clientX,y:e2.touches[0].clientY,t:Date.now()};}
+        if(e2.touches.length===1){
+          _drawTapStart={x:e2.touches[0].clientX,y:e2.touches[0].clientY,t:Date.now()};
+        }
       },{passive:true});
       canvas.addEventListener('touchend',e=>{
-        if(e.changedTouches.length===1){
+        if(e.changedTouches.length===1&&!skDrawDragging){
           const dx=e.changedTouches[0].clientX-_drawTapStart.x;
           const dy=e.changedTouches[0].clientY-_drawTapStart.y;
           const dt=Date.now()-_drawTapStart.t;
-          if(dt<300&&Math.sqrt(dx*dx+dy*dy)<10){
+          const moved=Math.sqrt(dx*dx+dy*dy);
+          if(dt<400&&moved<15){
+            e.preventDefault();
             const rect=canvas.getBoundingClientRect();
             skDrawHandleTap(e.changedTouches[0].clientX-rect.left,e.changedTouches[0].clientY-rect.top,false);
           }
         }
+      },{passive:false});
+      // PC 마우스 클릭
+      canvas.addEventListener('click',e=>{
+        if(!skDrawDragging){
+          const rect=canvas.getBoundingClientRect();
+          skDrawHandleTap(e.clientX-rect.left,e.clientY-rect.top,false);
+        }
       });
       canvas.addEventListener('mousedown',e=>{skDrawDragging=true;skDrawLastX=e.clientX;skDrawLastY=e.clientY;});
       canvas.addEventListener('mousemove',e=>{if(!skDrawDragging)return;skDrawOffX+=e.clientX-skDrawLastX;skDrawOffY+=e.clientY-skDrawLastY;skDrawLastX=e.clientX;skDrawLastY=e.clientY;skDrawDraw();});
-      canvas.addEventListener('mouseup',()=>skDrawDragging=false);
+      canvas.addEventListener('mouseup',()=>{setTimeout(()=>skDrawDragging=false,50);});
       canvas.addEventListener('mouseleave',()=>skDrawDragging=false);
       // 터치
       // 터치 — 1손가락:이동 / 2손가락:핀치줌
@@ -3198,12 +3206,12 @@ function switchTab(t){
 
   /* ── 건물 TM 모서리 계산 (공통) ── */
   // TM좌표계: x=북향(Northing), y=동향(Easting)
-  // 정북 기준:
-  //   ox = 동쪽 이격(m)  → y +ox
-  //   oy = 북쪽 이격(m)  → x +oy
-  //   w  = 건물 동서폭   → y방향
-  //   h  = 건물 남북폭   → x방향
-  //   angle = 정북 기준 시계방향 회전각(°)
+  // ox = 경계점에서 동쪽 이격(m) → y방향
+  // oy = 경계점에서 북쪽 이격(m) → x방향
+  // w  = 건물 동서폭(m)
+  // h  = 건물 남북폭(m)
+  // angle = 정북 기준 시계방향 회전(°)
+  // 기준점 = 건물 NW(북서) 모서리 기준
   window.skBldgGetCorners = function(){
     if(!skBuilding || !skPoints.length) return null;
     const ref = skPoints[skBuilding.refIdx];
@@ -3211,23 +3219,26 @@ function switchTab(t){
     const {ox, oy, w, h, angle} = skBuilding;
     const rad = angle * Math.PI / 180;
 
-    // 회전 전 모서리 (정북 기준)
-    // 기준 경계점에서 북쪽으로 oy, 동쪽으로 ox 이격 후 건물 배치
+    // NW 모서리: 기준점에서 북쪽 oy, 동쪽 ox
+    const nwX = ref.x + oy;   // 북향
+    const nwY = ref.y + ox;   // 동향
+
+    // 회전 전 4개 모서리 (정북 기준)
     const raw = [
-      [ref.x + oy,     ref.y + ox    ],  // 0: NW 좌상단
-      [ref.x + oy,     ref.y + ox + w],  // 1: NE 우상단
-      [ref.x + oy - h, ref.y + ox + w],  // 2: SE 우하단
-      [ref.x + oy - h, ref.y + ox    ],  // 3: SW 좌하단
+      [nwX,     nwY    ],   // NW (좌상단)
+      [nwX,     nwY + w],   // NE (우상단)
+      [nwX - h, nwY + w],   // SE (우하단)
+      [nwX - h, nwY    ],   // SW (좌하단)
     ];
 
-    // 건물 중심점
-    const cx = ref.x + oy - h/2;
-    const cy = ref.y + ox + w/2;
+    // 건물 중심
+    const cx = nwX - h/2;
+    const cy = nwY + w/2;
 
-    // 방위각 회전 (TM좌표계에서 정북기준 시계방향)
-    // TM: x=북, y=동 → 회전행렬
-    // x' = cx + (x-cx)*cos(rad) - (y-cy)*sin(rad)  ← 북향
-    // y' = cy + (x-cx)*sin(rad) + (y-cy)*cos(rad)  ← 동향
+    // 정북기준 시계방향 회전 (TM좌표계)
+    // Δx=북향차, Δy=동향차
+    // x' = cx + Δx*cos - Δy*sin
+    // y' = cy + Δx*sin + Δy*cos
     const rotated = raw.map(([px,py])=>{
       const dx=px-cx, dy=py-cy;
       return [
@@ -3235,7 +3246,7 @@ function switchTab(t){
         cy + dx*Math.sin(rad) + dy*Math.cos(rad)
       ];
     });
-    return {rotated, cx, cy};
+    return {rotated, cx, cy, nwX, nwY};
   };
 
   /* ── 건물 Canvas 그리기 (공통 함수) ── */
