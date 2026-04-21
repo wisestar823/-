@@ -846,44 +846,58 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <!-- 서브탭: 도면보기 -->
   <div id="sk-panel-draw" style="display:none;">
     <div class="sk-card" style="padding:14px;">
-      <div class="sk-hdr"><span class="sk-dot sk-orange"></span>필지 도면
-        <span id="sk-draw-badge" style="font-size:9px;background:rgba(245,160,32,.15);color:#f5a623;padding:2px 7px;border-radius:4px;font-family:monospace;margin-left:4px;"></span>
+
+      <!-- ① 도면 상태 헤더 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="sk-hdr" style="margin-bottom:0;">
+          <span class="sk-dot sk-orange"></span>필지 도면
+          <span id="sk-draw-badge" style="font-size:9px;background:rgba(245,160,32,.15);color:#f5a623;padding:2px 7px;border-radius:4px;font-family:monospace;margin-left:4px;"></span>
+          <span id="sk-bldg-badge" style="font-size:9px;background:rgba(155,125,248,.15);color:#9b7df8;padding:2px 7px;border-radius:4px;font-family:monospace;margin-left:4px;display:none;"></span>
+        </div>
+        <button onclick="skDrawFullscreen()" style="padding:5px 10px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;cursor:pointer;">⛶ 전체화면</button>
       </div>
+
+      <!-- ② 빈 상태 -->
       <div id="sk-draw-empty" style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">
-        경계점 조회 후 도면이 표시됩니다
+        주소검색 탭에서 필지를 조회하면<br>도면이 표시됩니다
       </div>
+
+      <!-- ③ 도면 + 기능 (좌표 있을 때) -->
       <div id="sk-draw-wrap" style="display:none;">
+
         <!-- 범례 -->
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text-muted);">
-          <span>🟢 살아있음</span>
-          <span>🔴 소실</span>
-          <span>⚪ 미지정</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:10px;color:var(--text-muted);">
+          <span>🟢 살아있음</span><span>🔴 소실</span><span>⚪ 미지정</span>
           <span style="color:#06c8d8;">━ 기지→소실</span>
         </div>
-        <!-- Canvas 도면 -->
+
+        <!-- Canvas 도면 (탭으로 거리 측정 가능) -->
         <div style="background:#0a0f1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;">
-          <canvas id="sk-draw-canvas" style="width:100%;display:block;touch-action:none;"></canvas>
-          <!-- 확대/축소 버튼 -->
+          <canvas id="sk-draw-canvas" style="width:100%;display:block;touch-action:none;cursor:crosshair;"></canvas>
+          <!-- 줌 버튼 -->
           <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;">
             <button onclick="skDrawZoom(1.2)" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer;">+</button>
             <button onclick="skDrawZoom(0.8)" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer;">−</button>
             <button onclick="skDrawReset()" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:10px;cursor:pointer;">⟳</button>
-            <button onclick="skDrawFullscreen()" id="sk-draw-fs-btn" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;cursor:pointer;">⛶</button>
           </div>
+          <!-- 측정 모드 버튼 -->
+          <button id="sk-measure-btn" onclick="skToggleMeasure()" style="position:absolute;bottom:8px;left:8px;padding:5px 10px;background:rgba(0,0,0,.75);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:10px;cursor:pointer;font-family:inherit;">📏 거리측정</button>
+          <!-- 측정 결과 -->
+          <div id="sk-measure-result" style="position:absolute;bottom:8px;left:90px;right:40px;background:rgba(0,0,0,.8);border:1px solid rgba(6,200,216,.4);border-radius:6px;padding:4px 8px;font-size:10px;color:#06c8d8;display:none;font-family:monospace;"></div>
         </div>
+
         <!-- 점간 거리표 -->
         <div style="margin-top:12px;">
           <div class="sk-hdr" style="margin-bottom:8px;"><span class="sk-dot sk-teal"></span>점간 거리표</div>
           <div id="sk-dist-table" style="font-family:monospace;font-size:11px;"></div>
         </div>
-        <!-- 건물 배치 섹션 -->
-        <div style="margin-top:12px;">
-          <div class="sk-hdr" style="margin-bottom:8px;"><span class="sk-dot sk-purple"></span>건물 배치
-            <span id="sk-bldg-badge" style="font-size:9px;background:rgba(155,125,248,.15);color:#9b7df8;padding:2px 7px;border-radius:4px;font-family:monospace;margin-left:4px;display:none;"></span>
-          </div>
 
-          <!-- 파일/사진 첨부 버튼 -->
-          <label style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;box-sizing:border-box;">
+        <!-- 건물 배치 섹션 -->
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div class="sk-hdr" style="margin-bottom:10px;"><span class="sk-dot sk-purple"></span>건물 배치</div>
+
+          <!-- 배치도 첨부 -->
+          <label style="width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px;box-sizing:border-box;">
             📎 배치도 첨부 (사진촬영 또는 파일선택)
             <input type="file" accept="image/*,application/pdf" onchange="skBldgAiAnalyze(this)" style="display:none;">
           </label>
@@ -925,13 +939,17 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
               <button onclick="skBldgClear()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">삭제</button>
             </div>
           </div>
+
+          <!-- 모서리 거리표 -->
+          <div id="sk-corner-dist-wrap" style="display:none;margin-top:8px;">
+            <div class="sk-hdr" style="margin-bottom:6px;"><span class="sk-dot sk-orange"></span>건물 모서리 → 경계점 거리</div>
+            <div id="sk-corner-dist-table" style="font-family:monospace;font-size:11px;"></div>
+          </div>
         </div>
 
-        <!-- 인쇄 버튼 -->
-        <button onclick="skDrawPrint()" style="width:100%;margin-top:10px;padding:11px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">🖨 도면 인쇄</button>
+        <!-- 인쇄 -->
+        <button onclick="skDrawPrint()" style="width:100%;margin-top:12px;padding:11px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">🖨 도면 인쇄</button>
       </div>
-
-
     </div>
   </div>
 
@@ -1106,16 +1124,81 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 
 <!-- ══ 도면 전체화면 오버레이 ══ -->
 <div id="sk-draw-overlay">
+  <!-- 상단바 -->
   <div id="sk-draw-overlay-hdr">
-    <div id="sk-draw-overlay-title">📐 필지 도면</div>
-    <button onclick="skDrawCloseFs()" style="padding:6px 14px;background:rgba(240,74,74,.15);border:1px solid rgba(240,74,74,.3);border-radius:6px;color:#f04a4a;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✕ 닫기</button>
+    <div id="sk-draw-overlay-title" style="font-size:13px;font-weight:700;">📐 필지 도면</div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <span id="sk-fs-bldg-badge" style="font-size:9px;background:rgba(155,125,248,.2);color:#9b7df8;padding:2px 7px;border-radius:4px;font-family:monospace;display:none;"></span>
+      <button onclick="skDrawCloseFs()" style="padding:5px 12px;background:rgba(240,74,74,.15);border:1px solid rgba(240,74,74,.3);border-radius:6px;color:#f04a4a;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✕ 닫기</button>
+    </div>
   </div>
-  <div id="sk-draw-overlay-canvas-wrap">
-    <canvas id="sk-draw-overlay-canvas" touch-action="none"></canvas>
-    <div id="sk-draw-overlay-btns">
-      <button class="sk-draw-ov-btn" onclick="skDrawOvZoom(1.2)">+</button>
-      <button class="sk-draw-ov-btn" onclick="skDrawOvZoom(0.8)">−</button>
-      <button class="sk-draw-ov-btn" onclick="skDrawOvReset()" style="font-size:11px;">⟳</button>
+
+  <!-- 좌우 분할: 도면(상) + 건물폼(하) — 세로 레이아웃 -->
+  <div style="display:flex;flex-direction:column;height:calc(100% - 48px);">
+
+    <!-- 도면 캔버스 영역 (전체 높이의 60%) -->
+    <div id="sk-draw-overlay-canvas-wrap" style="flex:6;position:relative;min-height:0;">
+      <canvas id="sk-draw-overlay-canvas" touch-action="none" style="width:100%;height:100%;display:block;"></canvas>
+      <!-- 줌 버튼 -->
+      <div id="sk-draw-overlay-btns">
+        <button class="sk-draw-ov-btn" onclick="skDrawOvZoom(1.2)">+</button>
+        <button class="sk-draw-ov-btn" onclick="skDrawOvZoom(0.8)">−</button>
+        <button class="sk-draw-ov-btn" onclick="skDrawOvReset()" style="font-size:11px;">⟳</button>
+      </div>
+      <!-- 탭 측정 힌트 -->
+      <div id="sk-fs-tap-hint" style="position:absolute;bottom:8px;left:8px;font-size:10px;color:#06c8d8;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);border-radius:5px;padding:3px 8px;">📍 두 점 탭 → 거리측정</div>
+      <!-- 탭 측정 결과 -->
+      <div id="sk-fs-tap-result" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:#f59e0b;background:rgba(0,0,0,.85);border:1px solid rgba(245,158,11,.3);border-radius:5px;padding:4px 10px;font-family:monospace;display:none;white-space:nowrap;"></div>
+    </div>
+
+    <!-- 건물 배치 폼 (스크롤 가능, 전체 높이의 40%) -->
+    <div style="flex:4;overflow-y:auto;border-top:1px solid var(--border);background:var(--bg);padding:12px;min-height:0;">
+      <div style="font-size:11px;font-weight:700;color:#9b7df8;margin-bottom:8px;">🏗 건물 배치</div>
+
+      <!-- 첨부 버튼 -->
+      <label style="width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;box-sizing:border-box;">
+        📎 배치도 첨부
+        <input type="file" accept="image/*,application/pdf" onchange="skBldgAiAnalyze(this);skBldgAiAnalyzeFsSync(this);" style="display:none;">
+      </label>
+
+      <!-- AI 상태 -->
+      <div id="sk-fs-bldg-status" style="display:none;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;text-align:center;"></div>
+
+      <!-- AI 결과 폼 -->
+      <div id="sk-fs-bldg-form" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">기준 경계점</div>
+            <select id="sk-fs-bldg-ref" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:inherit;"></select>
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">방위각 (°)</div>
+            <input id="sk-fs-bldg-angle" type="number" value="0" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">동쪽 이격 (m)</div>
+            <input id="sk-fs-bldg-ox" type="number" step="0.01" value="0" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">북쪽 이격 (m)</div>
+            <input id="sk-fs-bldg-oy" type="number" step="0.01" value="0" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">건물 가로 (m)</div>
+            <input id="sk-fs-bldg-w" type="number" step="0.01" value="10" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">건물 세로 (m)</div>
+            <input id="sk-fs-bldg-h" type="number" step="0.01" value="8" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="skBldgApplyFs()" style="flex:2;padding:9px;border:none;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">✅ 도면에 배치</button>
+          <button onclick="skBldgClearFs()" style="flex:1;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text-muted);font-size:11px;cursor:pointer;font-family:inherit;">삭제</button>
+        </div>
+        <!-- 모서리 거리표 -->
+        <div id="sk-fs-corner-dist" style="display:none;margin-top:8px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2278,10 +2361,32 @@ function switchTab(t){
 
     // 건물 배치 그리기
     skDrawBuilding(ctx, toCanvas);
+    // 측정선 그리기
+    skDrawMeasureLine(ctx, W, H, scale, cX, cY, midX, midY, false);
 
     // 드래그 이벤트 (최초 1회만 등록)
     if(!canvas._eventsSet){
       canvas._eventsSet=true;
+      // 탭으로 거리 측정
+      let _drawTapStart={x:0,y:0,t:0};
+      canvas.addEventListener('click',e=>{
+        const rect=canvas.getBoundingClientRect();
+        skDrawHandleTap(e.clientX-rect.left,e.clientY-rect.top,false);
+      });
+      canvas.addEventListener('touchstart',e2=>{
+        if(e2.touches.length===1){_drawTapStart={x:e2.touches[0].clientX,y:e2.touches[0].clientY,t:Date.now()};}
+      },{passive:true});
+      canvas.addEventListener('touchend',e=>{
+        if(e.changedTouches.length===1){
+          const dx=e.changedTouches[0].clientX-_drawTapStart.x;
+          const dy=e.changedTouches[0].clientY-_drawTapStart.y;
+          const dt=Date.now()-_drawTapStart.t;
+          if(dt<300&&Math.sqrt(dx*dx+dy*dy)<10){
+            const rect=canvas.getBoundingClientRect();
+            skDrawHandleTap(e.changedTouches[0].clientX-rect.left,e.changedTouches[0].clientY-rect.top,false);
+          }
+        }
+      });
       canvas.addEventListener('mousedown',e=>{skDrawDragging=true;skDrawLastX=e.clientX;skDrawLastY=e.clientY;});
       canvas.addEventListener('mousemove',e=>{if(!skDrawDragging)return;skDrawOffX+=e.clientX-skDrawLastX;skDrawOffY+=e.clientY-skDrawLastY;skDrawLastX=e.clientX;skDrawLastY=e.clientY;skDrawDraw();});
       canvas.addEventListener('mouseup',()=>skDrawDragging=false);
@@ -2390,9 +2495,26 @@ function switchTab(t){
     const title=document.getElementById('sk-draw-overlay-title');
     title.textContent='📐 '+(skLotMeta?.addr||'필지 도면')+' · '+skPoints.length+'개 경계점';
     ov.classList.add('open');
-    // 상태 초기화
     _fsScale=1;_fsOffX=0;_fsOffY=0;
-    // 잠시 후 캔버스 크기 설정 후 그리기
+    // 현재 건물 있으면 전체화면 폼에도 반영
+    if(skBuilding){
+      skBldgFillFsRefSelect();
+      document.getElementById('sk-fs-bldg-w').value=skBuilding.w;
+      document.getElementById('sk-fs-bldg-h').value=skBuilding.h;
+      document.getElementById('sk-fs-bldg-ox').value=skBuilding.ox;
+      document.getElementById('sk-fs-bldg-oy').value=skBuilding.oy;
+      document.getElementById('sk-fs-bldg-angle').value=skBuilding.angle;
+      document.getElementById('sk-fs-bldg-ref').value=skBuilding.refIdx;
+      document.getElementById('sk-fs-bldg-form').style.display='block';
+      const fb=document.getElementById('sk-fs-bldg-badge');
+      if(fb){fb.style.display='inline';fb.textContent=`🏗 ${skBuilding.w}×${skBuilding.h}m`;}
+    } else {
+      skBldgFillFsRefSelect();
+    }
+    // 측정점 초기화
+    skMeasurePts=[];
+    const res=document.getElementById('sk-fs-tap-result');
+    if(res) res.style.display='none';
     requestAnimationFrame(()=>{
       skDrawFsDraw();
       skDrawFsEvents();
@@ -2477,6 +2599,11 @@ function switchTab(t){
       if(isTarget){ctx.font='bold 11px sans-serif';ctx.fillStyle='#f5a623';ctx.textAlign='left';ctx.fillText('소실점',cx+r+6,cy+4);}
     });
 
+    // 건물 배치 그리기
+    skDrawBuilding(ctx, toC);
+    // 측정선 그리기
+    skDrawMeasureLine(ctx, W, H, scale, cX, cY, midX, midY, true);
+
     // 축척바
     const barM=5;const barPx=barM*scale;
     if(barPx>30&&barPx<W/3){
@@ -2490,23 +2617,42 @@ function switchTab(t){
     const canvas=document.getElementById('sk-draw-overlay-canvas');
     if(canvas._fsSet)return;
     canvas._fsSet=true;
+    let _fsTapStart={x:0,y:0,t:0};
     // 마우스
     canvas.addEventListener('mousedown',e=>{_fsDragging=true;_fsLastX=e.clientX;_fsLastY=e.clientY;});
     canvas.addEventListener('mousemove',e=>{if(!_fsDragging)return;_fsOffX+=e.clientX-_fsLastX;_fsOffY+=e.clientY-_fsLastY;_fsLastX=e.clientX;_fsLastY=e.clientY;skDrawFsDraw();});
     canvas.addEventListener('mouseup',()=>_fsDragging=false);
     canvas.addEventListener('mouseleave',()=>_fsDragging=false);
+    canvas.addEventListener('click',e=>{
+      const rect=canvas.getBoundingClientRect();
+      skDrawHandleTap(e.clientX-rect.left,e.clientY-rect.top,true);
+    });
     canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY<0?1.1:0.9;_fsScale*=f;_fsScale=Math.max(0.3,Math.min(_fsScale,20));skDrawFsDraw();},{passive:false});
     // 터치
     canvas.addEventListener('touchstart',e=>{
-      if(e.touches.length===1){_fsDragging=true;_fsLastX=e.touches[0].clientX;_fsLastY=e.touches[0].clientY;}
-      else if(e.touches.length===2){_fsDragging=false;const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;_fsLastPinch=Math.sqrt(dx*dx+dy*dy);}
+      if(e.touches.length===1){
+        _fsDragging=true;_fsLastX=e.touches[0].clientX;_fsLastY=e.touches[0].clientY;
+        _fsTapStart={x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()};
+      } else if(e.touches.length===2){_fsDragging=false;const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;_fsLastPinch=Math.sqrt(dx*dx+dy*dy);}
     },{passive:true});
     canvas.addEventListener('touchmove',e=>{
       e.preventDefault();
       if(e.touches.length===1&&_fsDragging){_fsOffX+=e.touches[0].clientX-_fsLastX;_fsOffY+=e.touches[0].clientY-_fsLastY;_fsLastX=e.touches[0].clientX;_fsLastY=e.touches[0].clientY;skDrawFsDraw();}
       else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;const dist=Math.sqrt(dx*dx+dy*dy);if(_fsLastPinch>0){const f=dist/_fsLastPinch;_fsScale*=f;_fsScale=Math.max(0.3,Math.min(_fsScale,20));}_fsLastPinch=dist;skDrawFsDraw();}
     },{passive:false});
-    canvas.addEventListener('touchend',e=>{if(e.touches.length===0){_fsDragging=false;_fsLastPinch=0;}});
+    canvas.addEventListener('touchend',e=>{
+      if(e.changedTouches.length===1){
+        const dx=e.changedTouches[0].clientX-_fsTapStart.x;
+        const dy=e.changedTouches[0].clientY-_fsTapStart.y;
+        const dt=Date.now()-_fsTapStart.t;
+        // 300ms 이내 & 10px 이내 이동 = 탭
+        if(dt<300&&Math.sqrt(dx*dx+dy*dy)<10){
+          const rect=canvas.getBoundingClientRect();
+          skDrawHandleTap(e.changedTouches[0].clientX-rect.left,e.changedTouches[0].clientY-rect.top,true);
+        }
+        _fsDragging=false;_fsLastPinch=0;
+      }
+    });
   }
 
   window.skDrawOvZoom=function(f){_fsScale*=f;_fsScale=Math.max(0.3,Math.min(_fsScale,20));skDrawFsDraw();};
@@ -2546,6 +2692,86 @@ function switchTab(t){
     win.document.open();win.document.write(html);win.document.close();
   };
 
+
+
+  /* ══ 탭 거리측정 모듈 ══════════════════════════════════════════════ */
+  // 두 점 탭 → 구간 거리 표시. 별도 패널 없음, 도면 오버레이로만 표시
+  let skMeasureOn = true; // 항상 활성 (버튼 없음)
+  let skMeasurePts = []; // 최대 2개 [{x,y}] TM 좌표
+
+  // 더미 (기존 호출 호환용)
+  window.skToggleMeasure = function(){};
+
+  // 캔버스 탭 → TM 좌표 변환 후 측정점 추가
+  function skDrawHandleTap(canvasX, canvasY, isFs){
+    if(!skPoints.length) return;
+    const canvas = isFs
+      ? document.getElementById('sk-draw-overlay-canvas')
+      : document.getElementById('sk-draw-canvas');
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    const xs=skPoints.map(p=>p.x),ys=skPoints.map(p=>p.y);
+    const minX=Math.min(...xs),maxX=Math.max(...xs);
+    const minY=Math.min(...ys),maxY=Math.max(...ys);
+    const rangeX=maxX-minX||1,rangeY=maxY-minY||1;
+    const pad=isFs?70:60;
+    const sc = isFs ? _fsScale : skDrawScale;
+    const ox = isFs ? _fsOffX : skDrawOffX;
+    const oy = isFs ? _fsOffY : skDrawOffY;
+    const scale=Math.min((W-pad*2)/rangeX,(H-pad*2)/rangeY)*sc;
+    const cX=W/2+ox, cY=H/2+oy;
+    const midX=(minX+maxX)/2, midY=(minY+maxY)/2;
+    // 역변환: y=동향, x=북향
+    const tmX = -(canvasY-cY)/scale + midX;
+    const tmY =  (canvasX-cX)/scale + midY;
+
+    if(skMeasurePts.length >= 2) skMeasurePts = []; // 초기화
+    skMeasurePts.push({x:tmX, y:tmY});
+
+    if(isFs) skDrawFsDraw();
+    else skDrawDraw();
+  }
+
+  // 측정선 그리기 (일반 도면 & 전체화면 공통)
+  function skDrawMeasureLine(ctx2, W, H, scale, cX, cY, midX, midY, isFs){
+    if(skMeasurePts.length < 1) return;
+    function tc(x,y){return[cX+(y-midY)*scale, cY-(x-midX)*scale];}
+    ctx2.save();
+    skMeasurePts.forEach((p,i)=>{
+      const [px,py]=tc(p.x,p.y);
+      ctx2.beginPath();ctx2.arc(px,py,6,0,Math.PI*2);
+      ctx2.fillStyle='rgba(6,200,216,.3)';ctx2.fill();
+      ctx2.beginPath();ctx2.arc(px,py,4,0,Math.PI*2);
+      ctx2.fillStyle='#06c8d8';ctx2.fill();
+      ctx2.strokeStyle='#fff';ctx2.lineWidth=1.5;ctx2.stroke();
+      // 점 번호
+      ctx2.font='bold 9px monospace';ctx2.textAlign='center';
+      ctx2.fillStyle='rgba(0,0,0,.8)';ctx2.fillRect(px-6,py-19,12,12);
+      ctx2.fillStyle='#06c8d8';ctx2.fillText(i===0?'A':'B',px,py-9);
+      if(i===1){
+        const [px0,py0]=tc(skMeasurePts[0].x,skMeasurePts[0].y);
+        // 선
+        ctx2.beginPath();ctx2.moveTo(px0,py0);ctx2.lineTo(px,py);
+        ctx2.strokeStyle='#06c8d8';ctx2.lineWidth=2;
+        ctx2.setLineDash([6,3]);ctx2.stroke();ctx2.setLineDash([]);
+        // 거리
+        const d=Math.sqrt((p.x-skMeasurePts[0].x)**2+(p.y-skMeasurePts[0].y)**2);
+        const mx=(px0+px)/2, my=(py0+py)/2;
+        const dtxt=d.toFixed(3)+'m';
+        ctx2.font='bold 12px monospace';ctx2.textAlign='center';
+        const tw=ctx2.measureText(dtxt).width;
+        ctx2.fillStyle='rgba(0,10,20,.92)';ctx2.fillRect(mx-tw/2-6,my-15,tw+12,18);
+        ctx2.strokeStyle='rgba(6,200,216,.4)';ctx2.lineWidth=1;ctx2.strokeRect(mx-tw/2-6,my-15,tw+12,18);
+        ctx2.fillStyle='#06c8d8';ctx2.fillText(dtxt,mx,my);
+        // 전체화면 결과 패널
+        if(isFs){
+          const res=document.getElementById('sk-fs-tap-result');
+          if(res){res.style.display='block';res.textContent='A→B: '+dtxt;}
+        }
+      }
+    });
+    ctx2.restore();
+  }
 
   /* ══ 건물 배치 모듈 ══════════════════════════════════════════════ */
   let skBuilding = null; // {refIdx, ox, oy, w, h, angle}
@@ -2620,17 +2846,24 @@ function switchTab(t){
           else throw new Error('JSON 파싱 실패');
         }
 
-        // 폼에 값 채우기
-        document.getElementById('sk-bldg-w').value = parsed.width || 10;
-        document.getElementById('sk-bldg-h').value = parsed.height || 8;
-        document.getElementById('sk-bldg-ox').value = parsed.offset_x || 0;
-        document.getElementById('sk-bldg-oy').value = parsed.offset_y || 0;
-        document.getElementById('sk-bldg-angle').value = parsed.angle || 0;
+        // 일반 폼 + 전체화면 폼 동시 반영
+        const _w=parsed.width||10,_h=parsed.height||8;
+        const _ox=parsed.offset_x||0,_oy=parsed.offset_y||0,_ang=parsed.angle||0;
+        skBldgFillRefSelect(); skBldgFillFsRefSelect();
+        ['sk-bldg-w','sk-fs-bldg-w'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=_w;});
+        ['sk-bldg-h','sk-fs-bldg-h'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=_h;});
+        ['sk-bldg-ox','sk-fs-bldg-ox'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=_ox;});
+        ['sk-bldg-oy','sk-fs-bldg-oy'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=_oy;});
+        ['sk-bldg-angle','sk-fs-bldg-angle'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=_ang;});
 
-        statusEl.style.cssText = 'display:block;background:rgba(0,229,138,.08);border:1px solid rgba(0,229,138,.25);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12px;text-align:center;color:#00e58a;';
-        statusEl.textContent = '✅ ' + (parsed.memo || 'AI 치수 인식 완료 — 아래에서 확인 후 배치하세요');
-        skBldgFillRefSelect();
-        document.getElementById('sk-bldg-form').style.display = 'block';
+        const okStyle='display:block;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11px;text-align:center;background:rgba(0,229,138,.08);border:1px solid rgba(0,229,138,.25);color:#00e58a;';
+        statusEl.style.cssText = okStyle;
+        statusEl.textContent = '✅ ' + (parsed.memo || 'AI 치수 인식 완료 — 확인 후 배치');
+        const fsStatus=document.getElementById('sk-fs-bldg-status');
+        if(fsStatus){fsStatus.style.cssText=okStyle;fsStatus.textContent=statusEl.textContent;}
+        document.getElementById('sk-bldg-form').style.display='block';
+        const fsForm=document.getElementById('sk-fs-bldg-form');
+        if(fsForm) fsForm.style.display='block';
         showToast('✅ AI 치수 인식 완료!');
 
       }catch(err){
@@ -2642,7 +2875,71 @@ function switchTab(t){
     reader.readAsDataURL(file);
   };
 
-  /* ── 건물 도면 배치 ── */
+  /* ── 전체화면 → 일반 폼 동기화 ── */
+  window.skBldgAiAnalyzeFsSync = function(input){
+    // 전체화면에서 첨부 시 일반 폼에도 동일하게 실행됨 (같은 함수 호출)
+    // 결과를 전체화면 폼에도 반영
+  };
+
+  /* ── 전체화면 폼 ref 채우기 ── */
+  function skBldgFillFsRefSelect(){
+    const sel=document.getElementById('sk-fs-bldg-ref');
+    if(!sel||!skPoints.length)return;
+    sel.innerHTML=skPoints.map((p,i)=>`<option value="${i}">${p.num}번 경계점</option>`).join('');
+  }
+
+  /* ── 전체화면 건물 배치 ── */
+  window.skBldgApplyFs = function(){
+    // 전체화면 폼 값 읽어서 skBuilding 설정 후 동기화
+    const w=parseFloat(document.getElementById('sk-fs-bldg-w').value)||10;
+    const h=parseFloat(document.getElementById('sk-fs-bldg-h').value)||8;
+    const ox=parseFloat(document.getElementById('sk-fs-bldg-ox').value)||0;
+    const oy=parseFloat(document.getElementById('sk-fs-bldg-oy').value)||0;
+    const angle=parseFloat(document.getElementById('sk-fs-bldg-angle').value)||0;
+    const refIdx=parseInt(document.getElementById('sk-fs-bldg-ref').value)||0;
+    if(!skPoints.length){showToast('⚠️ 경계점을 먼저 조회하세요');return;}
+    skBuilding={refIdx,ox,oy,w,h,angle};
+    // 일반 폼에도 값 동기화
+    document.getElementById('sk-bldg-w').value=w;
+    document.getElementById('sk-bldg-h').value=h;
+    document.getElementById('sk-bldg-ox').value=ox;
+    document.getElementById('sk-bldg-oy').value=oy;
+    document.getElementById('sk-bldg-angle').value=angle;
+    document.getElementById('sk-bldg-ref').value=refIdx;
+    const badge=document.getElementById('sk-bldg-badge');
+    badge.style.display='inline';badge.textContent=`${w}m × ${h}m`;
+    const fsBadge=document.getElementById('sk-fs-bldg-badge');
+    if(fsBadge){fsBadge.style.display='inline';fsBadge.textContent=`🏗 ${w}×${h}m`;}
+    skDrawFsDraw();
+    skUpdateCornerDistTable();
+    skUpdateFsCornerDist();
+    showToast('🏗 건물 배치 완료!');
+  };
+
+  /* ── 전체화면 건물 삭제 ── */
+  window.skBldgClearFs = function(){
+    skBuilding=null;
+    const b=document.getElementById('sk-bldg-badge');if(b)b.style.display='none';
+    const fb=document.getElementById('sk-fs-bldg-badge');if(fb)fb.style.display='none';
+    const fd=document.getElementById('sk-fs-corner-dist');if(fd)fd.style.display='none';
+    const fw=document.getElementById('sk-corner-dist-wrap');if(fw)fw.style.display='none';
+    document.getElementById('sk-fs-bldg-form').style.display='none';
+    skDrawFsDraw();skDrawRender();
+    showToast('🗑 건물 삭제됨');
+  };
+
+  /* ── 전체화면 모서리 거리표 ── */
+  function skUpdateFsCornerDist(){
+    const wrap=document.getElementById('sk-fs-corner-dist');
+    const tbl=document.getElementById('sk-corner-dist-table');
+    if(!wrap||!skBuilding||!skPoints.length)return;
+    // 일반 거리표 내용 복사
+    skUpdateCornerDistTable();
+    const src=document.getElementById('sk-corner-dist-wrap');
+    if(src){wrap.style.display='block';wrap.innerHTML=src.innerHTML;}
+  }
+
+  /* ── 도면보기 건물 배치 ── */
   window.skBldgApply = function(){
     const refIdx = parseInt(document.getElementById('sk-bldg-ref').value);
     const ox = parseFloat(document.getElementById('sk-bldg-ox').value) || 0;
@@ -2659,7 +2956,8 @@ function switchTab(t){
     badge.style.display = 'inline';
     badge.textContent = `${w}m × ${h}m`;
 
-    skDrawRender();      // 도면보기 갱신
+    skDrawRender();
+    skUpdateCornerDistTable();
     showToast('🏗 건물 배치 완료!');
   };
 
@@ -2669,8 +2967,49 @@ function switchTab(t){
     document.getElementById('sk-bldg-badge').style.display = 'none';
     document.getElementById('sk-bldg-form').style.display = 'none';
     document.getElementById('sk-bldg-ai-status').style.display = 'none';
+    const cdw = document.getElementById('sk-corner-dist-wrap');
+    if(cdw) cdw.style.display = 'none';
     skDrawRender();
     showToast('🗑 건물 삭제됨');
+  };
+
+  /* ── 모서리 거리표 ── */
+  window.skUpdateCornerDistTable = function(){
+    if(!skBuilding || !skPoints.length) return;
+    const ref = skPoints[skBuilding.refIdx];
+    if(!ref) return;
+    const {w,h,ox,oy,angle} = skBuilding;
+    const rad = angle*Math.PI/180;
+    const corners=[[ref.x+oy,ref.y+ox],[ref.x+oy,ref.y+ox+w],[ref.x+oy+h,ref.y+ox+w],[ref.x+oy+h,ref.y+ox]];
+    const cx0=ref.x+oy+h/2,cy0=ref.y+ox+w/2;
+    const rotated=corners.map(([px,py])=>{
+      const dx=px-cx0,dy=py-cy0;
+      return[cx0+dx*Math.cos(rad)-dy*Math.sin(rad),cy0+dx*Math.sin(rad)+dy*Math.cos(rad)];
+    });
+    const usedIdx=new Set();
+    const rows=rotated.map((corner,pi)=>{
+      let minD=Infinity,nearPt=null;
+      skPoints.forEach((sp,si)=>{
+        if(usedIdx.has(si))return;
+        const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);
+        if(d<minD){minD=d;nearPt=sp;}
+      });
+      if(!nearPt){skPoints.forEach((sp)=>{const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);if(d<minD){minD=d;nearPt=sp;}});}
+      if(nearPt) usedIdx.add(skPoints.indexOf(nearPt));
+      return {c:pi+1, pt:nearPt?nearPt.num:'?', d:minD.toFixed(2)};
+    });
+    const wrap=document.getElementById('sk-corner-dist-wrap');
+    const tbl=document.getElementById('sk-corner-dist-table');
+    if(wrap&&tbl){
+      wrap.style.display='block';
+      tbl.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">'
+        +rows.map(r=>`<div style="background:var(--surface2);border-radius:6px;padding:7px 10px;font-size:11px;">
+          <span style="color:var(--text-muted);">모서리${r.c}</span>
+          <span style="color:#9b7df8;margin:0 4px;">→</span>
+          <span style="color:var(--text);">${r.pt}번점</span>
+          <span style="color:#f5a623;font-weight:700;margin-left:6px;">${r.d}m</span>
+        </div>`).join('')+'</div>';
+    }
   };
 
   /* ── 건물 Canvas 그리기 (공통 함수) ── */
