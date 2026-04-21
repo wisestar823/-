@@ -1150,16 +1150,16 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     <!-- 도면 캔버스 영역 (전체 높이의 60%) -->
     <div id="sk-draw-overlay-canvas-wrap" style="flex:6;position:relative;min-height:0;">
       <canvas id="sk-draw-overlay-canvas" touch-action="none" style="width:100%;height:100%;display:block;"></canvas>
-      <!-- 줌 버튼 -->
-      <div id="sk-draw-overlay-btns">
-        <button class="sk-draw-ov-btn" onclick="skDrawOvZoom(1.2)">+</button>
-        <button class="sk-draw-ov-btn" onclick="skDrawOvZoom(0.8)">−</button>
-        <button class="sk-draw-ov-btn" onclick="skDrawOvReset()" style="font-size:11px;">⟳</button>
+      <!-- 줌 버튼: 우측 상단 고정 -->
+      <div style="position:absolute;top:6px;right:6px;display:flex;flex-direction:column;gap:3px;z-index:10;">
+        <button onclick="skDrawOvZoom(1.2)" style="width:30px;height:30px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-size:16px;cursor:pointer;">+</button>
+        <button onclick="skDrawOvZoom(0.8)" style="width:30px;height:30px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-size:16px;cursor:pointer;">−</button>
+        <button onclick="skDrawOvReset()" style="width:30px;height:30px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-size:11px;cursor:pointer;">⟳</button>
       </div>
-      <!-- 탭 측정 힌트 -->
-      <div id="sk-fs-tap-hint" style="position:absolute;bottom:8px;left:8px;font-size:10px;color:#06c8d8;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);border-radius:5px;padding:3px 8px;">📍 두 점 탭 → 거리측정</div>
-      <!-- 탭 측정 결과 -->
-      <div id="sk-fs-tap-result" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;color:#f59e0b;background:rgba(0,0,0,.85);border:1px solid rgba(245,158,11,.3);border-radius:5px;padding:4px 10px;font-family:monospace;display:none;white-space:nowrap;"></div>
+      <!-- 탭 안내 -->
+      <div style="position:absolute;bottom:6px;left:6px;font-size:9px;color:#06c8d8;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2);border-radius:4px;padding:2px 6px;">📍 탭 → 노드 선택</div>
+      <!-- 탭 결과 -->
+      <div id="sk-fs-tap-result" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#f59e0b;background:rgba(0,0,0,.85);border:1px solid rgba(245,158,11,.25);border-radius:4px;padding:3px 8px;font-family:monospace;display:none;white-space:nowrap;z-index:10;"></div>
     </div>
 
     <!-- 건물 배치 폼 (스크롤 가능, 전체 높이의 40%) -->
@@ -2740,22 +2740,60 @@ function switchTab(t){
     };
   }
 
-  // 탭 처리: 첫 탭=A점, 두 번째 탭=B점→구간 확정
+  // 모든 노드 반환: 경계점 + 건물 모서리
+  function skGetAllNodes(){
+    const nodes = [];
+    skPoints.forEach(p=>nodes.push({
+      x:p.x, y:p.y,
+      label:p.num+'번 경계점',
+      type:'lot'
+    }));
+    if(skBuilding){
+      const res = skBldgGetCorners();
+      if(res){
+        res.rotated.forEach((c,i)=>nodes.push({
+          x:c[0], y:c[1],
+          label:'기초 모서리'+(i+1),
+          type:'bldg'
+        }));
+      }
+    }
+    return nodes;
+  }
+
+  // 탭 위치에서 가장 가까운 노드 찾기
+  function skFindNearestNode(tmX, tmY){
+    const nodes = skGetAllNodes();
+    if(!nodes.length) return null;
+    let best=null, bestD=Infinity;
+    nodes.forEach(n=>{
+      const d=Math.sqrt((n.x-tmX)**2+(n.y-tmY)**2);
+      if(d<bestD){bestD=d;best=n;}
+    });
+    return best;
+  }
+
+  // 탭 처리: 가장 가까운 노드 자동 선택 → 두 노드 선택 시 구간 확정
   function skDrawHandleTap(canvasX, canvasY, isFs){
     if(!skPoints.length) return;
     const tm = skCanvasToTM(canvasX, canvasY, isFs);
+    const node = skFindNearestNode(tm.x, tm.y);
+    if(!node) return;
 
     if(skMeasurePts.length === 0){
-      // 첫 번째 점
-      skMeasurePts = [{x:tm.x, y:tm.y}];
+      skMeasurePts = [node];
     } else {
-      // 두 번째 점 → 구간 완성
       const a = skMeasurePts[0];
-      const b = {x:tm.x, y:tm.y};
-      const d = Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2);
-      skMeasureSegs.push({a,b,d,id:skMeasureSegId++});
-      skMeasurePts = []; // 임시점 초기화
-      skRenderSegList(); // 목록 업데이트
+      const b = node;
+      if(a.x===b.x && a.y===b.y){
+        // 같은 노드 탭 → 취소
+        skMeasurePts = [];
+      } else {
+        const d = Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2);
+        skMeasureSegs.push({a,b,d,id:skMeasureSegId++});
+        skMeasurePts = [];
+        skRenderSegList();
+      }
     }
 
     if(isFs) skDrawFsDraw();
@@ -2788,12 +2826,22 @@ function switchTab(t){
       return;
     }
     wrap.style.display='block';
-    list.innerHTML = skMeasureSegs.map((s,i)=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--surface2);border-radius:6px;margin-bottom:4px;">
-        <span style="font-size:10px;color:var(--text-muted);">구간${i+1}</span>
-        <span style="font-family:monospace;font-size:12px;font-weight:700;color:#06c8d8;">${s.d.toFixed(3)}m</span>
-        <button onclick="skDeleteSeg(${s.id})" style="padding:2px 8px;background:rgba(240,64,80,.15);border:1px solid rgba(240,64,80,.3);border-radius:4px;color:#f04050;font-size:10px;cursor:pointer;">삭제</button>
-      </div>`).join('');
+    list.innerHTML = skMeasureSegs.map((s,i)=>{
+      const aCol=s.a.type==='bldg'?'#9b7df8':'#06c8d8';
+      const bCol=s.b.type==='bldg'?'#9b7df8':'#06c8d8';
+      return `<div style="background:var(--surface2);border-radius:6px;padding:6px 8px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+          <span style="font-size:9px;color:var(--text-muted);">구간${i+1}</span>
+          <span style="font-family:monospace;font-size:12px;font-weight:700;color:#06c8d8;">${s.d.toFixed(3)}m</span>
+          <button onclick="skDeleteSeg(${s.id})" style="padding:2px 8px;background:rgba(240,64,80,.15);border:1px solid rgba(240,64,80,.3);border-radius:4px;color:#f04050;font-size:10px;cursor:pointer;">삭제</button>
+        </div>
+        <div style="font-size:9px;">
+          <span style="color:${aCol}">${s.a.label}</span>
+          <span style="color:var(--text-muted);margin:0 4px;">→</span>
+          <span style="color:${bCol}">${s.b.label}</span>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   // 측정선 + 구간 모두 그리기
@@ -2805,49 +2853,47 @@ function switchTab(t){
     skMeasureSegs.forEach((seg,i)=>{
       const [ax,ay]=tc(seg.a.x,seg.a.y);
       const [bx,by]=tc(seg.b.x,seg.b.y);
-      // 점
-      [[ax,ay],[bx,by]].forEach(([px,py])=>{
-        ctx2.beginPath();ctx2.arc(px,py,5,0,Math.PI*2);
-        ctx2.fillStyle='rgba(6,200,216,.25)';ctx2.fill();
-        ctx2.beginPath();ctx2.arc(px,py,3.5,0,Math.PI*2);
-        ctx2.fillStyle='#06c8d8';ctx2.fill();
-      });
-      // 선
+      const colA=seg.a.type==='bldg'?'#9b7df8':'#06c8d8';
+      const colB=seg.b.type==='bldg'?'#9b7df8':'#06c8d8';
+      // A점
+      ctx2.beginPath();ctx2.arc(ax,ay,4,0,Math.PI*2);ctx2.fillStyle=colA;ctx2.fill();
+      ctx2.strokeStyle='rgba(255,255,255,.5)';ctx2.lineWidth=1;ctx2.stroke();
+      // B점
+      ctx2.beginPath();ctx2.arc(bx,by,4,0,Math.PI*2);ctx2.fillStyle=colB;ctx2.fill();
+      ctx2.strokeStyle='rgba(255,255,255,.5)';ctx2.lineWidth=1;ctx2.stroke();
+      // 연결선
       ctx2.beginPath();ctx2.moveTo(ax,ay);ctx2.lineTo(bx,by);
-      ctx2.strokeStyle='#06c8d8';ctx2.lineWidth=1.5;
+      ctx2.strokeStyle='rgba(6,200,216,.7)';ctx2.lineWidth=1.5;
       ctx2.setLineDash([5,3]);ctx2.stroke();ctx2.setLineDash([]);
       // 거리 라벨
       const mx=(ax+bx)/2, my=(ay+by)/2;
       const dtxt=seg.d.toFixed(2)+'m';
       ctx2.font='bold 10px monospace';ctx2.textAlign='center';
       const tw=ctx2.measureText(dtxt).width;
-      ctx2.fillStyle='rgba(0,10,20,.9)';ctx2.fillRect(mx-tw/2-4,my-13,tw+8,15);
-      ctx2.strokeStyle='rgba(6,200,216,.35)';ctx2.lineWidth=1;ctx2.strokeRect(mx-tw/2-4,my-13,tw+8,15);
+      ctx2.fillStyle='rgba(0,10,20,.92)';ctx2.fillRect(mx-tw/2-4,my-13,tw+8,15);
+      ctx2.strokeStyle='rgba(6,200,216,.4)';ctx2.lineWidth=1;ctx2.strokeRect(mx-tw/2-4,my-13,tw+8,15);
       ctx2.fillStyle='#06c8d8';ctx2.fillText(dtxt,mx,my);
-      // 구간 번호
-      ctx2.font='8px monospace';ctx2.fillStyle='rgba(6,200,216,.6)';
-      ctx2.fillText('구간'+(i+1),mx,my+12);
     });
 
-    // 임시 첫 번째 점 (두 번째 탭 대기 중)
+    // 선택된 첫 번째 노드 강조 표시
     if(skMeasurePts.length===1){
-      const [px,py]=tc(skMeasurePts[0].x,skMeasurePts[0].y);
-      ctx2.beginPath();ctx2.arc(px,py,8,0,Math.PI*2);
-      ctx2.fillStyle='rgba(6,200,216,.15)';ctx2.fill();
-      ctx2.beginPath();ctx2.arc(px,py,5,0,Math.PI*2);
-      ctx2.fillStyle='#06c8d8';ctx2.fill();
-      ctx2.strokeStyle='#fff';ctx2.lineWidth=1.5;ctx2.stroke();
+      const n = skMeasurePts[0];
+      const [px,py]=tc(n.x,n.y);
+      const col = n.type==='bldg'?'#9b7df8':'#06c8d8';
+      ctx2.beginPath();ctx2.arc(px,py,10,0,Math.PI*2);
+      ctx2.fillStyle=n.type==='bldg'?'rgba(155,125,248,.2)':'rgba(6,200,216,.2)';ctx2.fill();
+      ctx2.beginPath();ctx2.arc(px,py,6,0,Math.PI*2);
+      ctx2.fillStyle=col;ctx2.fill();
+      ctx2.strokeStyle='#fff';ctx2.lineWidth=2;ctx2.stroke();
+      // 라벨
       ctx2.font='bold 9px monospace';ctx2.textAlign='center';
-      ctx2.fillStyle='rgba(0,0,0,.8)';ctx2.fillRect(px-8,py-20,16,13);
-      ctx2.fillStyle='#06c8d8';ctx2.fillText('A',px,py-9);
-      // 힌트
+      const lw=ctx2.measureText(n.label).width;
+      ctx2.fillStyle='rgba(0,0,0,.85)';ctx2.fillRect(px-lw/2-4,py-22,lw+8,14);
+      ctx2.fillStyle=col;ctx2.fillText(n.label,px,py-10);
       if(isFs){
         const res=document.getElementById('sk-fs-tap-result');
-        if(res){res.style.display='block';res.textContent='A 찍힘 — 두 번째 점 탭';}
+        if(res){res.style.display='block';res.textContent=n.label+' 선택됨';}
       }
-    } else if(skMeasurePts.length===0 && skMeasureSegs.length>0 && isFs){
-      const res=document.getElementById('sk-fs-tap-result');
-      if(res) res.style.display='none';
     }
 
     ctx2.restore();
@@ -3118,72 +3164,85 @@ function switchTab(t){
 
   /* ── 모서리 거리표 ── */
   window.skUpdateCornerDistTable = function(){
-    if(!skBuilding || !skPoints.length) return;
-    const ref = skPoints[skBuilding.refIdx];
-    if(!ref) return;
-    const {w,h,ox,oy,angle} = skBuilding;
-    const rad = angle*Math.PI/180;
-    const corners=[[ref.x+oy,ref.y+ox],[ref.x+oy,ref.y+ox+w],[ref.x+oy+h,ref.y+ox+w],[ref.x+oy+h,ref.y+ox]];
-    const cx0=ref.x+oy+h/2,cy0=ref.y+ox+w/2;
-    const rotated=corners.map(([px,py])=>{
-      const dx=px-cx0,dy=py-cy0;
-      return[cx0+dx*Math.cos(rad)-dy*Math.sin(rad),cy0+dx*Math.sin(rad)+dy*Math.cos(rad)];
-    });
-    const usedIdx=new Set();
-    const rows=rotated.map((corner,pi)=>{
-      let minD=Infinity,nearPt=null;
+    const res = skBldgGetCorners();
+    if(!res || !skPoints.length) return;
+    const {rotated} = res;
+    const usedIdx = new Set();
+    const rows = rotated.map((corner,pi)=>{
+      let minD=Infinity, nearPt=null;
       skPoints.forEach((sp,si)=>{
-        if(usedIdx.has(si))return;
+        if(usedIdx.has(si)) return;
         const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);
         if(d<minD){minD=d;nearPt=sp;}
       });
-      if(!nearPt){skPoints.forEach((sp)=>{const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);if(d<minD){minD=d;nearPt=sp;}});}
+      if(!nearPt) skPoints.forEach(sp=>{
+        const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);
+        if(d<minD){minD=d;nearPt=sp;}
+      });
       if(nearPt) usedIdx.add(skPoints.indexOf(nearPt));
-      return {c:pi+1, pt:nearPt?nearPt.num:'?', d:minD.toFixed(2)};
+      return {c:pi+1, pt:nearPt?nearPt.num:'?', d:minD.toFixed(3)};
     });
     const wrap=document.getElementById('sk-corner-dist-wrap');
     const tbl=document.getElementById('sk-corner-dist-table');
     if(wrap&&tbl){
       wrap.style.display='block';
-      tbl.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">'
-        +rows.map(r=>`<div style="background:var(--surface2);border-radius:6px;padding:7px 10px;font-size:11px;">
-          <span style="color:var(--text-muted);">모서리${r.c}</span>
-          <span style="color:#9b7df8;margin:0 4px;">→</span>
-          <span style="color:var(--text);">${r.pt}번점</span>
-          <span style="color:#f5a623;font-weight:700;margin-left:6px;">${r.d}m</span>
+      tbl.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;">'
+        +rows.map(r=>`<div style="background:var(--surface2);border-radius:6px;padding:6px 8px;font-size:10px;">
+          <span style="color:#9b7df8;">기초${r.c}</span>
+          <span style="color:var(--text-muted);margin:0 3px;">→</span>
+          <span style="color:var(--text);">${r.pt}번</span>
+          <span style="color:#f5a623;font-weight:700;margin-left:4px;">${r.d}m</span>
         </div>`).join('')+'</div>';
     }
   };
 
-  /* ── 건물 Canvas 그리기 (공통 함수) ── */
-  function skDrawBuilding(ctx, toCanvasFn){
-    if(!skBuilding || !skPoints.length) return;
+  /* ── 건물 TM 모서리 계산 (공통) ── */
+  // TM좌표계: x=북향(Northing), y=동향(Easting)
+  // 정북 기준:
+  //   ox = 동쪽 이격(m)  → y +ox
+  //   oy = 북쪽 이격(m)  → x +oy
+  //   w  = 건물 동서폭   → y방향
+  //   h  = 건물 남북폭   → x방향
+  //   angle = 정북 기준 시계방향 회전각(°)
+  window.skBldgGetCorners = function(){
+    if(!skBuilding || !skPoints.length) return null;
     const ref = skPoints[skBuilding.refIdx];
-    if(!ref) return;
-
+    if(!ref) return null;
     const {ox, oy, w, h, angle} = skBuilding;
     const rad = angle * Math.PI / 180;
 
-    // 건물 4개 모서리 TM 좌표 계산
-    // 기준점 + (동쪽이격=y, 북쪽이격=x) 후 가로(동향)×세로(북향) 사각형
-    const corners = [
-      [ref.x + oy,       ref.y + ox      ],
-      [ref.x + oy,       ref.y + ox + w  ],
-      [ref.x + oy + h,   ref.y + ox + w  ],
-      [ref.x + oy + h,   ref.y + ox      ],
+    // 회전 전 모서리 (정북 기준)
+    // 기준 경계점에서 북쪽으로 oy, 동쪽으로 ox 이격 후 건물 배치
+    const raw = [
+      [ref.x + oy,     ref.y + ox    ],  // 0: NW 좌상단
+      [ref.x + oy,     ref.y + ox + w],  // 1: NE 우상단
+      [ref.x + oy - h, ref.y + ox + w],  // 2: SE 우하단
+      [ref.x + oy - h, ref.y + ox    ],  // 3: SW 좌하단
     ];
 
-    // 방위각 회전 (기준점 기준)
-    const cx = ref.x + oy + h/2;
+    // 건물 중심점
+    const cx = ref.x + oy - h/2;
     const cy = ref.y + ox + w/2;
-    const rotated = corners.map(([px,py])=>{
+
+    // 방위각 회전 (TM좌표계에서 정북기준 시계방향)
+    // TM: x=북, y=동 → 회전행렬
+    // x' = cx + (x-cx)*cos(rad) - (y-cy)*sin(rad)  ← 북향
+    // y' = cy + (x-cx)*sin(rad) + (y-cy)*cos(rad)  ← 동향
+    const rotated = raw.map(([px,py])=>{
       const dx=px-cx, dy=py-cy;
       return [
         cx + dx*Math.cos(rad) - dy*Math.sin(rad),
         cy + dx*Math.sin(rad) + dy*Math.cos(rad)
       ];
     });
+    return {rotated, cx, cy};
+  };
 
+  /* ── 건물 Canvas 그리기 (공통 함수) ── */
+  function skDrawBuilding(ctx, toCanvasFn){
+    const res = skBldgGetCorners();
+    if(!res) return;
+    const {rotated} = res;
     const pts = rotated.map(([px,py]) => toCanvasFn(px, py));
 
     // 건물 폴리곤
@@ -3197,6 +3256,13 @@ function switchTab(t){
     ctx.lineWidth = 2;
     ctx.stroke();
 
+    // 건물 모서리 노드 표시
+    pts.forEach((pt,i)=>{
+      ctx.beginPath();ctx.arc(pt[0],pt[1],4,0,Math.PI*2);
+      ctx.fillStyle='#9b7df8';ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1;ctx.stroke();
+    });
+
     // 건물 중앙 라벨
     const cx2 = pts.reduce((s,p)=>s+p[0],0)/4;
     const cy2 = pts.reduce((s,p)=>s+p[1],0)/4;
@@ -3204,58 +3270,6 @@ function switchTab(t){
     ctx.textAlign = 'center';
     ctx.fillStyle = '#9b7df8';
     ctx.fillText('건물', cx2, cy2+4);
-
-    // 각 모서리 → 가장 가까운 경계점 (이미 사용한 점 제외) 거리 표시
-    if(skPoints && skPoints.length){
-      const usedIdx = new Set(); // 이미 연결된 경계점 인덱스
-      pts.forEach((pt, pi)=>{
-        const corner = rotated[pi]; // TM 좌표
-
-        // 아직 사용 안 한 경계점 중 가장 가까운 점 찾기
-        // (모두 사용됐으면 재사용 허용)
-        let minDist=Infinity, nearPt=null, nearIdx=-1;
-        skPoints.forEach((sp,si)=>{
-          if(usedIdx.has(si)) return;
-          const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);
-          if(d<minDist){minDist=d;nearPt=sp;nearIdx=si;}
-        });
-        // 모두 사용됐으면 재탐색 (제한 없이)
-        if(!nearPt){
-          skPoints.forEach((sp,si)=>{
-            const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);
-            if(d<minDist){minDist=d;nearPt=sp;nearIdx=si;}
-          });
-        }
-        if(!nearPt) return;
-        usedIdx.add(nearIdx);
-
-        const np=toCanvasFn(nearPt.x,nearPt.y);
-
-        // 점선 연결
-        ctx.save();
-        ctx.setLineDash([4,3]);
-        ctx.strokeStyle='rgba(245,160,32,.55)';
-        ctx.lineWidth=1;
-        ctx.beginPath();ctx.moveTo(pt[0],pt[1]);ctx.lineTo(np[0],np[1]);ctx.stroke();
-        ctx.setLineDash([]);ctx.restore();
-
-        // 거리 라벨 (선 중간)
-        const mx=(pt[0]+np[0])/2, my=(pt[1]+np[1])/2;
-        const distTxt=minDist.toFixed(2)+'m';
-        ctx.font='bold 9px monospace';
-        ctx.textAlign='center';
-        const tw=ctx.measureText(distTxt).width;
-        ctx.fillStyle='rgba(10,15,26,.88)';
-        ctx.fillRect(mx-tw/2-3,my-11,tw+6,13);
-        ctx.fillStyle='#f5a623';
-        ctx.fillText(distTxt,mx,my);
-
-        // 경계점 번호 표시 (어느 점인지)
-        ctx.font='8px monospace';
-        ctx.fillStyle='rgba(245,160,32,.6)';
-        ctx.fillText(nearPt.num+'번',mx,my+10);
-      });
-    }
   }
 
   // proj4 로드 (없으면 CDN)
