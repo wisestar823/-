@@ -700,9 +700,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <!-- 서브탭 -->
   <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;">
     <button class="sk-btn-sub" id="sk-sub-search" onclick="skSubTab('search')" style="background:var(--accent2);color:#000;border-color:transparent;">🔍 주소검색</button>
-    <button class="sk-btn-sub" id="sk-sub-result" onclick="skSubTab('result')">📍 결과</button>
     <button class="sk-btn-sub" id="sk-sub-draw" onclick="skSubTab('draw')">📐 도면보기</button>
-    <button class="sk-btn-sub" id="sk-sub-gps" onclick="skSubTab('gps')">🛰 GPS탐색</button>
     <button class="sk-btn-sub" id="sk-sub-hist" onclick="skSubTab('hist')">📁 이력</button>
   </div>
 
@@ -884,28 +882,25 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
             <span id="sk-bldg-badge" style="font-size:9px;background:rgba(155,125,248,.15);color:#9b7df8;padding:2px 7px;border-radius:4px;font-family:monospace;margin-left:4px;display:none;"></span>
           </div>
 
-          <!-- AI 사진 분석 버튼 -->
-          <div style="display:flex;gap:8px;margin-bottom:10px;">
-            <label style="flex:1;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">
-              📷 배치도 사진으로 AI 치수 인식
-              <input type="file" accept="image/*" capture="environment" onchange="skBldgAiAnalyze(this)" style="display:none;">
-            </label>
-            <button onclick="skBldgToggleManual()" style="flex-shrink:0;padding:11px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">✏️ 직접입력</button>
-          </div>
+          <!-- 파일/사진 첨부 버튼 -->
+          <label style="width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;box-sizing:border-box;">
+            📎 배치도 첨부 (사진촬영 또는 파일선택)
+            <input type="file" accept="image/*,application/pdf" onchange="skBldgAiAnalyze(this)" style="display:none;">
+          </label>
 
           <!-- AI 분석 상태 -->
-          <div id="sk-bldg-ai-status" style="display:none;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;text-align:center;color:#a78bfa;"></div>
+          <div id="sk-bldg-ai-status" style="display:none;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12px;text-align:center;"></div>
 
-          <!-- 건물 입력 폼 (수동/AI 결과 공통) -->
+          <!-- AI 결과 확인 폼 -->
           <div id="sk-bldg-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">경계점 기준으로 건물 위치와 크기를 입력하세요</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--accent2);font-weight:700;margin-bottom:10px;">✅ AI 인식 결과 — 확인 후 배치</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
               <div>
                 <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">기준 경계점</div>
                 <select id="sk-bldg-ref" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:inherit;"></select>
               </div>
               <div>
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">방위각 (°, 정북=0)</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">방위각 (°)</div>
                 <input id="sk-bldg-angle" type="number" value="0" min="0" max="360" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:monospace;">
               </div>
               <div>
@@ -926,8 +921,8 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
               </div>
             </div>
             <div style="display:flex;gap:8px;">
-              <button onclick="skBldgApply()" style="flex:2;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">✅ 도면에 배치</button>
-              <button onclick="skBldgClear()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">삭제</button>
+              <button onclick="skBldgApply()" style="flex:2;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">✅ 도면에 배치</button>
+              <button onclick="skBldgClear()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">삭제</button>
             </div>
           </div>
         </div>
@@ -935,57 +930,19 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
         <!-- 인쇄 버튼 -->
         <button onclick="skDrawPrint()" style="width:100%;margin-top:10px;padding:11px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">🖨 도면 인쇄</button>
       </div>
+
+
     </div>
   </div>
 
-  <!-- 서브탭: GPS 탐색 -->
-  <div id="sk-panel-gps" style="display:none;padding:14px;">
-
-    <!-- 상태바 + GPS 버튼 한 줄 -->
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <div id="sk-gps-status-bar" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px;">
-        <div id="sk-gps-dot" style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);flex-shrink:0;"></div>
-        <div id="sk-gps-status-txt" style="font-size:11px;color:var(--text-muted);flex:1;">GPS 비활성</div>
-        <div id="sk-gps-acc" style="font-family:monospace;font-size:10px;color:var(--text-muted);"></div>
-      </div>
-      <button id="sk-gps-start-btn" onclick="skGpsToggle()" style="flex-shrink:0;padding:9px 16px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#047857);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">📍 GPS 시작</button>
-      <button onclick="skGpsReset()" style="flex-shrink:0;padding:9px 12px;border:none;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">초기화</button>
-    </div>
-
-    <!-- 캔버스 -->
-    <div style="background:#050a0f;border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative;margin-bottom:10px;">
-      <canvas id="sk-gps-canvas" style="width:100%;display:block;touch-action:none;"></canvas>
-      <!-- 확대/축소/리셋 -->
-      <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;">
-        <button onclick="skGpsZoom(1.2)" style="width:28px;height:28px;background:rgba(0,0,0,.75);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer;">+</button>
-        <button onclick="skGpsZoom(0.8)" style="width:28px;height:28px;background:rgba(0,0,0,.75);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer;">−</button>
-        <button onclick="skGpsResetView()" style="width:28px;height:28px;background:rgba(0,0,0,.75);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:10px;cursor:pointer;">⟳</button>
-      </div>
-    </div>
-
-    <!-- 보정 목록 -->
-    <div class="sk-card" style="padding:14px;margin-bottom:10px;">
-      <div class="sk-hdr" style="margin-bottom:10px;"><span class="sk-dot sk-green"></span>경계점 보정</div>
-      <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px;">각 경계점 위에 서서 보정 버튼을 누르세요</div>
-      <div id="sk-gps-calib-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-    </div>
-
-    <!-- 보정 방법 안내 -->
-    <div style="padding:10px 14px;background:rgba(245,160,32,.06);border:1px solid rgba(245,160,32,.2);border-radius:8px;font-size:10px;color:var(--text-muted);line-height:1.7;">
-      📌 <strong style="color:var(--accent2)">보정 방법</strong><br>
-      ① 폰을 <strong style="color:var(--tx)">수평으로 눕혀</strong> 화면이 하늘을 향하게 하세요<br>
-      ② 폰 <strong style="color:var(--tx)">상단(전원버튼 쪽)</strong>을 기지점 바로 위에 근접<br>
-      ③ 움직이지 말고 <strong style="color:var(--tx)">3초</strong> 유지 후 보정 버튼 클릭<br>
-      ④ 기지점 2개 이상 보정할수록 정확해집니다
-    </div>
-  </div>
 
   <!-- 서브탭: 이력 -->
-  <div id="sk-panel-hist" style="display:none;">
-    <div class="sk-btn-row">
-      <button class="sk-btn-sub" onclick="skSubTab('search')">🔍 새 필지 검색</button>
-      <button class="sk-btn-sub" onclick="skClearHist()">🗑 전체 삭제</button>
+  <div id="sk-panel-hist" style="display:none;padding:14px;">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button onclick="skSubTab('search')" style="flex:1;padding:9px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">🔍 새 필지 검색</button>
+      <button onclick="skClearHist()" style="padding:9px 14px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">🗑 전체삭제</button>
     </div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">탭하면 해당 필지 좌표가 복원됩니다</div>
     <div id="sk-hist-content"></div>
   </div>
 
@@ -1768,13 +1725,13 @@ function switchTab(t){
   /* ── 서브탭 ── */
   window.skSubTab=function(t){
     ['search','result','draw','gps','hist'].forEach(id=>{
-      document.getElementById('sk-panel-'+id).style.display=t===id?'block':'none';
+      const el=document.getElementById('sk-panel-'+id);
+      if(el) el.style.display=t===id?'block':'none';
       const btn=document.getElementById('sk-sub-'+id);
       if(btn){btn.style.background=t===id?'var(--accent2)':'';btn.style.color=t===id?'#000':'';}
     });
     if(t==='hist') skRenderHist();
     if(t==='draw') skDrawRender();
-    if(t==='gps'){skGpsRenderCalibList();requestAnimationFrame(skGpsDrawMap);}
   };
 
   /* ── 주소 검색 ── */
@@ -2026,11 +1983,14 @@ function switchTab(t){
       dist:dist.toFixed(3),bearing:bearing.toFixed(2),dir:dir.text,
       tLat:kt.lat.toFixed(7),tLng:kt.lng.toFixed(7),
       time:new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})});
+    // points 함께 저장 (복원용)
+    if(h.length>0) h[0].points=skPoints.map(p=>({...p}));
     localStorage.setItem('sk_hist',JSON.stringify(h.slice(0,30)));
     document.getElementById('sk-res-empty').style.display='none';
     document.getElementById('sk-res-content').style.display='block';
-    skSubTab('result');
-    showToast('✅ 계산 완료');
+    skDrawRender();
+    skSubTab('draw');
+    showToast('✅ 계산 완료 — 도면보기 확인');
   };
 
   /* ── 수학 ── */
@@ -2072,23 +2032,56 @@ function switchTab(t){
   function skRenderHist(){
     const h=JSON.parse(localStorage.getItem('sk_hist')||'[]');
     const el=document.getElementById('sk-hist-content');
-    if(!h.length){el.innerHTML='<div class="sk-empty"><div class="sk-empty-icon">📁</div><div class="sk-empty-txt">저장된 이력이 없습니다</div></div>';return;}
+    if(!h.length){
+      el.innerHTML='<div class="sk-empty"><div class="sk-empty-icon">📁</div><div class="sk-empty-txt">저장된 이력이 없습니다<br><span style="font-size:11px;color:var(--text-muted);">주소 검색 후 자동 저장됩니다</span></div></div>';
+      return;
+    }
     el.innerHTML=h.map(item=>`
-      <div class="sk-hist-item">
+      <div class="sk-hist-item" style="cursor:pointer;" onclick="skRestoreHist(${item.id})">
         <div class="sk-hist-top">
-          <div class="sk-hist-name">${item.addr||item.pnu} · ${item.base}→${item.target}번</div>
+          <div class="sk-hist-name">📍 ${item.addr||item.pnu}</div>
           <div style="display:flex;gap:6px;align-items:center;">
             <div class="sk-hist-time">${item.time}</div>
-            <div class="sk-hist-del" onclick="skDelHist(${item.id})">삭제</div>
+            <div class="sk-hist-del" onclick="event.stopPropagation();skDelHist(${item.id})">삭제</div>
           </div>
         </div>
-        <div class="sk-hist-det">방위각: ${item.bearing}° · 거리: ${item.dist}m · ${item.dir}</div>
-        <div class="sk-hist-res">📍 ${item.tLat}, ${item.tLng}</div>
-        <div class="sk-map-row" style="margin-top:8px;">
-          <a class="sk-map-btn sk-mb-n" href="https://map.naver.com/p/search/${item.tLat},${item.tLng}" target="_blank" style="font-size:10px;max-width:200px;margin:0 auto;">N 네이버지도</a>
-        </div>
+        <div class="sk-hist-det">기지점 ${item.base}번 → 소실점 ${item.target}번 · 방위각 ${item.bearing}° · ${item.dist}m</div>
+        <div style="font-size:10px;color:var(--accent2);margin-top:4px;">탭하여 좌표 복원 →</div>
       </div>`).join('');
   }
+
+  window.skRestoreHist=function(id){
+    const h=JSON.parse(localStorage.getItem('sk_hist')||'[]');
+    const item=h.find(x=>x.id===id);
+    if(!item){showToast('이력을 찾을 수 없습니다');return;}
+    // 저장된 좌표 복원
+    if(item.points){
+      skPoints=item.points;
+      skLotMeta={addr:item.addr,pnu:item.pnu};
+      skPNU=item.pnu||'';
+      skBase=item.base-1;
+      skTarget=item.target-1;
+      // 결과값 복원
+      document.getElementById('sk-r-lat').textContent=item.tLat;
+      document.getElementById('sk-r-lng').textContent=item.tLng;
+      document.getElementById('sk-r-deg').textContent=item.bearing+'°';
+      document.getElementById('sk-r-dist').textContent=item.dist;
+      document.getElementById('sk-r-copy').value=item.tLat+','+item.tLng;
+      document.getElementById('sk-res-empty').style.display='none';
+      document.getElementById('sk-res-content').style.display='block';
+      // 네이버 지도 링크
+      const bN=document.getElementById('sk-bN');
+      if(bN) bN.href='https://map.naver.com/p/search/'+item.tLat+','+item.tLng;
+      skDrawRender();
+      skSubTab('draw');
+      showToast('✅ '+item.addr+' 복원 완료');
+    } else {
+      // 구버전 이력 (points 없음)
+      showToast('⚠️ 이 이력은 좌표 재조회가 필요합니다');
+      document.getElementById('sk-addr-inp').value=item.addr||'';
+      skSubTab('search');
+    }
+  };
 
   window.skDelHist=function(id){
     let h=JSON.parse(localStorage.getItem('sk_hist')||'[]');
@@ -2554,339 +2547,10 @@ function switchTab(t){
   };
 
 
-  /* ══ GPS 탐색 모듈 ══════════════════════════════════════════════ */
-  let skGpsOn=false, skGpsWatchId=null;
-  let skGpsLat=null, skGpsLng=null, skGpsAcc=null;
-  let skGpsCalib=[];        // [{ptIdx, offsetLat, offsetLng}] 보정값 배열
-  let skGpsScale=1, skGpsOffX=0, skGpsOffY=0;
-  let skGpsDragging=false, skGpsLastX=0, skGpsLastY=0, skGpsLastPinch=0;
-  let skGpsCalibbing=false, skGpsCalibTarget=null, skGpsCalibSamples=[];
-  let skGpsAnimId=null;
-
-  /* ── GPS 시작/정지 ── */
-  window.skGpsToggle=function(){
-    if(!skGpsOn){
-      if(!navigator.geolocation){showToast('⚠️ GPS 미지원 기기');return;}
-      // 이전 안내 제거
-      const prevGuide=document.getElementById('sk-gps-perm-guide');
-      if(prevGuide)prevGuide.remove();
-      navigator.geolocation.getCurrentPosition(function(pos){
-        skGpsLat=pos.coords.latitude;
-        skGpsLng=pos.coords.longitude;
-        skGpsAcc=pos.coords.accuracy;
-        skGpsOn=true;
-        skGpsWatchId=navigator.geolocation.watchPosition(skGpsOnPos,skGpsOnErr,{enableHighAccuracy:true,maximumAge:1000,timeout:10000});
-        document.getElementById('sk-gps-start-btn').textContent='⏹ GPS 정지';
-        document.getElementById('sk-gps-start-btn').style.background='linear-gradient(135deg,#b91c1c,#991b1b)';
-        skGpsUpdateStatus();
-        skGpsRenderCalibList();
-        skGpsLoop();
-      },skGpsOnErr,{enableHighAccuracy:true,timeout:10000});
-    } else {
-      skGpsOn=false;
-      if(skGpsWatchId!=null){navigator.geolocation.clearWatch(skGpsWatchId);skGpsWatchId=null;}
-      if(skGpsAnimId){cancelAnimationFrame(skGpsAnimId);skGpsAnimId=null;}
-      document.getElementById('sk-gps-start-btn').textContent='📍 GPS 시작';
-      document.getElementById('sk-gps-start-btn').style.background='linear-gradient(135deg,#059669,#047857)';
-      skGpsUpdateStatus();
-    }
-  };
-
-  function skGpsOnPos(pos){
-    skGpsLat=pos.coords.latitude;
-    skGpsLng=pos.coords.longitude;
-    skGpsAcc=pos.coords.accuracy;
-    // 보정 샘플 수집 중이면 추가
-    if(skGpsCalibbing&&skGpsCalibSamples.length<5){
-      skGpsCalibSamples.push({lat:skGpsLat,lng:skGpsLng});
-      if(skGpsCalibSamples.length>=3) skGpsFinishCalib();
-    }
-    skGpsUpdateStatus();
-  }
-  function skGpsOnErr(e){
-    skGpsOn=false;
-    if(skGpsWatchId!=null){navigator.geolocation.clearWatch(skGpsWatchId);skGpsWatchId=null;}
-    if(skGpsAnimId){cancelAnimationFrame(skGpsAnimId);skGpsAnimId=null;}
-    document.getElementById('sk-gps-start-btn').textContent='📍 GPS 시작';
-    document.getElementById('sk-gps-start-btn').style.background='linear-gradient(135deg,#059669,#047857)';
-    const dot=document.getElementById('sk-gps-dot');
-    const txt=document.getElementById('sk-gps-status-txt');
-    dot.style.background='#f04050';dot.style.boxShadow='none';
-    txt.style.color='#f04050';
-    // 오류 코드별 안내
-    if(e.code===1){
-      // 권한 거부
-      txt.textContent='GPS 권한 거부됨';
-      skGpsShowPermGuide();
-    } else if(e.code===2){
-      txt.textContent='GPS 신호 없음 — 실외에서 시도하세요';
-    } else if(e.code===3){
-      txt.textContent='GPS 응답 없음 — 다시 시도해주세요';
-    } else {
-      txt.textContent='GPS 오류: '+e.message;
-    }
-  }
-
-  function skGpsShowPermGuide(){
-    // 권한 거부 시 안내 팝업
-    const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
-    const isAndroid=/Android/.test(navigator.userAgent);
-    let guide='';
-    if(isIOS){
-      guide='iPhone 설정 방법:\n설정 > Safari > 위치 > 허용\n또는 설정 > 개인 정보 보호 > 위치 서비스 > Safari';
-    } else if(isAndroid){
-      guide='Android 설정 방법:\n브라우저 주소창 왼쪽 🔒 자물쇠 클릭\n> 위치 > 허용';
-    } else {
-      guide='브라우저 주소창 왼쪽 자물쇠(🔒) 클릭\n> 위치 > 허용 으로 변경 후 새로고침';
-    }
-    // 상태바 아래에 안내 표시
-    const bar=document.getElementById('sk-gps-status-bar');
-    let guide_el=document.getElementById('sk-gps-perm-guide');
-    if(!guide_el){
-      guide_el=document.createElement('div');
-      guide_el.id='sk-gps-perm-guide';
-      guide_el.style.cssText='background:rgba(240,64,80,.08);border:1px solid rgba(240,64,80,.25);border-radius:10px;padding:12px 14px;margin-top:8px;font-size:11px;color:var(--text-muted);line-height:1.9;white-space:pre-line;';
-      bar.parentNode.insertBefore(guide_el,bar.nextSibling);
-    }
-    guide_el.innerHTML='⚠️ <strong style="color:#f04050">위치 권한이 거부됐습니다.</strong>\n'+guide+'\n\n<span style="color:var(--text-muted);">설정 변경 후 아래 버튼을 누르세요:</span>\n<button onclick="location.reload()" style="margin-top:6px;padding:7px 16px;background:rgba(61,142,248,.2);border:1px solid rgba(61,142,248,.3);border-radius:6px;color:#4a9eff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;">🔄 페이지 새로고침</button>';
-  }
-
-  function skGpsUpdateStatus(){
-    const dot=document.getElementById('sk-gps-dot');
-    const txt=document.getElementById('sk-gps-status-txt');
-    const acc=document.getElementById('sk-gps-acc');
-    if(skGpsOn&&skGpsLat){
-      dot.style.background='#10d98a';dot.style.boxShadow='0 0 6px #10d98a';
-      txt.textContent='GPS 활성';txt.style.color='#10d98a';
-      acc.textContent=skGpsAcc?'±'+Math.round(skGpsAcc)+'m':'';
-    } else if(skGpsOn){
-      dot.style.background='#f5a623';dot.style.boxShadow='none';
-      txt.textContent='GPS 신호 수신 중...';txt.style.color='#f5a623';
-      acc.textContent='';
-    } else {
-      dot.style.background='var(--text-muted)';dot.style.boxShadow='none';
-      txt.textContent='GPS 비활성';txt.style.color='var(--text-muted)';
-      acc.textContent='';
-    }
-  }
-
-  /* ── 애니메이션 루프 ── */
-  function skGpsLoop(){
-    skGpsDrawMap();
-    if(skGpsOn) skGpsAnimId=requestAnimationFrame(skGpsLoop);
-  }
-
-  /* ── 보정 목록 렌더 ── */
-  window.skGpsRenderCalibList=function(){
-    const el=document.getElementById('sk-gps-calib-list');
-    if(!el||!skPoints||!skPoints.length){
-      if(el)el.innerHTML='<div style="font-size:11px;color:var(--text-muted);">경계점을 먼저 조회하세요</div>';
-      return;
-    }
-    el.innerHTML=skPoints.map((p,i)=>{
-      const calib=skGpsCalib.find(c=>c.ptIdx===i);
-      const done=!!calib;
-      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${done?'rgba(16,217,138,.06)':'var(--surface2)'};border:1px solid ${done?'rgba(16,217,138,.2)':'var(--border)'};border-radius:8px;">
-        <div style="width:24px;height:24px;border-radius:50%;background:${done?'rgba(16,217,138,.2)':'rgba(255,255,255,.05)'};border:1.5px solid ${done?'#10d98a':'rgba(255,255,255,.3)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${done?'#10d98a':'rgba(255,255,255,.6)'};flex-shrink:0;">${p.num}</div>
-        <div style="flex:1;font-size:11px;color:${done?'#10d98a':'var(--text-muted)'};">${done?'✅ 보정완료':'대기중 — 이 점 위에 서세요'}</div>
-        <button onclick="skGpsStartCalib(${i})" style="padding:5px 12px;border:none;border-radius:6px;background:${done?'rgba(255,255,255,.08)':'#059669'};color:${done?'var(--text-muted)':'#fff'};font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;">${done?'재보정':'보정'}</button>
-      </div>`;
-    }).join('');
-  };
-
-  /* ── 보정 시작 ── */
-  window.skGpsStartCalib=function(ptIdx){
-    if(!skGpsOn||!skGpsLat){showToast('⚠️ GPS를 먼저 시작하세요');return;}
-    skGpsCalibbing=true;
-    skGpsCalibTarget=ptIdx;
-    skGpsCalibSamples=[{lat:skGpsLat,lng:skGpsLng}];
-    showToast('📍 보정 중... 잠시 멈춰계세요');
-    // 2초 후 강제 완료
-    setTimeout(()=>{if(skGpsCalibbing) skGpsFinishCalib();},2500);
-  };
-
-  function skGpsFinishCalib(){
-    if(!skGpsCalibbing||skGpsCalibTarget===null)return;
-    skGpsCalibbing=false;
-    const avgLat=skGpsCalibSamples.reduce((s,c)=>s+c.lat,0)/skGpsCalibSamples.length;
-    const avgLng=skGpsCalibSamples.reduce((s,c)=>s+c.lng,0)/skGpsCalibSamples.length;
-    // 해당 경계점의 WGS84 좌표
-    const p=skPoints[skGpsCalibTarget];
-    const offsetLat=p.lat-avgLat;
-    const offsetLng=p.lng-avgLng;
-    // 기존 보정값 제거 후 추가
-    skGpsCalib=skGpsCalib.filter(c=>c.ptIdx!==skGpsCalibTarget);
-    skGpsCalib.push({ptIdx:skGpsCalibTarget,offsetLat,offsetLng});
-    skGpsCalibTarget=null;
-    skGpsCalibSamples=[];
-    skGpsRenderCalibList();
-    showToast('✅ 보정 완료!');
-  }
-
-  /* ── 보정된 내 위치 계산 ── */
-  function skGpsMyPos(){
-    if(!skGpsLat||!skGpsLng)return null;
-    if(!skGpsCalib.length)return{lat:skGpsLat,lng:skGpsLng};
-    // 보정값 평균
-    const avgOffLat=skGpsCalib.reduce((s,c)=>s+c.offsetLat,0)/skGpsCalib.length;
-    const avgOffLng=skGpsCalib.reduce((s,c)=>s+c.offsetLng,0)/skGpsCalib.length;
-    return{lat:skGpsLat+avgOffLat,lng:skGpsLng+avgOffLng};
-  }
-
-  /* ── GPS → Canvas 좌표 변환 ── */
-  function skGpsLatLngToTM(lat,lng){
-    // WGS84 → EPSG:5186 (proj4 사용)
-    if(typeof proj4==='undefined')return null;
-    const tm=proj4('EPSG:4326','EPSG:5186',[lng,lat]);
-    return{x:tm[1],y:tm[0]};
-  }
-
-  /* ── 도면 그리기 ── */
-  window.skGpsDrawMap=function(){
-    const canvas=document.getElementById('sk-gps-canvas');
-    if(!canvas||!skPoints||!skPoints.length)return;
-    const W=canvas.parentElement.clientWidth||360;
-    const H=Math.round(W*0.9);
-    if(canvas.width!==W){canvas.width=W;canvas.height=H;canvas.style.height=H+'px';}
-    const ctx=canvas.getContext('2d');
-
-    // 배경 — 블랙 격자
-    ctx.fillStyle='#050a0f';
-    ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle='rgba(61,142,248,.06)';
-    ctx.lineWidth=1;
-    const gs=20;
-    for(let x=0;x<W;x+=gs){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-    for(let y=0;y<H;y+=gs){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-
-    // 좌표 범위 (TM)
-    const xs=skPoints.map(p=>p.x), ys=skPoints.map(p=>p.y);
-    const minX=Math.min(...xs),maxX=Math.max(...xs);
-    const minY=Math.min(...ys),maxY=Math.max(...ys);
-    const rangeX=maxX-minX||1, rangeY=maxY-minY||1;
-    const pad=50;
-    const scaleX=(W-pad*2)/rangeX, scaleY=(H-pad*2)/rangeY;
-    const baseScale=Math.min(scaleX,scaleY);
-    const scale=baseScale*skGpsScale;
-    const cX=W/2+skGpsOffX, cY=H/2+skGpsOffY;
-    const midX=(minX+maxX)/2, midY=(minY+maxY)/2;
-
-    function toC(x,y){return[cX+(y-midY)*scale, cY-(x-midX)*scale];} // x=북향,y=동향
-
-    // 필지 폴리곤 외곽선
-    ctx.beginPath();
-    const[fx,fy]=toC(skPoints[0].x,skPoints[0].y);ctx.moveTo(fx,fy);
-    for(let i=1;i<skPoints.length;i++){const[cx,cy]=toC(skPoints[i].x,skPoints[i].y);ctx.lineTo(cx,cy);}
-    ctx.closePath();
-    ctx.fillStyle='rgba(61,142,248,.05)';ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.25)';ctx.lineWidth=1.5;ctx.stroke();
-
-    // 변 거리 라벨
-    for(let i=0;i<skPoints.length;i++){
-      const a=skPoints[i],b=skPoints[(i+1)%skPoints.length];
-      const[ax,ay]=toC(a.x,a.y),[bx,by]=toC(b.x,b.y);
-      const dist=Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2);
-      const mx=(ax+bx)/2,my=(ay+by)/2;
-      const angle=Math.atan2(by-ay,bx-ax);
-      ctx.save();ctx.translate(mx,my);ctx.rotate(angle);
-      const txt=dist.toFixed(1)+'m';
-      ctx.font='bold 9px monospace';
-      const tw=ctx.measureText(txt).width;
-      ctx.fillStyle='rgba(5,10,15,.85)';ctx.fillRect(-tw/2-2,-11,tw+4,12);
-      ctx.fillStyle='rgba(245,160,32,.8)';ctx.textAlign='center';ctx.fillText(txt,0,0);
-      ctx.restore();
-    }
-
-    // 경계점 — 작은 점 + 번호
-    skPoints.forEach((p,i)=>{
-      const[cx,cy]=toC(p.x,p.y);
-      const calib=skGpsCalib.find(c=>c.ptIdx===i);
-      const color=calib?'#10d98a':'rgba(255,255,255,.75)';
-      // 점 (반지름 4px)
-      ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);
-      ctx.fillStyle=calib?'rgba(16,217,138,.3)':'rgba(255,255,255,.15)';ctx.fill();
-      ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();
-      // 번호
-      ctx.font='bold 9px monospace';ctx.textAlign='center';
-      ctx.fillStyle=color;ctx.fillText(p.num,cx,cy-7);
-    });
-
-    // 내 위치
-    const myPos=skGpsMyPos();
-    if(myPos&&skGpsLat){
-      const myTM=skGpsLatLngToTM(myPos.lat,myPos.lng);
-      if(myTM){
-        const[mx,my2]=toC(myTM.x,myTM.y);
-        // GPS 정확도 링
-        if(skGpsAcc){
-          const accPx=skGpsAcc*scale;
-          ctx.beginPath();ctx.arc(mx,my2,Math.min(accPx,80),0,Math.PI*2);
-          ctx.fillStyle='rgba(61,142,248,.06)';ctx.fill();
-          ctx.strokeStyle='rgba(61,142,248,.2)';ctx.lineWidth=1;ctx.stroke();
-        }
-        // 내 위치 점 (반지름 5px)
-        ctx.beginPath();ctx.arc(mx,my2,5,0,Math.PI*2);
-        ctx.fillStyle='#3d8ef8';ctx.fill();
-        ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-        // 나 텍스트
-        ctx.font='bold 9px sans-serif';ctx.textAlign='center';
-        ctx.fillStyle='#3d8ef8';ctx.fillText('나',mx,my2-8);
-      }
-    }
-
-    // 건물 배치 그리기
-    skDrawBuilding(ctx, toC);
-
-    // 드래그/핀치 이벤트 (최초 1회)
-    if(!canvas._gpsEvt){
-      canvas._gpsEvt=true;
-      canvas.addEventListener('mousedown',e=>{skGpsDragging=true;skGpsLastX=e.clientX;skGpsLastY=e.clientY;});
-      canvas.addEventListener('mousemove',e=>{if(!skGpsDragging)return;skGpsOffX+=e.clientX-skGpsLastX;skGpsOffY+=e.clientY-skGpsLastY;skGpsLastX=e.clientX;skGpsLastY=e.clientY;skGpsDrawMap();});
-      canvas.addEventListener('mouseup',()=>skGpsDragging=false);
-      canvas.addEventListener('mouseleave',()=>skGpsDragging=false);
-      canvas.addEventListener('wheel',e=>{e.preventDefault();skGpsScale*=e.deltaY<0?1.1:0.9;skGpsScale=Math.max(0.3,Math.min(skGpsScale,20));skGpsDrawMap();},{passive:false});
-      canvas.addEventListener('touchstart',e=>{
-        if(e.touches.length===1){skGpsDragging=true;skGpsLastX=e.touches[0].clientX;skGpsLastY=e.touches[0].clientY;}
-        else if(e.touches.length===2){skGpsDragging=false;const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;skGpsLastPinch=Math.sqrt(dx*dx+dy*dy);}
-      },{passive:true});
-      canvas.addEventListener('touchmove',e=>{
-        e.preventDefault();
-        if(e.touches.length===1&&skGpsDragging){skGpsOffX+=e.touches[0].clientX-skGpsLastX;skGpsOffY+=e.touches[0].clientY-skGpsLastY;skGpsLastX=e.touches[0].clientX;skGpsLastY=e.touches[0].clientY;skGpsDrawMap();}
-        else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;const dist=Math.sqrt(dx*dx+dy*dy);if(skGpsLastPinch>0){skGpsScale*=dist/skGpsLastPinch;skGpsScale=Math.max(0.3,Math.min(skGpsScale,20));}skGpsLastPinch=dist;skGpsDrawMap();}
-      },{passive:false});
-      canvas.addEventListener('touchend',e=>{if(e.touches.length===0){skGpsDragging=false;skGpsLastPinch=0;}});
-    }
-  };
-
-  window.skGpsZoom=function(f){skGpsScale*=f;skGpsScale=Math.max(0.3,Math.min(skGpsScale,20));skGpsDrawMap();};
-  window.skGpsResetView=function(){skGpsScale=1;skGpsOffX=0;skGpsOffY=0;skGpsDrawMap();};
-  window.skGpsReset=function(){
-    skGpsOn=false;
-    if(skGpsWatchId!=null){navigator.geolocation.clearWatch(skGpsWatchId);skGpsWatchId=null;}
-    if(skGpsAnimId){cancelAnimationFrame(skGpsAnimId);skGpsAnimId=null;}
-    skGpsLat=null;skGpsLng=null;skGpsAcc=null;
-    skGpsCalib=[];skGpsScale=1;skGpsOffX=0;skGpsOffY=0;
-    skGpsCalibbing=false;skGpsCalibTarget=null;skGpsCalibSamples=[];
-    document.getElementById('sk-gps-start-btn').textContent='📍 GPS 시작';
-    document.getElementById('sk-gps-start-btn').style.background='linear-gradient(135deg,#059669,#047857)';
-    skGpsUpdateStatus();
-    skGpsRenderCalibList();
-    skGpsDrawMap();
-    showToast('초기화 완료');
-  };
-
-
   /* ══ 건물 배치 모듈 ══════════════════════════════════════════════ */
   let skBuilding = null; // {refIdx, ox, oy, w, h, angle}
 
   /* ── 수동 입력 폼 토글 ── */
-  window.skBldgToggleManual = function(){
-    const form = document.getElementById('sk-bldg-form');
-    const isHidden = form.style.display === 'none';
-    form.style.display = isHidden ? 'block' : 'none';
-    if(isHidden) skBldgFillRefSelect();
-  };
-
   function skBldgFillRefSelect(){
     const sel = document.getElementById('sk-bldg-ref');
     if(!sel || !skPoints.length) return;
@@ -2957,26 +2621,21 @@ function switchTab(t){
         }
 
         // 폼에 값 채우기
-        skBldgFillRefSelect();
         document.getElementById('sk-bldg-w').value = parsed.width || 10;
         document.getElementById('sk-bldg-h').value = parsed.height || 8;
         document.getElementById('sk-bldg-ox').value = parsed.offset_x || 0;
         document.getElementById('sk-bldg-oy').value = parsed.offset_y || 0;
         document.getElementById('sk-bldg-angle').value = parsed.angle || 0;
 
-        statusEl.style.background = 'rgba(0,229,138,.08)';
-        statusEl.style.borderColor = 'rgba(0,229,138,.25)';
-        statusEl.style.color = '#00e58a';
-        statusEl.textContent = '✅ AI 인식 완료: ' + (parsed.memo || '치수 추출 성공');
-
+        statusEl.style.cssText = 'display:block;background:rgba(0,229,138,.08);border:1px solid rgba(0,229,138,.25);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12px;text-align:center;color:#00e58a;';
+        statusEl.textContent = '✅ ' + (parsed.memo || 'AI 치수 인식 완료 — 아래에서 확인 후 배치하세요');
+        skBldgFillRefSelect();
         document.getElementById('sk-bldg-form').style.display = 'block';
-        showToast('✅ AI 치수 인식 완료! 확인 후 배치하세요');
+        showToast('✅ AI 치수 인식 완료!');
 
       }catch(err){
-        statusEl.style.background = 'rgba(240,64,80,.08)';
-        statusEl.style.borderColor = 'rgba(240,64,80,.25)';
-        statusEl.style.color = '#f04050';
-        statusEl.textContent = '❌ 인식 실패: ' + err.message + ' — 직접 입력을 사용하세요';
+        statusEl.style.cssText = 'display:block;background:rgba(240,64,80,.08);border:1px solid rgba(240,64,80,.25);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12px;text-align:center;color:#f04050;';
+        statusEl.textContent = '❌ 인식 실패: ' + err.message;
       }
       input.value = '';
     };
@@ -3001,7 +2660,6 @@ function switchTab(t){
     badge.textContent = `${w}m × ${h}m`;
 
     skDrawRender();      // 도면보기 갱신
-    skGpsDrawMap();      // GPS 탐색 갱신
     showToast('🏗 건물 배치 완료!');
   };
 
@@ -3012,7 +2670,6 @@ function switchTab(t){
     document.getElementById('sk-bldg-form').style.display = 'none';
     document.getElementById('sk-bldg-ai-status').style.display = 'none';
     skDrawRender();
-    skGpsDrawMap();
     showToast('🗑 건물 삭제됨');
   };
 
@@ -3058,16 +2715,65 @@ function switchTab(t){
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // 건물 라벨
+    // 건물 중앙 라벨
     const cx2 = pts.reduce((s,p)=>s+p[0],0)/4;
     const cy2 = pts.reduce((s,p)=>s+p[1],0)/4;
     ctx.font = 'bold 11px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#9b7df8';
-    ctx.fillText('건물', cx2, cy2-4);
-    ctx.font = '9px monospace';
-    ctx.fillStyle = 'rgba(155,125,248,.8)';
-    ctx.fillText(`${w}×${h}m`, cx2, cy2+8);
+    ctx.fillText('건물', cx2, cy2+4);
+
+    // 각 모서리 → 가장 가까운 경계점 (이미 사용한 점 제외) 거리 표시
+    if(skPoints && skPoints.length){
+      const usedIdx = new Set(); // 이미 연결된 경계점 인덱스
+      pts.forEach((pt, pi)=>{
+        const corner = rotated[pi]; // TM 좌표
+
+        // 아직 사용 안 한 경계점 중 가장 가까운 점 찾기
+        // (모두 사용됐으면 재사용 허용)
+        let minDist=Infinity, nearPt=null, nearIdx=-1;
+        skPoints.forEach((sp,si)=>{
+          if(usedIdx.has(si)) return;
+          const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);
+          if(d<minDist){minDist=d;nearPt=sp;nearIdx=si;}
+        });
+        // 모두 사용됐으면 재탐색 (제한 없이)
+        if(!nearPt){
+          skPoints.forEach((sp,si)=>{
+            const d=Math.sqrt((sp.x-corner[0])**2+(sp.y-corner[1])**2);
+            if(d<minDist){minDist=d;nearPt=sp;nearIdx=si;}
+          });
+        }
+        if(!nearPt) return;
+        usedIdx.add(nearIdx);
+
+        const np=toCanvasFn(nearPt.x,nearPt.y);
+
+        // 점선 연결
+        ctx.save();
+        ctx.setLineDash([4,3]);
+        ctx.strokeStyle='rgba(245,160,32,.55)';
+        ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(pt[0],pt[1]);ctx.lineTo(np[0],np[1]);ctx.stroke();
+        ctx.setLineDash([]);ctx.restore();
+
+        // 거리 라벨 (선 중간)
+        const mx=(pt[0]+np[0])/2, my=(pt[1]+np[1])/2;
+        const distTxt=minDist.toFixed(2)+'m';
+        ctx.font='bold 9px monospace';
+        ctx.textAlign='center';
+        const tw=ctx.measureText(distTxt).width;
+        ctx.fillStyle='rgba(10,15,26,.88)';
+        ctx.fillRect(mx-tw/2-3,my-11,tw+6,13);
+        ctx.fillStyle='#f5a623';
+        ctx.fillText(distTxt,mx,my);
+
+        // 경계점 번호 표시 (어느 점인지)
+        ctx.font='8px monospace';
+        ctx.fillStyle='rgba(245,160,32,.6)';
+        ctx.fillText(nearPt.num+'번',mx,my+10);
+      });
+    }
   }
 
   // proj4 로드 (없으면 CDN)
