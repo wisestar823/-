@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>GitHub 자동 업로드</title>
+<style>
+:root{
+  --bg:#07090f;--s1:#0d1117;--s2:#131925;
+  --b1:#1e2a3e;--tx:#dde4f2;--soft:#6a7a9a;
+  --green:#10b981;--blue:#3b82f6;--red:#ef4444;--orange:#f59e0b;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;padding:20px;min-height:100vh;}
+h1{font-size:18px;font-weight:800;margin-bottom:4px}
+p{font-size:12px;color:var(--soft);margin-bottom:16px}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:18px;margin-bottom:14px;}
+label{display:block;font-size:10px;color:var(--soft);font-weight:700;margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase;}
+input,select{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;color:var(--tx);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;}
+input:focus,select:focus{border-color:var(--blue);}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-blue{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;}
+.btn-green{background:linear-gradient(135deg,#059669,#047857);color:#fff;}
+.btn-red{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--red);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn:active{opacity:.8;}
+.status{border-radius:10px;padding:12px 14px;font-size:12px;margin-top:10px;display:none;line-height:1.6;}
+.s-ok{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);color:var(--green);}
+.s-err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:var(--red);}
+.s-ing{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);color:var(--blue);}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--b1);font-size:11px;}
+.info-row:last-child{border:none;}
+.info-label{color:var(--soft);}
+.info-val{color:var(--tx);font-family:monospace;}
+.file-drop{border:2px dashed var(--b1);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;margin-bottom:12px;}
+.file-drop:hover,.file-drop.drag{border-color:var(--blue);background:rgba(59,130,246,.05);}
+.file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.file-drop .icon{font-size:28px;margin-bottom:6px;}
+.file-drop .title{font-size:13px;font-weight:700;margin-bottom:3px;}
+.file-drop .sub{font-size:10px;color:var(--soft);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
+</style>
+</head>
+<body>
+<div style="max-width:500px;margin:0 auto;">
+
+<div style="margin-bottom:20px;">
+  <div style="font-size:10px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">시공관리 · 배포 도구</div>
+  <h1>GitHub 자동 업로드</h1>
+  <p>수정된 파일을 GitHub에 바로 올립니다<br>설정은 한 번만 하면 저장됩니다</p>
+</div>
+
+<!-- 설정 -->
+<div class="card">
+  <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:12px;">⚙️ GitHub 설정</div>
+
+  <label>GitHub Token</label>
+  <input type="password" id="token" placeholder="ghp_..." oninput="saveSettings()">
+
+  <label>저장소 (owner/repo)</label>
+  <input type="text" id="repo" value="wisestar823/-" oninput="saveSettings()">
+
+  <label>브랜치</label>
+  <input type="text" id="branch" value="main" oninput="saveSettings()">
+
+  <label>파일 경로 (저장소 내)</label>
+  <input type="text" id="filepath" value="sicgong.html" oninput="saveSettings()">
+
+  <button class="btn btn-blue" onclick="testConnection()" id="btn-test">
+    🔗 연결 테스트
+  </button>
+  <div class="status" id="test-status"></div>
+</div>
+
+<!-- 파일 업로드 -->
+<div class="card">
+  <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:12px;">📤 파일 업로드</div>
+
+  <div class="file-drop" id="drop-area">
+    <input type="file" id="file-input" accept=".html,.js,.css" onchange="onFileSelect(this)">
+    <div class="icon">📄</div>
+    <div class="title" id="drop-title">파일 선택 또는 드래그</div>
+    <div class="sub" id="drop-sub">sicgong.html 파일을 선택하세요</div>
+  </div>
+
+  <div id="file-info" style="display:none;margin-bottom:12px;">
+    <div class="info-row"><span class="info-label">파일명</span><span class="info-val" id="fi-name">-</span></div>
+    <div class="info-row"><span class="info-label">크기</span><span class="info-val" id="fi-size">-</span></div>
+    <div class="info-row"><span class="info-label">업로드 위치</span><span class="info-val" id="fi-dest">-</span></div>
+  </div>
+
+  <input type="text" id="commit-msg" placeholder="커밋 메시지 (선택)" value="시공관리 업데이트">
+
+  <button class="btn btn-green" onclick="uploadFile()" id="btn-upload" disabled>
+    🚀 GitHub에 업로드
+  </button>
+  <div class="status" id="upload-status"></div>
+</div>
+
+<!-- 빠른 링크 -->
+<div class="card">
+  <div style="font-size:12px;font-weight:700;color:var(--soft);margin-bottom:10px;">🔗 빠른 링크</div>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <button class="btn" style="background:var(--s2);border:1px solid var(--b1);color:var(--tx);font-size:12px;"
+      onclick="window.open('https://wisestar823.github.io/-/sicgong.html','_blank')">
+      🌐 사이트 열기
+    </button>
+    <button class="btn" style="background:var(--s2);border:1px solid var(--b1);color:var(--tx);font-size:12px;"
+      onclick="window.open('https://github.com/wisestar823/-/actions','_blank')">
+      ⚙️ 배포 상태 확인
+    </button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ── 설정 저장/불러오기 ──
+function saveSettings(){
+  const s={
+    token: document.getElementById('token').value,
+    repo:  document.getElementById('repo').value,
+    branch:document.getElementById('branch').value,
+    filepath:document.getElementById('filepath').value,
+  };
+  localStorage.setItem('gh_upload_settings', JSON.stringify(s));
+}
+
+function loadSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem('gh_upload_settings')||'{}');
+    if(s.token) document.getElementById('token').value = s.token;
+    if(s.repo)  document.getElementById('repo').value  = s.repo;
+    if(s.branch)document.getElementById('branch').value= s.branch;
+    if(s.filepath)document.getElementById('filepath').value=s.filepath;
+  }catch(e){}
+}
+
+// ── 연결 테스트 ──
+async function testConnection(){
+  const token = document.getElementById('token').value.trim();
+  const repo  = document.getElementById('repo').value.trim();
+  const branch= document.getElementById('branch').value.trim();
+  const st = document.getElementById('test-status');
+  const btn = document.getElementById('btn-test');
+
+  if(!token){showStatus(st,'❌ Token을 입력하세요','err');return;}
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> 확인 중...';
+  showStatus(st,'연결 확인 중...','ing');
+
+  try{
+    const [owner,repoName] = repo.split('/');
+    const r = await fetch(`https://api.github.com/repos/${owner}/${repoName}/branches/${branch}`,{
+      headers:{
+        'Authorization':'token '+token,
+        'Accept':'application/vnd.github.v3+json'
+      }
+    });
+    if(r.ok){
+      const data = await r.json();
+      showStatus(st,`✅ 연결 성공!\n저장소: ${repo}\n브랜치: ${branch}\n최신 커밋: ${data.commit.sha.slice(0,7)}`,'ok');
+    } else {
+      const err = await r.json();
+      showStatus(st,`❌ 실패: ${err.message}`,'err');
+    }
+  }catch(e){
+    showStatus(st,'❌ 네트워크 오류: '+e.message,'err');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='🔗 연결 테스트';
+  }
+}
+
+// ── 파일 선택 ──
+let selectedFile = null;
+let selectedContent = null;
+
+function onFileSelect(input){
+  const file = input.files[0];
+  if(!file) return;
+  selectedFile = file;
+
+  document.getElementById('fi-name').textContent = file.name;
+  document.getElementById('fi-size').textContent = (file.size/1024).toFixed(1)+'KB';
+  document.getElementById('fi-dest').textContent =
+    document.getElementById('repo').value + '/' +
+    document.getElementById('filepath').value;
+  document.getElementById('file-info').style.display='block';
+  document.getElementById('drop-title').textContent = file.name;
+  document.getElementById('drop-sub').textContent = (file.size/1024).toFixed(1)+'KB';
+  document.getElementById('btn-upload').disabled = false;
+
+  // 파일 내용 읽기
+  const reader = new FileReader();
+  reader.onload = e => { selectedContent = e.target.result; };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ── 파일 업로드 ──
+async function uploadFile(){
+  if(!selectedFile || !selectedContent){
+    alert('파일을 먼저 선택하세요');return;
+  }
+  const token    = document.getElementById('token').value.trim();
+  const repo     = document.getElementById('repo').value.trim();
+  const branch   = document.getElementById('branch').value.trim();
+  const filepath = document.getElementById('filepath').value.trim();
+  const msg      = document.getElementById('commit-msg').value.trim() || '시공관리 업데이트';
+  const st = document.getElementById('upload-status');
+  const btn = document.getElementById('btn-upload');
+
+  if(!token){showStatus(st,'❌ Token을 입력하세요','err');return;}
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> 업로드 중...';
+  showStatus(st,'파일 업로드 중...','ing');
+
+  try{
+    const [owner,repoName] = repo.split('/');
+    const apiBase = `https://api.github.com/repos/${owner}/${repoName}/contents/${filepath}`;
+    const headers = {
+      'Authorization':'token '+token,
+      'Accept':'application/vnd.github.v3+json',
+      'Content-Type':'application/json'
+    };
+
+    // 현재 파일 SHA 가져오기 (업데이트 시 필요)
+    let sha = null;
+    try{
+      const getR = await fetch(apiBase+'?ref='+branch, {headers});
+      if(getR.ok){
+        const data = await getR.json();
+        sha = data.sha;
+      }
+    }catch(e){}
+
+    // Base64 인코딩
+    const b64 = btoa(unescape(encodeURIComponent(selectedContent)));
+
+    // 업로드
+    const body = {
+      message: msg + ' (' + new Date().toLocaleString('ko-KR') + ')',
+      content: b64,
+      branch:  branch,
+    };
+    if(sha) body.sha = sha;
+
+    const upR = await fetch(apiBase, {
+      method:'PUT',
+      headers,
+      body: JSON.stringify(body)
+    });
+
+    if(upR.ok){
+      const data = await upR.json();
+      showStatus(st,
+        `✅ 업로드 완료!\n커밋: ${data.commit.sha.slice(0,7)}\n\n약 1분 후 사이트에 반영됩니다`,
+        'ok'
+      );
+    } else {
+      const err = await upR.json();
+      showStatus(st,'❌ 업로드 실패: '+err.message,'err');
+    }
+  }catch(e){
+    showStatus(st,'❌ 오류: '+e.message,'err');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='🚀 GitHub에 업로드';
+  }
+}
+
+function showStatus(el, msg, type){
+  el.style.display='block';
+  el.className='status s-'+type;
+  el.style.whiteSpace='pre-line';
+  el.textContent=msg;
+}
+
+// 드래그 앤 드롭
+const drop = document.getElementById('drop-area');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{
+  e.preventDefault();drop.classList.remove('drag');
+  const file=e.dataTransfer.files[0];
+  if(file){
+    const dt=new DataTransfer();dt.items.add(file);
+    document.getElementById('file-input').files=dt.files;
+    onFileSelect(document.getElementById('file-input'));
+  }
+});
+
+// 초기화
+loadSettings();
+</script>
+</body>
+</html>
