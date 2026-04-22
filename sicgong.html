@@ -903,58 +903,61 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 
         <!-- 건물 배치 섹션 -->
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-          <div class="sk-hdr" style="margin-bottom:10px;"><span class="sk-dot sk-purple"></span>건물 배치</div>
-
-          <!-- Claude에서 붙여넣기 버튼 (메인) -->
-          <button onclick="skBldgPaste()" style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;">
-            📋 Claude에서 복사한 값 붙여넣기
-          </button>
-          <div style="font-size:10px;color:var(--text-muted);text-align:center;margin-bottom:8px;">
-            배치도를 이 채팅에 올리면 Claude가 JSON값을 줍니다 → 복사 후 위 버튼 탭
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="sk-hdr" style="margin-bottom:0;"><span class="sk-dot sk-purple"></span>건물 배치
+              <span id="sk-bldg-badge" style="font-size:9px;background:rgba(155,125,248,.15);color:#9b7df8;padding:2px 7px;border-radius:4px;font-family:monospace;margin-left:4px;display:none;"></span>
+            </div>
           </div>
 
-          <!-- AI 분석 상태 -->
-          <div id="sk-bldg-ai-status" style="display:none;border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:12px;text-align:center;"></div>
+          <!-- 모드 선택 -->
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button id="sk-tab-coord" onclick="skBldgMode('coord')" style="flex:1;padding:8px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📍 좌표 입력</button>
+            <button id="sk-tab-paste" onclick="skBldgMode('paste')" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📋 Claude 값</button>
+          </div>
 
-          <!-- AI 결과 확인 폼 -->
-          <div id="sk-bldg-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">
-            <div style="font-size:11px;color:var(--accent2);font-weight:700;margin-bottom:10px;">✅ AI 인식 결과 — 확인 후 배치</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-              <div>
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">기준 경계점</div>
-                <select id="sk-bldg-ref" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:inherit;"></select>
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">방위각 (°)</div>
-                <input id="sk-bldg-angle" type="number" value="0" min="0" max="360" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:monospace;">
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">동쪽 이격 (m)</div>
-                <input id="sk-bldg-ox" type="number" value="0" step="0.01" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:monospace;">
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">북쪽 이격 (m)</div>
-                <input id="sk-bldg-oy" type="number" value="0" step="0.01" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:monospace;">
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">건물 가로 (m)</div>
-                <input id="sk-bldg-w" type="number" value="10" step="0.01" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:monospace;">
-              </div>
-              <div>
-                <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">건물 세로 (m)</div>
-                <input id="sk-bldg-h" type="number" value="8" step="0.01" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-size:12px;font-family:monospace;">
-              </div>
+          <!-- 모드 A: 좌표 직접 입력 -->
+          <div id="sk-panel-coord">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;line-height:1.7;">
+              배치도 보면서 건물 모서리 좌표를 입력하세요.<br>
+              <span style="color:#9b7df8;">TM좌표: X=북향(Northing), Y=동향(Easting)</span>
             </div>
+            <div id="sk-coord-list" style="margin-bottom:8px;display:flex;flex-direction:column;gap:6px;"></div>
+            <button onclick="skCoordAddPt()" style="width:100%;padding:9px;border:1.5px dashed rgba(155,125,248,.4);border-radius:8px;background:rgba(155,125,248,.06);color:#9b7df8;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:10px;font-family:inherit;">＋ 모서리 좌표 추가</button>
             <div style="display:flex;gap:8px;">
-              <button onclick="skBldgApply()" style="flex:2;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">✅ 도면에 배치</button>
-              <button onclick="skBldgClear()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">삭제</button>
+              <button onclick="skCoordApply()" style="flex:2;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">✅ 도면에 배치</button>
+              <button onclick="skCoordClear()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">삭제</button>
             </div>
           </div>
+
+          <!-- 모드 B: Claude 값 붙여넣기 -->
+          <div id="sk-panel-paste" style="display:none;">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;line-height:1.7;">
+              배치도를 Claude 채팅에 올리면<br>건물 모서리 좌표를 계산해줍니다.<br>
+              JSON 복사 후 아래 버튼 탭하세요.
+            </div>
+            <button onclick="skBldgPaste()" style="width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;cursor:pointer;">
+              📋 Claude에서 복사한 값 붙여넣기
+            </button>
+          </div>
+
+          <!-- 상태 메시지 -->
+          <div id="sk-bldg-ai-status" style="display:none;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;text-align:center;"></div>
+
+          <!-- 숨김 호환 필드 -->
+          <div style="display:none;">
+            <select id="sk-bldg-ref"></select>
+            <input id="sk-bldg-angle" type="number" value="0">
+            <input id="sk-bldg-ox" type="number" value="0">
+            <input id="sk-bldg-oy" type="number" value="0">
+            <input id="sk-bldg-w" type="number" value="10">
+            <input id="sk-bldg-h" type="number" value="8">
+          </div>
+          <div id="sk-bldg-form" style="display:none;"></div>
 
           <!-- 모서리 거리표 -->
-          <div id="sk-corner-dist-wrap" style="display:none;margin-top:8px;">
+          <div id="sk-corner-dist-wrap" style="display:none;margin-top:10px;">
             <div class="sk-hdr" style="margin-bottom:6px;"><span class="sk-dot sk-orange"></span>건물 모서리 → 경계점 거리</div>
-            <div id="sk-corner-dist-table" style="font-family:monospace;font-size:11px;"></div>
+            <div id="sk-corner-dist-table"></div>
           </div>
         </div>
 
@@ -2371,6 +2374,7 @@ function switchTab(t){
 
     // 건물 배치 그리기
     skDrawBuilding(ctx, toCanvas);
+    skDrawCoordBuilding(ctx, toCanvas);
     // 측정선 그리기
     skDrawMeasureLine(ctx, W, H, scale, cX, cY, midX, midY, false);
 
@@ -2618,6 +2622,7 @@ function switchTab(t){
 
     // 건물 배치 그리기
     skDrawBuilding(ctx, toC);
+    skDrawCoordBuilding(ctx, toC);
     // 측정선 그리기
     skDrawMeasureLine(ctx, W, H, scale, cX, cY, midX, midY, true);
 
@@ -2907,8 +2912,134 @@ function switchTab(t){
     ctx2.restore();
   }
 
+
+  /* ══ 건물 좌표 직접 입력 모듈 ══════════════════════════════════════ */
+  let skCoordPts = []; // [{x, y, label}] TM 좌표 목록
+  let skBldgCurrentMode = 'coord'; // 'coord' | 'paste'
+
+  /* ── 모드 전환 ── */
+  window.skBldgMode = function(mode){
+    skBldgCurrentMode = mode;
+    const isCoord = mode === 'coord';
+    document.getElementById('sk-panel-coord').style.display = isCoord ? 'block' : 'none';
+    document.getElementById('sk-panel-paste').style.display = isCoord ? 'none' : 'block';
+    const tabCoord = document.getElementById('sk-tab-coord');
+    const tabPaste = document.getElementById('sk-tab-paste');
+    if(tabCoord){
+      tabCoord.style.background = isCoord ? 'linear-gradient(135deg,#7c3aed,#6d28d9)' : 'var(--surface2)';
+      tabCoord.style.color = isCoord ? '#fff' : 'var(--text-muted)';
+      tabCoord.style.border = isCoord ? 'none' : '1px solid var(--border)';
+    }
+    if(tabPaste){
+      tabPaste.style.background = !isCoord ? 'linear-gradient(135deg,#7c3aed,#6d28d9)' : 'var(--surface2)';
+      tabPaste.style.color = !isCoord ? '#fff' : 'var(--text-muted)';
+      tabPaste.style.border = !isCoord ? 'none' : '1px solid var(--border)';
+    }
+  };
+
+  /* ── 좌표 추가 ── */
+  window.skCoordAddPt = function(){
+    const id = Date.now();
+    skCoordPts.push({id, x:'', y:'', label:'모서리'+(skCoordPts.length+1)});
+    skCoordRenderList();
+  };
+
+  /* ── 좌표 삭제 ── */
+  window.skCoordDelPt = function(id){
+    skCoordPts = skCoordPts.filter(p=>p.id!==id);
+    skCoordRenderList();
+  };
+
+  /* ── 좌표 목록 렌더링 ── */
+  function skCoordRenderList(){
+    const list = document.getElementById('sk-coord-list');
+    if(!list) return;
+    if(!skCoordPts.length){
+      list.innerHTML = '<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:8px;">아직 입력된 좌표가 없습니다</div>';
+      return;
+    }
+    list.innerHTML = skCoordPts.map((p,i)=>`
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:10px;font-weight:700;color:#9b7df8;">모서리 ${i+1}</span>
+          <button onclick="skCoordDelPt(${p.id})" style="font-size:9px;padding:2px 7px;background:rgba(240,64,80,.12);border:1px solid rgba(240,64,80,.25);border-radius:4px;color:#f04050;cursor:pointer;">삭제</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">X (북향 Northing)</div>
+            <input type="number" step="0.001" value="${p.x}" placeholder="예) 201234.789"
+              oninput="skCoordPts[${i}].x=this.value"
+              style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:7px 8px;color:var(--text);font-size:11px;font-family:monospace;outline:none;">
+          </div>
+          <div>
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">Y (동향 Easting)</div>
+            <input type="number" step="0.001" value="${p.y}" placeholder="예) 449823.456"
+              oninput="skCoordPts[${i}].y=this.value"
+              style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:7px 8px;color:var(--text);font-size:11px;font-family:monospace;outline:none;">
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── 좌표로 도면 배치 ── */
+  window.skCoordApply = function(){
+    const valid = skCoordPts.filter(p=>p.x!==''&&p.y!==''&&!isNaN(parseFloat(p.x))&&!isNaN(parseFloat(p.y)));
+    if(valid.length < 4){
+      showToast('⚠️ 최소 4개 모서리 좌표를 입력하세요');
+      return;
+    }
+    // TM 좌표 배열로 변환
+    skBldgCoordPts = valid.map(p=>({x:parseFloat(p.x), y:parseFloat(p.y)}));
+    skBuilding = null; // 기존 방식 초기화
+
+    const badge = document.getElementById('sk-bldg-badge');
+    if(badge){badge.style.display='inline';badge.textContent=`${valid.length}점 배치`;}
+
+    skDrawRender();
+    skUpdateCoordDistTable();
+    showToast('✅ 건물 배치 완료!');
+  };
+
+  /* ── 좌표 초기화 ── */
+  window.skCoordClear = function(){
+    skCoordPts = [];
+    skBldgCoordPts = [];
+    skCoordRenderList();
+    const badge = document.getElementById('sk-bldg-badge');
+    if(badge) badge.style.display='none';
+    const cdw = document.getElementById('sk-corner-dist-wrap');
+    if(cdw) cdw.style.display='none';
+    skDrawRender();
+    showToast('🗑 건물 삭제됨');
+  };
+
+  /* ── 좌표 기반 모서리 거리표 ── */
+  window.skUpdateCoordDistTable = function(){
+    if(!skBldgCoordPts || !skBldgCoordPts.length || !skPoints.length) return;
+    const wrap = document.getElementById('sk-corner-dist-wrap');
+    const tbl  = document.getElementById('sk-corner-dist-table');
+    if(!wrap||!tbl) return;
+    wrap.style.display='block';
+    const rows = skBldgCoordPts.map((c,i)=>{
+      let minD=Infinity, nearPt=null;
+      skPoints.forEach(sp=>{
+        const d=Math.sqrt((sp.x-c.x)**2+(sp.y-c.y)**2);
+        if(d<minD){minD=d;nearPt=sp;}
+      });
+      return {c:i+1, pt:nearPt?nearPt.num:'?', d:minD.toFixed(3)};
+    });
+    tbl.innerHTML='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;">'
+      +rows.map(r=>`<div style="background:var(--surface2);border-radius:6px;padding:6px 8px;font-size:10px;">
+        <span style="color:#9b7df8;">모서리${r.c}</span>
+        <span style="color:var(--text-muted);margin:0 3px;">→</span>
+        <span style="color:var(--text);">${r.pt}번</span>
+        <span style="color:#f5a623;font-weight:700;margin-left:4px;">${r.d}m</span>
+      </div>`).join('')+'</div>';
+  };
+
   /* ══ 건물 배치 모듈 ══════════════════════════════════════════════ */
   let skBuilding = null; // {refIdx, ox, oy, w, h, angle}
+  let skBldgCoordPts = []; // 좌표 직접 입력 모서리 [{x,y}]
 
   /* ── 수동 입력 폼 토글 ── */
   function skBldgFillRefSelect(){
@@ -3203,6 +3334,41 @@ function switchTab(t){
         </div>`).join('')+'</div>';
     }
   };
+
+
+  /* ── 좌표 기반 건물 그리기 ── */
+  function skDrawCoordBuilding(ctx, toCanvasFn){
+    if(!skBldgCoordPts || skBldgCoordPts.length < 3) return; // 3개부터 미리보기, 4개부터 확정
+    const pts = skBldgCoordPts.map(p => toCanvasFn(p.x, p.y));
+
+    // 폴리곤
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(155,125,248,.18)';
+    ctx.fill();
+    ctx.strokeStyle = '#9b7df8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 모서리 노드
+    pts.forEach((pt,i)=>{
+      ctx.beginPath();ctx.arc(pt[0],pt[1],4,0,Math.PI*2);
+      ctx.fillStyle='#9b7df8';ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1;ctx.stroke();
+      // 번호
+      ctx.font='bold 9px monospace';ctx.textAlign='center';
+      ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(pt[0]-6,pt[1]-18,12,12);
+      ctx.fillStyle='#c4b5fd';ctx.fillText(i+1,pt[0],pt[1]-8);
+    });
+
+    // 중앙 라벨
+    const cx = pts.reduce((s,p)=>s+p[0],0)/pts.length;
+    const cy = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+    ctx.fillStyle='#9b7df8';ctx.fillText('건물',cx,cy+4);
+  }
 
   /* ── 건물 TM 모서리 계산 (공통) ── */
   // TM좌표계: x=북향(Northing), y=동향(Easting)
