@@ -3144,10 +3144,16 @@ function switchTab(t){
   window.skBldgPaste = async function(){
     try{
       let txt = '';
-      if(navigator.clipboard && navigator.clipboard.readText){
-        txt = await navigator.clipboard.readText();
-      } else {
-        txt = prompt('Claude가 준 JSON을 붙여넣으세요:','');
+      try{
+        if(navigator.clipboard && navigator.clipboard.readText){
+          txt = await navigator.clipboard.readText();
+        }
+      }catch(clipErr){
+        // 클립보드 권한 없으면 직접 입력 팝업
+        txt = '';
+      }
+      if(!txt){
+        txt = prompt('Claude가 준 JSON을 여기에 붙여넣으세요:\n(복사한 내용을 길게 눌러 붙여넣기)','');
         if(!txt) return;
       }
       // JSON 추출
