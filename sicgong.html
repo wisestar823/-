@@ -3156,6 +3156,31 @@ function switchTab(t){
       if(!match) throw new Error('JSON 형식이 아닙니다');
       const parsed = JSON.parse(match[0]);
 
+      if(!skPoints.length){showToast('⚠️ 먼저 주소 검색으로 필지를 조회하세요');return;}
+
+      // ── coords 배열 방식 (모서리 좌표 직접 입력) ──
+      if(parsed.coords && Array.isArray(parsed.coords) && parsed.coords.length >= 4){
+        skBldgCoordPts = parsed.coords.map(c=>({x:parseFloat(c.x), y:parseFloat(c.y)}));
+        skBuilding = null;
+        // 좌표 입력 모드로 전환
+        skBldgMode('coord');
+        // 폼에도 표시
+        skCoordPts = parsed.coords.map((c,i)=>({
+          id: Date.now()+i,
+          x: parseFloat(c.x),
+          y: parseFloat(c.y),
+          label:'모서리'+(i+1)
+        }));
+        skCoordRenderList();
+        const badge=document.getElementById('sk-bldg-badge');
+        if(badge){badge.style.display='inline';badge.textContent=`${parsed.coords.length}점 배치`;}
+        skDrawRender();
+        skUpdateCoordDistTable();
+        showToast('✅ 건물 배치 완료! (좌표 '+parsed.coords.length+'점)');
+        return;
+      }
+
+      // ── 기존 방식 (w/h/ox/oy) ──
       const w = parseFloat(parsed.w || parsed.width) || 10;
       const h = parseFloat(parsed.h || parsed.height) || 8;
       const ox = parseFloat(parsed.ox || parsed.offset_x) || 0;
@@ -3163,9 +3188,6 @@ function switchTab(t){
       const angle = parseFloat(parsed.angle) || 0;
       const refIdx = parseInt(parsed.refIdx || parsed.ref) || 0;
 
-      if(!skPoints.length){showToast('⚠️ 먼저 주소 검색으로 필지를 조회하세요');return;}
-
-      // 폼에 값 설정
       skBldgFillRefSelect(); skBldgFillFsRefSelect();
       const ids = ['w','h','ox','oy','angle'];
       const vals = [w,h,ox,oy,angle];
@@ -3179,21 +3201,14 @@ function switchTab(t){
       const fsRefEl=document.getElementById('sk-fs-bldg-ref');
       if(refEl) refEl.value=refIdx;
       if(fsRefEl) fsRefEl.value=refIdx;
-
-      // 건물 배치
       skBuilding={refIdx,ox,oy,w,h,angle};
-
-      // 폼 표시
       document.getElementById('sk-bldg-form').style.display='block';
       const fsForm=document.getElementById('sk-fs-bldg-form');
       if(fsForm) fsForm.style.display='block';
-
-      // 배지 업데이트
       const badge=document.getElementById('sk-bldg-badge');
       if(badge){badge.style.display='inline';badge.textContent=`${w}m × ${h}m`;}
       const fsBadge=document.getElementById('sk-fs-bldg-badge');
       if(fsBadge){fsBadge.style.display='inline';fsBadge.textContent=`🏗 ${w}×${h}m`;}
-
       skDrawRender();
       skUpdateCornerDistTable();
       showToast('✅ 건물 배치 완료!');
