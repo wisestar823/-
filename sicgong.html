@@ -3160,23 +3160,34 @@ function switchTab(t){
 
       // ── coords 배열 방식 (모서리 좌표 직접 입력) ──
       if(parsed.coords && Array.isArray(parsed.coords) && parsed.coords.length >= 4){
-        skBldgCoordPts = parsed.coords.map(c=>({x:parseFloat(c.x), y:parseFloat(c.y)}));
-        skBuilding = null;
-        // 좌표 입력 모드로 전환
-        skBldgMode('coord');
-        // 폼에도 표시
-        skCoordPts = parsed.coords.map((c,i)=>({
-          id: Date.now()+i,
+        // 전역 변수에 직접 설정
+        skBldgCoordPts = parsed.coords.map(c=>({
           x: parseFloat(c.x),
-          y: parseFloat(c.y),
+          y: parseFloat(c.y)
+        }));
+        skBuilding = null;
+
+        // 폼 표시
+        skCoordPts = skBldgCoordPts.map((c,i)=>({
+          id: Date.now()+i,
+          x: c.x,
+          y: c.y,
           label:'모서리'+(i+1)
         }));
+
+        // 좌표 입력 모드로 전환
+        skBldgMode('coord');
         skCoordRenderList();
+
+        // 배지
         const badge=document.getElementById('sk-bldg-badge');
-        if(badge){badge.style.display='inline';badge.textContent=`${parsed.coords.length}점 배치`;}
+        if(badge){badge.style.display='inline';badge.textContent=parsed.coords.length+'점 좌표배치';}
+
+        // 도면 강제 재렌더링
         skDrawRender();
-        skUpdateCoordDistTable();
-        showToast('✅ 건물 배치 완료! (좌표 '+parsed.coords.length+'점)');
+        setTimeout(()=>{skDrawRender();skUpdateCoordDistTable();}, 100);
+
+        showToast('✅ 건물 배치 완료! '+parsed.coords.length+'개 좌표');
         return;
       }
 
