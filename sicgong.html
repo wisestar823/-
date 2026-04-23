@@ -1150,8 +1150,8 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <!-- 좌우 분할: 도면(상) + 건물폼(하) — 세로 레이아웃 -->
   <div style="display:flex;flex-direction:column;height:calc(100% - 48px);">
 
-    <!-- 도면 캔버스 영역 (전체 높이의 60%) -->
-    <div id="sk-draw-overlay-canvas-wrap" style="flex:6;position:relative;min-height:0;">
+    <!-- 도면 캔버스 영역 -->
+    <div id="sk-draw-overlay-canvas-wrap" style="flex:1;position:relative;min-height:0;">
       <canvas id="sk-draw-overlay-canvas" touch-action="none" style="width:100%;height:100%;display:block;"></canvas>
       <!-- 줌 버튼: 우측 상단 고정 -->
       <div style="position:absolute;top:6px;right:6px;display:flex;flex-direction:column;gap:3px;z-index:10;">
@@ -1165,53 +1165,20 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
       <div id="sk-fs-tap-result" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#f59e0b;background:rgba(0,0,0,.85);border:1px solid rgba(245,158,11,.25);border-radius:4px;padding:3px 8px;font-family:monospace;display:none;white-space:nowrap;z-index:10;"></div>
     </div>
 
-    <!-- 건물 배치 폼 (스크롤 가능, 전체 높이의 40%) -->
-    <div style="flex:4;overflow-y:auto;border-top:1px solid var(--border);background:var(--bg);padding:12px;min-height:0;">
-      <div style="font-size:11px;font-weight:700;color:#9b7df8;margin-bottom:8px;">🏗 건물 배치</div>
+    <!-- 전체화면: 하단 버튼 없음 (도면 확인 전용) -->
 
-      <!-- 붙여넣기 버튼 -->
-      <button onclick="skBldgPaste()" style="width:100%;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px;">
-        📋 Claude에서 복사한 값 붙여넣기
-      </button>
-
-      <!-- AI 상태 -->
-      <div id="sk-fs-bldg-status" style="display:none;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:11px;text-align:center;"></div>
-
-      <!-- AI 결과 폼 -->
-      <div id="sk-fs-bldg-form" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
-          <div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">기준 경계점</div>
-            <select id="sk-fs-bldg-ref" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:inherit;"></select>
-          </div>
-          <div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">방위각 (°)</div>
-            <input id="sk-fs-bldg-angle" type="number" value="0" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
-          </div>
-          <div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">동쪽 이격 (m)</div>
-            <input id="sk-fs-bldg-ox" type="number" step="0.01" value="0" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
-          </div>
-          <div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">북쪽 이격 (m)</div>
-            <input id="sk-fs-bldg-oy" type="number" step="0.01" value="0" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
-          </div>
-          <div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">건물 가로 (m)</div>
-            <input id="sk-fs-bldg-w" type="number" step="0.01" value="10" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
-          </div>
-          <div>
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">건물 세로 (m)</div>
-            <input id="sk-fs-bldg-h" type="number" step="0.01" value="8" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:6px;color:var(--text);font-size:11px;font-family:monospace;">
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <button onclick="skBldgApplyFs()" style="flex:2;padding:9px;border:none;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">✅ 도면에 배치</button>
-          <button onclick="skBldgClearFs()" style="flex:1;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text-muted);font-size:11px;cursor:pointer;font-family:inherit;">삭제</button>
-        </div>
-        <!-- 모서리 거리표 -->
-        <div id="sk-fs-corner-dist" style="display:none;margin-top:8px;"></div>
-      </div>
+    <!-- 숨김 호환 필드 -->
+    <div style="display:none;">
+      <select id="sk-fs-bldg-ref"></select>
+      <input id="sk-fs-bldg-angle" type="number" value="0">
+      <input id="sk-fs-bldg-ox" type="number" value="0">
+      <input id="sk-fs-bldg-oy" type="number" value="0">
+      <input id="sk-fs-bldg-w" type="number" value="10">
+      <input id="sk-fs-bldg-h" type="number" value="8">
+      <div id="sk-fs-bldg-status"></div>
+      <div id="sk-fs-bldg-form"></div>
+      <div id="sk-fs-bldg-badge"></div>
+      <div id="sk-fs-corner-dist"></div>
     </div>
   </div>
 </div>
@@ -3193,6 +3160,7 @@ function switchTab(t){
         skDrawRender();
         setTimeout(()=>{skDrawRender();skUpdateCoordDistTable();}, 100);
 
+        const cr=document.getElementById('sk-fs-bldg-clear-row');if(cr)cr.style.display='block';
         showToast('✅ 건물 배치 완료! '+parsed.coords.length+'개 좌표');
         return;
       }
@@ -3279,11 +3247,12 @@ function switchTab(t){
   /* ── 전체화면 건물 삭제 ── */
   window.skBldgClearFs = function(){
     skBuilding=null;
+    skBldgCoordPts=[];
     const b=document.getElementById('sk-bldg-badge');if(b)b.style.display='none';
     const fb=document.getElementById('sk-fs-bldg-badge');if(fb)fb.style.display='none';
     const fd=document.getElementById('sk-fs-corner-dist');if(fd)fd.style.display='none';
     const fw=document.getElementById('sk-corner-dist-wrap');if(fw)fw.style.display='none';
-    document.getElementById('sk-fs-bldg-form').style.display='none';
+    const cr=document.getElementById('sk-fs-bldg-clear-row');if(cr)cr.style.display='none';
     skDrawFsDraw();skDrawRender();
     showToast('🗑 건물 삭제됨');
   };
