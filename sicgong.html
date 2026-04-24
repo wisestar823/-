@@ -5361,6 +5361,46 @@ initDB()
   // 주소 조회 후 규제 캐시 리셋 (새 필지)
   window._skRegReset=function(){_regInfo=null;};
 
+  // ── 외부 호출용 전역 노출 ──
+  window.skRegLoad    = function(){
+    const empty   = document.getElementById('sk-reg-empty');
+    const pInfo   = document.getElementById('sk-reg-panel-info');
+    const pMap    = document.getElementById('sk-reg-panel-map');
+    if(!window.skPNU){
+      if(empty) empty.style.display='block';
+      if(pInfo) pInfo.style.display='none';
+      if(pMap)  pMap.style.display='none';
+      return;
+    }
+    if(empty) empty.style.display='none';
+    skRegSubTab(_curSubTab);
+    if(pInfo) pInfo.style.display=_curSubTab==='info'?'block':'none';
+    if(pMap)  pMap.style.display=_curSubTab==='map' ?'block':'none';
+    if(_regInfo){ skRegRender(_regInfo); return; }
+    skRegFetch();
+  };
+
+  window.skRegSubTab  = skRegSubTab;
+  window.skRegDrawCanvas = skRegDrawCanvas;
+  window.skRegZoom    = function(f){ _regScale*=f; _regScale=Math.max(.3,Math.min(_regScale,20)); skRegDrawCanvas(); };
+  window.skRegResetView  = function(){ _regScale=1; _regOffX=0; _regOffY=0; skRegDrawCanvas(); };
+
+  window.skRegSyncBadge = function(){
+    const btn = document.getElementById('tab-reg-btn');
+    const addr = window.skLotMeta?.addr||'';
+    if(btn && addr) btn.style.color='#f59e0b';
+    const regEl = document.getElementById('tab-reg-content');
+    if(regEl && regEl.style.display!=='none') window.skRegLoad();
+  };
+
+  window.skRegAutoFetch = function(){
+    if(!window.skPNU) return;
+    const regEl = document.getElementById('tab-reg-content');
+    if(regEl && regEl.style.display!=='none'){ window.skRegLoad(); return; }
+    // 백그라운드 조회 (탭 열릴 때 즉시 표시용)
+    if(!_regInfo) skRegFetch();
+  };
+
 })();
 </script>
 </body>
