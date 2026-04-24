@@ -231,24 +231,29 @@ function fetchSuggest(q){
   jsonp(url, (err, data)=>{
     const box = document.getElementById('suggest-box');
     if(err || !data){ box.style.display='none'; return; }
-    const items = data?.response?.result || [];
-    if(!items.length){ box.style.display='none'; return; }
+    const status = data?.response?.status;
+    const result = data?.response?.result;
+    if(status!=='OK' || !result){ box.style.display='none'; return; }
+    // 단일 결과로 목록 구성
     box.style.display = 'block';
-    box.innerHTML = items.slice(0,6).map((it,i)=>`
-      <div class="suggest-item" onclick="selectSuggest(${i})">
-        <div class="suggest-addr">${it.text||''}</div>
-        <div class="suggest-pnu">${it.zipcode||''}</div>
-      </div>`).join('');
-    box._items = items;
+    box.innerHTML = `<div class="suggest-item" onclick="selectResult('${(result.text||q).replace(/'/g,"\\'")}','${result.point?.x||''}','${result.point?.y||''}')">
+      <div class="suggest-addr">${result.text||q}</div>
+      <div class="suggest-pnu">지번주소</div>
+    </div>`;
+    box._result = result;
   }, 5000);
 }
 
-function selectSuggest(i){
-  const box = document.getElementById('suggest-box');
-  const it = box._items[i];
-  box.style.display = 'none';
-  document.getElementById('addr-inp').value = it.text||'';
-  fetchPNU(it.text||'', it.x, it.y);
+function selectResult(addr, x, y){
+  document.getElementById('suggest-box').style.display = 'none';
+  document.getElementById('addr-inp').value = addr;
+  document.getElementById('log-panel').innerHTML='';
+  document.getElementById('pnu-badge').style.display='none';
+  document.getElementById('reg-result').style.display='none';
+  setStep(1,'done'); setStep(2,'active');
+  showState('loading','PNU 조회 중...');
+  lg('선택: '+addr+' (x='+x+', y='+y+')', 'ok');
+  fetchPNU(addr, x, y);
 }
 
 /* ── 검색 버튼 ── */
@@ -265,18 +270,41 @@ function doSearch(){
 
   const url = `${SK_BASE}/req/address?service=address&request=getCoord&version=2.0&crs=epsg:4326&format=json&type=parcel&address=${encodeURIComponent(q)}&key=${SK_KEY}`;
   jsonp(url, (err, data)=>{
-    if(err){ setStep(1,'fail'); showErr('주소 검색 실패', err+'<br><small>인터넷 연결 또는 GitHub Pages 접속 필요</small>'); lg('❌ '+err,'err'); return; }
-    const items = data?.response?.result||[];
-    lg('검색 결과: '+items.length+'건', items.length?'ok':'warn');
-    if(!items.length){
-      setStep(1,'fail');
-      showErr('주소를 찾을 수 없습니다','시/군/구 포함해서 입력해보세요<br><small>예) 의정부시 녹양동 225-2</small>');
+    if(err){ setStep(1,'fail'); showErr('주소 검색 실패', err); lg('❌ '+err,'err'); return; }
+
+    const status = data?.response?.status;
+    const result = data?.response?.result;
+    lg('status: '+status, status==='OK'?'ok':'warn');
+
+    if(status==='OK' && result){
+      // 단일 결과 객체 (경계말뚝과 동일한 구조)
+      const x = result.point?.x||'';
+      const y = result.point?.y||'';
+      const addr2 = result.text||q;
+      lg('✅ 주소: '+addr2+' (x='+x+', y='+y+')', 'ok');
+      setStep(1,'done'); setStep(2,'active');
+      fetchPNU(addr2, x, y);
       return;
     }
-    setStep(1,'done'); setStep(2,'active');
-    const it = items[0];
-    lg('선택: '+it.text+' (x='+it.x+', y='+it.y+')', 'ok');
-    fetchPNU(it.text, it.x, it.y);
+
+    // 지번 실패 → 도로명 재시도
+    lg('지번 검색 실패 → 도로명으로 재시도', 'warn');
+    const url2 = `${SK_BASE}/req/address?service=address&request=getCoord&version=2.0&crs=epsg:4326&format=json&type=road&address=${encodeURIComponent(q)}&key=${SK_KEY}`;
+    jsonp(url2, (err2, data2)=>{
+      const result2 = data2?.response?.result;
+      if(!err2 && data2?.response?.status==='OK' && result2){
+        const x = result2.point?.x||'';
+        const y = result2.point?.y||'';
+        const addr2 = result2.text||q;
+        lg('✅ 도로명 주소: '+addr2+' (x='+x+', y='+y+')', 'ok');
+        setStep(1,'done'); setStep(2,'active');
+        fetchPNU(addr2, x, y);
+        return;
+      }
+      setStep(1,'fail');
+      showErr('주소를 찾을 수 없습니다','더 자세한 주소를 입력해보세요<br><small>예) 의정부시 녹양동 225-2 / 충남 논산시 원박리 267</small>');
+      lg('❌ 도로명도 실패: '+(err2||'결과없음'), 'err');
+    });
   });
 }
 
