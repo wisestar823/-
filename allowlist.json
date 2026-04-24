@@ -58,5 +58,11 @@
     "id": "uykuyvp7",
     "name": "장지훈",
     "role": "viewer"
+  },
+  {
+    "id": "K7b7jeq7",
+    "role": "viewer",
+    "memo": "테스트",
+    "addedAt": "2026-04-24"
   }
 ]
