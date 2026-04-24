@@ -2127,8 +2127,9 @@ function switchTab(t){
     if(pnu&&pnu.length>=10){
       skPNU=pnu.slice(0,19);
       skShowSelected(title,skPNU);
-      // 주소 선택 즉시 법적규제 자동 조회 시작
-      setTimeout(()=>{if(window._skRegReset){_skRegReset();window._skRegLoadInner&&_skRegLoadInner();}},500);
+      // 주소 선택 즉시 법적규제 자동 조회 (PNU만 있으면 가능)
+      if(window._skRegReset) _skRegReset();
+      setTimeout(()=>{ if(window._skRegLoadInner) _skRegLoadInner(); }, 800);
     } else if(x&&y){
       // 좌표로 PNU 조회 (JSONP)
       skShowLoading('PNU 조회 중...');
@@ -5007,32 +5008,41 @@ initDB()
   // skRegFetch: 2개 API 병렬 조회
   // ══════════════════════════════════════════════════════════════════
   function skRegFetch(){
-    const loading=document.getElementById('sk-reg-loading');
-    const regContent=document.getElementById('sk-reg-content');
-    if(loading) loading.style.display='block';
-    if(regContent) regContent.style.display='none';
+    // 모든 loading/body 요소 처리 (두 패널 모두)
+    ['sk-reg-loading','sk-reg-loading-inner'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.style.display='block';
+    });
+    ['sk-reg-content','sk-reg-body'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.style.display='none';
+    });
+
     const pnu=window.skPNU||'';
-    if(!pnu){if(loading)loading.style.display='none';return;}
+    if(!pnu){
+      ['sk-reg-loading','sk-reg-loading-inner'].forEach(id=>{
+        const el=document.getElementById(id); if(el) el.style.display='none';
+      });
+      return;
+    }
 
-    let done=0;
-    let result1=null, result2=null;
-
+    let done=0, result1=null, result2=null;
     function tryRender(){
       done++;
       if(done<2) return;
-      if(loading) loading.style.display='none';
+      ['sk-reg-loading','sk-reg-loading-inner'].forEach(id=>{
+        const el=document.getElementById(id); if(el) el.style.display='none';
+      });
       const info=skRegParseAll(result1, result2);
       _regInfo=info;
       skRegRender(info);
     }
 
-    // API 1: 토지특성정보 (용도지역 등)
+    // API1: 토지특성정보 (용도지역·건폐율 등)
     const url1=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_P_FNNMAP&key=${SK_KEY}&domain=wisestar823.github.io&attrFilter=pnu:=:${pnu}&format=json&size=10`;
-    _jsonp(url1,(d)=>{result1=d;tryRender();});
+    _jsonp(url1,(d)=>{ result1=d; tryRender(); });
 
-    // API 2: 토지이용계획 전체 (모든 규제 목록)
+    // API2: 토지이용계획 (규제 목록 전체)
     const url2=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_LHBLPN&key=${SK_KEY}&domain=wisestar823.github.io&attrFilter=pnu:=:${pnu}&format=json&size=30`;
-    _jsonp(url2,(d)=>{result2=d;tryRender();});
+    _jsonp(url2,(d)=>{ result2=d; tryRender(); });
   }
 
   function _jsonp(url,cb){
@@ -5059,45 +5069,57 @@ initDB()
       warnCount:0,
     };
 
-    // API1: 토지특성정보 파싱
+    // API1: 토지특성정보 - 가능한 모든 필드명 시도
     try{
       const f1=data1?.response?.result?.featureCollection?.features||[];
       if(f1.length){
         const p=f1[0].properties||{};
-        info.useZone = p.prpos_area1_nm||p.prposArea1Nm||p.use_area1||'';
-        info.useZone2= p.prpos_area2_nm||p.prposArea2Nm||p.use_area2||'';
-        info.useDistrict=p.use_district_nm||p.useDistrictNm||'';
-        // 용도지역에서 건폐율/용적률
+        // 용도지역명 (필드명이 API 버전마다 다름)
+        info.useZone = p.prpos_area1_cde_nm||p.prpos_area1_nm||p.prposArea1Nm||
+                       p.use_zone_nm||p.useZoneNm||p.prpos_area_nm||
+                       p.pnuLduse||p.lduse_nm||p.ldUseNm||p.znCd||'';
+        info.useZone2= p.prpos_area2_cde_nm||p.prpos_area2_nm||p.prposArea2Nm||'';
+        info.useDistrict=p.use_district_nm||p.useDistrictNm||p.use_dstrct_nm||'';
+        // 건폐율/용적률 직접 제공시 우선 사용
+        const rawBcr=parseFloat(p.bldg_cvrg_rat||p.bldgCvrgRat||p.bcr||0);
+        const rawFar=parseFloat(p.floor_area_rat||p.floorAreaRat||p.far||0);
+        // 테이블에서 보완
         const tbl=REG_TABLE[info.useZone]||{};
-        info.bcr=tbl.bcr||0;
-        info.far=tbl.far||0;
+        info.bcr=rawBcr||tbl.bcr||0;
+        info.far=rawFar||tbl.far||0;
         info.solar=tbl.solar||'조례 확인';
         info.height=tbl.height||'없음';
         info.note=tbl.note||'';
-        // 토지이용계획 항목 추출
-        const plan=p.land_use_plan||p.landUsePlan||p.plan_dstrct||'';
-        if(plan) plan.split(/[,/|]/).map(s=>s.trim()).filter(Boolean).forEach(s=>{
-          if(!info.rawItems.includes(s)) info.rawItems.push(s);
+        // 토지이용계획 항목 (여러 필드명 시도)
+        ['land_use_plan','landUsePlan','plan_dstrct','use_plan_nm','regl_nm'].forEach(f=>{
+          const v=p[f]||'';
+          if(v) v.split(/[,/|·\n]/).map(s=>s.trim()).filter(s=>s.length>1).forEach(s=>{
+            if(!info.rawItems.includes(s)) info.rawItems.push(s);
+          });
         });
       }
-    }catch(e){}
+    }catch(e){ console.warn('규제 API1 파싱 오류:',e); }
 
-    // API2: 토지이용계획 전체 파싱
+    // API2: 토지이용계획 전체 - 다양한 필드명 대응
     try{
       const f2=data2?.response?.result?.featureCollection?.features||[];
       f2.forEach(feat=>{
         const p=feat.properties||{};
-        const nm=p.reglt_cde_nm||p.regltnNm||p.use_area||p.prpos_area_nm||'';
-        if(nm&&!info.rawItems.includes(nm)) info.rawItems.push(nm);
-        // 저촉여부
-        const hit=p.cnflc_at||p.cnflcAt||'';
-        if(nm&&hit==='Y'&&!info.rawItems.includes('⚠️저촉:'+nm)) info.rawItems.push('⚠️저촉:'+nm);
+        const nm=p.reglt_cde_nm||p.regltnNm||p.regl_nm||p.use_nm||
+                  p.prpos_area_nm||p.pnu_area_nm||p.znCd||'';
+        if(nm&&nm.length>1&&!info.rawItems.includes(nm)) info.rawItems.push(nm);
+        const hit=p.cnflc_at||p.cnflcAt||p.hit||'';
+        if(nm&&(hit==='Y'||hit==='1')&&!info.rawItems.includes('⚠️저촉:'+nm)){
+          info.rawItems.push('⚠️저촉:'+nm);
+        }
       });
-    }catch(e){}
+    }catch(e){ console.warn('규제 API2 파싱 오류:',e); }
 
-    // 용도지역 자체도 rawItems에 추가
+    // 용도지역 rawItems 앞에 추가
     if(info.useZone&&!info.rawItems.includes(info.useZone)) info.rawItems.unshift(info.useZone);
     if(info.useZone2&&info.useZone2!==info.useZone&&!info.rawItems.includes(info.useZone2)) info.rawItems.splice(1,0,info.useZone2);
+    // API 실패시 안내
+    if(!info.useZone&&!info.rawItems.length) info.useZone='API 조회 실패 — 토지이음 확인 필요';
 
     // 카테고리 분류
     const assigned=new Set();
