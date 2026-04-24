@@ -2242,6 +2242,9 @@ function switchTab(t){
     document.getElementById('sk-res-content').style.display='block';
     skDrawRender();
     skSubTab('draw');
+    // 법적규제 탭 자동 연동
+    if(window._skRegReset) _skRegReset();
+    skRegSyncBadge();
     showToast('✅ 계산 완료 — 도면보기 확인');
   };
 
@@ -2326,6 +2329,8 @@ function switchTab(t){
       if(bN) bN.href='https://map.naver.com/p/search/'+item.tLat+','+item.tLng;
       skDrawRender();
       skSubTab('draw');
+      if(window._skRegReset) _skRegReset();
+      skRegSyncBadge();
       showToast('✅ '+item.addr+' 복원 완료');
     } else {
       // 구버전 이력 (points 없음)
@@ -3641,6 +3646,7 @@ function switchTab(t){
 
         const cr=document.getElementById('sk-fs-bldg-clear-row');if(cr)cr.style.display='block';
         showToast('✅ 건물 배치 완료! '+parsed.coords.length+'개 좌표');
+        skRegSyncBadge();
         return;
       }
 
@@ -4831,6 +4837,22 @@ initDB()
   };
 
   /* ── 진입점 ── */
+  /* ── 법적규제 탭 뱃지 동기화 (경계말뚝에서 호출) ── */
+  window.skRegSyncBadge = function(){
+    // 법적규제 탭 버튼에 주소 뱃지 표시
+    const btn = document.getElementById('tab-reg-btn');
+    const addr = window.skLotMeta?.addr || '';
+    if(btn && addr){
+      btn.innerHTML = '⚖️ 법적규제';
+      btn.style.color = '#f59e0b';
+    }
+    // 이미 규제탭이 열려있으면 자동 갱신
+    const regEl = document.getElementById('tab-reg-content');
+    if(regEl && regEl.style.display !== 'none'){
+      skRegLoad();
+    }
+  };
+
   window.skRegLoad=function(){
     const empty=document.getElementById('sk-reg-empty');
     const panelInfo=document.getElementById('sk-reg-panel-info');
