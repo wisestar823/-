@@ -44,7 +44,6 @@ input:focus{border-color:var(--blue);}
 .role-btn.sel-admin{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:var(--red);}
 .role-btn.sel-viewer{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.4);color:var(--blue);}
 .user-item{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
-.user-id{flex:1;font-size:12px;}
 .user-role{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;}
 .role-admin{background:rgba(239,68,68,.15);color:var(--red);}
 .role-viewer{background:rgba(59,130,246,.15);color:var(--blue);}
@@ -96,15 +95,16 @@ input:focus{border-color:var(--blue);}
 
 <!-- 사용자 관리 탭 -->
 <div id="tab-user" class="tab-panel">
-
   <div class="card">
     <div class="card-title" style="color:var(--purple);">➕ 새 사용자 추가</div>
-    <label>사용자 ID</label>
-    <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:#6a7a9a;line-height:1.7;">
-      📱 <strong style="color:#dde4f2;">기기 ID 확인 방법</strong><br>
-      앱 잠금화면 하단에 표시된 <span style="color:#3b82f6;font-family:monospace;">기기 ID</span>를<br>
-      [📋 ID 복사] 버튼으로 복사 후 아래에 붙여넣으세요
+
+    <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--soft);line-height:1.7;">
+      📱 <strong style="color:var(--tx);">기기 ID 확인 방법</strong><br>
+      앱 잠금화면 하단 <span style="color:#3b82f6;font-family:monospace;">기기 ID</span> 표시됨<br>
+      [📋 ID 복사] 탭 → 아래에 붙여넣기
     </div>
+
+    <label>사용자 ID (기기 ID)</label>
     <input type="text" id="new-user-id" placeholder="앱 잠금화면의 기기 ID 붙여넣기">
 
     <label>역할 선택</label>
@@ -120,7 +120,7 @@ input:focus{border-color:var(--blue);}
     <label>메모 (선택)</label>
     <input type="text" id="new-user-memo" placeholder="예) 김동완 차장, 현장 태블릿">
 
-    <button class="btn btn-purple" onclick="addUser()">✅ 추가 후 GitHub에 반영</button>
+    <button class="btn btn-purple" onclick="addUser()" id="btn-add-user">✅ 추가 후 GitHub에 반영</button>
     <div class="status" id="user-add-status"></div>
   </div>
 
@@ -134,7 +134,6 @@ input:focus{border-color:var(--blue);}
     </div>
     <div class="status" id="user-list-status"></div>
   </div>
-
 </div>
 
 <!-- 설정 탭 -->
@@ -158,7 +157,7 @@ input:focus{border-color:var(--blue);}
 
 </div>
 <script>
-// 탭 전환
+// ── 탭 전환 ──
 function switchTab(t){
   ['upload','user','setting'].forEach((id,i)=>{
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',id===t);
@@ -167,9 +166,9 @@ function switchTab(t){
   if(t==='user') loadAllowlist();
 }
 
-// 설정
+// ── 설정 ──
 function saveSettings(){
-  localStorage.setItem('gh_mgr_settings',JSON.stringify({
+  localStorage.setItem('gh_mgr_v2',JSON.stringify({
     token:document.getElementById('token').value,
     repo:document.getElementById('repo').value,
     branch:document.getElementById('branch').value,
@@ -179,7 +178,7 @@ function saveSettings(){
 }
 function loadSettings(){
   try{
-    const s=JSON.parse(localStorage.getItem('gh_mgr_settings')||'{}');
+    const s=JSON.parse(localStorage.getItem('gh_mgr_v2')||localStorage.getItem('gh_mgr_settings')||'{}');
     if(s.token) document.getElementById('token').value=s.token;
     if(s.repo)  document.getElementById('repo').value=s.repo;
     if(s.branch)document.getElementById('branch').value=s.branch;
@@ -193,29 +192,61 @@ function cfg(){
     repo:document.getElementById('repo').value.trim(),
     branch:document.getElementById('branch').value.trim(),
     filepath:document.getElementById('filepath').value.trim(),
-    alPath:document.getElementById('allowlist-path').value.trim(),
+    alPath:document.getElementById('allowlist-path').value.trim()||'allowlist.json',
   };
 }
-function ghHdr(token){return{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};}
+
+// ── GitHub API ──
+function ghHdr(token){
+  return{
+    'Authorization':'token '+token,
+    'Accept':'application/vnd.github.v3+json',
+    'Content-Type':'application/json'
+  };
+}
+
+// Base64 인코딩/디코딩 (한글 포함 안전)
+function safeB64Encode(str){
+  const bytes=new TextEncoder().encode(str);
+  let binary='';
+  bytes.forEach(b=>binary+=String.fromCharCode(b));
+  return btoa(binary);
+}
+function safeB64Decode(b64){
+  const binary=atob(b64.replace(/\n/g,''));
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
 
 async function ghGet(token,repo,path,branch){
   const[owner,name]=repo.split('/');
-  const r=await fetch(`https://api.github.com/repos/${owner}/${name}/contents/${path}?ref=${branch}`,{headers:ghHdr(token)});
-  if(!r.ok) return null;
+  const url=`https://api.github.com/repos/${owner}/${name}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+  const r=await fetch(url,{headers:ghHdr(token)});
+  if(r.status===404) return null; // 파일 없음
+  if(!r.ok){const e=await r.json();throw new Error(e.message||'GitHub API 오류');}
   const d=await r.json();
-  return{sha:d.sha,content:decodeURIComponent(escape(atob(d.content.replace(/\n/g,''))))};
-}
-async function ghPut(token,repo,path,branch,content,sha,msg){
-  const[owner,name]=repo.split('/');
-  let b64;
-  try{ b64=btoa(unescape(encodeURIComponent(content))); }
-  catch(e){ b64=btoa(content); }
-  const body={message:msg+' ('+new Date().toLocaleString('ko-KR')+')',content:b64,branch};
-  if(sha) body.sha=sha;
-  return fetch(`https://api.github.com/repos/${owner}/${name}/contents/${path}`,{method:'PUT',headers:ghHdr(token),body:JSON.stringify(body)});
+  return{sha:d.sha, content:safeB64Decode(d.content)};
 }
 
-// 연결 테스트
+async function ghPut(token,repo,path,branch,content,sha,msg){
+  const[owner,name]=repo.split('/');
+  const b64=safeB64Encode(content);
+  const body={
+    message:msg+' ('+new Date().toLocaleString('ko-KR')+')',
+    content:b64,
+    branch:branch,
+  };
+  if(sha) body.sha=sha;
+  const r=await fetch(
+    `https://api.github.com/repos/${owner}/${name}/contents/${encodeURIComponent(path)}`,
+    {method:'PUT',headers:ghHdr(token),body:JSON.stringify(body)}
+  );
+  if(!r.ok){const e=await r.json();throw new Error(e.message||'업로드 실패');}
+  return r;
+}
+
+// ── 연결 테스트 ──
 async function testConnection(){
   const{token,repo,branch}=cfg();
   const st=document.getElementById('test-status');
@@ -225,13 +256,15 @@ async function testConnection(){
   try{
     const[owner,name]=repo.split('/');
     const r=await fetch(`https://api.github.com/repos/${owner}/${name}/branches/${branch}`,{headers:ghHdr(token)});
-    if(r.ok){const d=await r.json();showStatus(st,`✅ 연결 성공!\n저장소: ${repo}\n브랜치: ${branch}\n커밋: ${d.commit.sha.slice(0,7)}`,'ok');}
-    else{const e=await r.json();showStatus(st,'❌ 실패: '+e.message,'err');}
+    if(r.ok){
+      const d=await r.json();
+      showStatus(st,`✅ 연결 성공!\n저장소: ${repo}\n브랜치: ${branch}\n커밋: ${d.commit.sha.slice(0,7)}`,'ok');
+    }else{const e=await r.json();showStatus(st,'❌ 실패: '+e.message,'err');}
   }catch(e){showStatus(st,'❌ '+e.message,'err');}
   finally{btn.disabled=false;btn.innerHTML='🔗 연결 테스트';}
 }
 
-// 파일 선택
+// ── 파일 선택 ──
 let selFile=null,selContent=null;
 function onFileSelect(input){
   const file=input.files[0];if(!file)return;
@@ -242,10 +275,12 @@ function onFileSelect(input){
   document.getElementById('drop-title').textContent=file.name;
   document.getElementById('drop-sub').textContent=(file.size/1024).toFixed(1)+'KB';
   document.getElementById('btn-upload').disabled=false;
-  const r=new FileReader();r.onload=e=>{selContent=e.target.result;};r.readAsText(file,'utf-8');
+  const r=new FileReader();
+  r.onload=e=>{selContent=e.target.result;};
+  r.readAsText(file,'utf-8');
 }
 
-// 파일 업로드
+// ── 파일 업로드 ──
 async function uploadFile(){
   if(!selFile||!selContent){alert('파일을 먼저 선택하세요');return;}
   const{token,repo,branch,filepath}=cfg();
@@ -256,14 +291,13 @@ async function uploadFile(){
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> 업로드 중...';showStatus(st,'업로드 중...','ing');
   try{
     const cur=await ghGet(token,repo,filepath,branch);
-    const r=await ghPut(token,repo,filepath,branch,selContent,cur?.sha,msg);
-    if(r.ok){const d=await r.json();showStatus(st,`✅ 업로드 완료!\n커밋: ${d.commit.sha.slice(0,7)}\n약 1분 후 반영됩니다`,'ok');}
-    else{const e=await r.json();showStatus(st,'❌ '+e.message,'err');}
+    await ghPut(token,repo,filepath,branch,selContent,cur?.sha,msg);
+    showStatus(st,'✅ 업로드 완료!\n약 1분 후 사이트에 반영됩니다','ok');
   }catch(e){showStatus(st,'❌ '+e.message,'err');}
   finally{btn.disabled=false;btn.innerHTML='🚀 GitHub에 업로드';}
 }
 
-// 역할 선택
+// ── 역할 선택 ──
 let selRole='';
 function selectRole(r){
   selRole=r;
@@ -271,77 +305,134 @@ function selectRole(r){
   document.getElementById('btn-viewer').className='role-btn'+(r==='viewer'?' sel-viewer':'');
 }
 
-// 사용자 목록 불러오기
+// ── allowlist.json 불러오기 ──
 async function loadAllowlist(){
   const{token,repo,branch,alPath}=cfg();
   const el=document.getElementById('user-list');
-  if(!token){el.innerHTML='<div style="text-align:center;padding:12px;color:var(--soft);font-size:12px;">⚙️ 설정 탭에서 Token을 입력하세요</div>';return;}
+  const st=document.getElementById('user-list-status');
+  if(!token){
+    el.innerHTML='<div style="text-align:center;padding:12px;color:var(--soft);font-size:12px;">⚙️ 설정 탭에서 Token을 입력하세요</div>';
+    return;
+  }
   el.innerHTML='<div style="text-align:center;padding:12px;color:var(--soft);font-size:12px;">🔄 불러오는 중...</div>';
+  st.style.display='none';
   try{
     const file=await ghGet(token,repo,alPath,branch);
-    if(!file){el.innerHTML='<div style="text-align:center;padding:12px;color:var(--soft);font-size:12px;">allowlist.json 없음<br>첫 사용자 추가 시 자동 생성</div>';return;}
-    const data=JSON.parse(file.content);
-    const users=data.users||[];
-    if(!users.length){el.innerHTML='<div style="text-align:center;padding:12px;color:var(--soft);font-size:12px;">등록된 사용자가 없습니다</div>';return;}
+    if(!file){
+      el.innerHTML='<div style="text-align:center;padding:12px;color:var(--soft);font-size:12px;">등록된 사용자 없음<br>첫 사용자 추가 시 자동 생성됩니다</div>';
+      return;
+    }
+    const raw=JSON.parse(file.content);
+    // 배열 또는 {users:[]} 형식 모두 지원
+    const users=Array.isArray(raw)?raw:(raw.users||[]);
+    if(!users.length){
+      el.innerHTML='<div style="text-align:center;padding:12px;color:var(--soft);font-size:12px;">등록된 사용자가 없습니다</div>';
+      return;
+    }
     el.innerHTML=users.map((u,i)=>`
       <div class="user-item">
         <div style="flex:1;min-width:0;">
-          <div class="user-id" style="font-weight:700;">${u.id}</div>
+          <div style="font-size:12px;font-weight:700;font-family:monospace;">${u.id}</div>
           ${u.memo?`<div style="font-size:10px;color:var(--soft);margin-top:1px;">${u.memo}</div>`:''}
           <div style="font-size:9px;color:var(--soft);margin-top:1px;">${u.addedAt||''}</div>
         </div>
         <span class="user-role ${u.role==='admin'?'role-admin':'role-viewer'}">${u.role==='admin'?'🔴 관리자':'🔵 뷰어'}</span>
         <button class="user-del" onclick="deleteUser(${i})">삭제</button>
       </div>`).join('');
-  }catch(e){el.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px;">오류: '+e.message+'</div>';}
+  }catch(e){
+    el.innerHTML=`<div style="color:var(--red);font-size:12px;padding:8px;">❌ 오류: ${e.message}</div>`;
+  }
 }
 
-// 사용자 추가
+// ── 사용자 추가 ──
 async function addUser(){
   const{token,repo,branch,alPath}=cfg();
   const userId=document.getElementById('new-user-id').value.trim();
   const memo=document.getElementById('new-user-memo').value.trim();
   const st=document.getElementById('user-add-status');
+  const btn=document.getElementById('btn-add-user');
+
   if(!token){showStatus(st,'❌ 설정 탭에서 Token을 입력하세요','err');return;}
   if(!userId){showStatus(st,'❌ 사용자 ID를 입력하세요','err');return;}
   if(!selRole){showStatus(st,'❌ 역할을 선택하세요 (관리자/뷰어)','err');return;}
-  showStatus(st,'⏳ 처리 중...','ing');
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span> 처리 중...';
+  showStatus(st,'allowlist.json 확인 중...','ing');
+
   try{
+    // 기존 파일 조회
     const file=await ghGet(token,repo,alPath,branch);
-    let data={users:[]},sha=null;
-    if(file){data=JSON.parse(file.content);sha=file.sha;if(!data.users)data.users=[];}
-    if(data.users.find(u=>u.id===userId)){showStatus(st,'⚠️ 이미 등록된 ID입니다','err');return;}
-    data.users.push({id:userId,role:selRole,memo:memo||'',addedAt:new Date().toISOString().slice(0,10)});
-    const r=await ghPut(token,repo,alPath,branch,JSON.stringify(data,null,2),sha,`사용자 추가: ${userId}`);
-    if(r.ok){
-      showStatus(st,`✅ ${userId} (${selRole==='admin'?'관리자':'뷰어'}) 등록 완료!\n약 1분 후 앱에서 사용 가능합니다`,'ok');
-      document.getElementById('new-user-id').value='';
-      document.getElementById('new-user-memo').value='';
-      selectRole('');
-      loadAllowlist();
-    } else {const e=await r.json();showStatus(st,'❌ '+e.message,'err');}
-  }catch(e){showStatus(st,'❌ '+e.message,'err');}
+    let users=[];
+    let sha=null;
+
+    if(file){
+      sha=file.sha;
+      const raw=JSON.parse(file.content);
+      users=Array.isArray(raw)?raw:(raw.users||[]);
+    }
+
+    // 중복 체크
+    if(users.find(u=>u.id===userId)){
+      showStatus(st,'⚠️ 이미 등록된 ID입니다','err');
+      return;
+    }
+
+    // 신규 사용자 추가
+    users.push({
+      id:userId,
+      role:selRole,
+      memo:memo||'',
+      addedAt:new Date().toISOString().slice(0,10)
+    });
+
+    // allowlist.json은 배열 형식으로 저장 (앱 호환)
+    const newContent=JSON.stringify(users,null,2);
+
+    showStatus(st,'GitHub에 저장 중...','ing');
+    await ghPut(token,repo,alPath,branch,newContent,sha,`사용자 추가: ${userId} (${selRole})`);
+
+    showStatus(st,
+      `✅ ${userId} (${selRole==='admin'?'관리자':'뷰어'}) 등록 완료!\n약 1분 후 앱에서 사용 가능합니다`,
+      'ok'
+    );
+    document.getElementById('new-user-id').value='';
+    document.getElementById('new-user-memo').value='';
+    selectRole('');
+    loadAllowlist();
+
+  }catch(e){
+    showStatus(st,'❌ '+e.message,'err');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='✅ 추가 후 GitHub에 반영';
+  }
 }
 
-// 사용자 삭제
+// ── 사용자 삭제 ──
 async function deleteUser(idx){
   const{token,repo,branch,alPath}=cfg();
   const st=document.getElementById('user-list-status');
   if(!confirm('이 사용자를 삭제하시겠습니까?')) return;
+  showStatus(st,'⏳ 삭제 중...','ing');
   try{
     const file=await ghGet(token,repo,alPath,branch);
-    if(!file) return;
-    const data=JSON.parse(file.content);
-    const removed=data.users[idx];
-    data.users.splice(idx,1);
-    showStatus(st,'⏳ 삭제 중...','ing');
-    const r=await ghPut(token,repo,alPath,branch,JSON.stringify(data,null,2),file.sha,`사용자 삭제: ${removed?.id}`);
-    if(r.ok){showStatus(st,'✅ 삭제 완료','ok');loadAllowlist();}
-    else{const e=await r.json();showStatus(st,'❌ '+e.message,'err');}
+    if(!file){showStatus(st,'❌ 파일을 찾을 수 없습니다','err');return;}
+    const raw=JSON.parse(file.content);
+    const users=Array.isArray(raw)?raw:(raw.users||[]);
+    const removed=users[idx];
+    users.splice(idx,1);
+    await ghPut(token,repo,alPath,branch,JSON.stringify(users,null,2),file.sha,`사용자 삭제: ${removed?.id}`);
+    showStatus(st,'✅ 삭제 완료','ok');
+    loadAllowlist();
   }catch(e){showStatus(st,'❌ '+e.message,'err');}
 }
 
-function showStatus(el,msg,type){el.style.display='block';el.className='status s-'+type;el.textContent=msg;}
+function showStatus(el,msg,type){
+  el.style.display='block';
+  el.className='status s-'+type;
+  el.textContent=msg;
+}
 
 // 드래그 앤 드롭
 const drop=document.getElementById('drop-area');
@@ -350,7 +441,11 @@ drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
 drop.addEventListener('drop',e=>{
   e.preventDefault();drop.classList.remove('drag');
   const file=e.dataTransfer.files[0];
-  if(file){const dt=new DataTransfer();dt.items.add(file);document.getElementById('file-input').files=dt.files;onFileSelect(document.getElementById('file-input'));}
+  if(file){
+    const dt=new DataTransfer();dt.items.add(file);
+    document.getElementById('file-input').files=dt.files;
+    onFileSelect(document.getElementById('file-input'));
+  }
 });
 
 loadSettings();
