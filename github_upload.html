@@ -100,7 +100,12 @@ input:focus{border-color:var(--blue);}
   <div class="card">
     <div class="card-title" style="color:var(--purple);">➕ 새 사용자 추가</div>
     <label>사용자 ID</label>
-    <input type="text" id="new-user-id" placeholder="이름 또는 기기 고유 ID">
+    <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:#6a7a9a;line-height:1.7;">
+      📱 <strong style="color:#dde4f2;">기기 ID 확인 방법</strong><br>
+      앱 잠금화면 하단에 표시된 <span style="color:#3b82f6;font-family:monospace;">기기 ID</span>를<br>
+      [📋 ID 복사] 버튼으로 복사 후 아래에 붙여넣으세요
+    </div>
+    <input type="text" id="new-user-id" placeholder="앱 잠금화면의 기기 ID 붙여넣기">
 
     <label>역할 선택</label>
     <div class="role-btns">
