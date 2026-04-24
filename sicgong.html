@@ -4696,7 +4696,9 @@ async function checkDeviceAuth(){
   try{
     var res=await fetch(ALLOWLIST_URL+'?t='+Date.now());
     if(!res.ok) throw new Error('목록 불러오기 실패 ('+res.status+')');
-    var list=await res.json();
+    var raw=await res.json();
+    // 배열 형식 또는 {users:[]} 형식 모두 지원
+    var list=Array.isArray(raw)?raw:(raw.users||[]);
     var found=null;
     for(var i=0;i<list.length;i++){if(list[i].id===deviceId){found=list[i];break;}}
     document.getElementById('auth-checking').classList.remove('show');
