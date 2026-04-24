@@ -625,7 +625,6 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <div class="tab active" id="tab-view-btn" onclick="switchTab('view')">📋 자료 보기</div>
   <div class="tab" id="tab-ph-btn" onclick="switchTab('photo')">📷 사진대지</div>
   <div class="tab" id="tab-stake-btn" onclick="switchTab('stake')">📐 경계말뚝</div>
-  <div class="tab" id="tab-reg-btn" onclick="switchTab('reg')">⚖️ 법적규제</div>
 </div>
 
 <!-- ══ VIEW TAB ══ -->
@@ -703,6 +702,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;">
     <button class="sk-btn-sub" id="sk-sub-search" onclick="skSubTab('search')" style="background:var(--accent2);color:#000;border-color:transparent;">🔍 주소검색</button>
     <button class="sk-btn-sub" id="sk-sub-draw" onclick="skSubTab('draw')">📐 도면보기</button>
+    <button class="sk-btn-sub" id="sk-sub-reg" onclick="skSubTab('reg')">⚖️ 법적규제</button>
     <button class="sk-btn-sub" id="sk-sub-hist" onclick="skSubTab('hist')">📁 이력</button>
   </div>
 
@@ -1025,6 +1025,56 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 
 
   <!-- 서브탭: 이력 -->
+
+  <!-- ⚖️ 법적규제 패널 -->
+  <div id="sk-panel-reg" style="display:none;">
+    <div id="sk-reg-empty-inner" style="text-align:center;padding:50px 20px;color:var(--text-muted);">
+      <div style="font-size:36px;margin-bottom:12px;">⚖️</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px;">주소를 먼저 검색하세요</div>
+      <div style="font-size:11px;line-height:1.7;">주소검색 후 자동으로<br>법적 규제 정보가 표시됩니다</div>
+    </div>
+    <div id="sk-reg-loading-inner" style="text-align:center;padding:30px;display:none;">
+      <div style="font-size:20px;margin-bottom:8px;">🔄</div>
+      <div style="font-size:12px;color:var(--text-muted);">규제 정보 조회 중...</div>
+    </div>
+    <div id="sk-reg-body" style="display:none;">
+      <!-- 주소 헤더 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div id="sk-reg-addr2" style="font-size:13px;font-weight:700;margin-bottom:3px;"></div>
+        <div id="sk-reg-pnu2" style="font-size:10px;color:var(--text-muted);font-family:monospace;"></div>
+      </div>
+      <!-- 요약 뱃지 -->
+      <div id="sk-reg-summary2" style="background:rgba(245,160,32,.06);border:1px solid rgba(245,160,32,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;">
+        <div style="font-size:10px;color:#f5a020;font-weight:700;margin-bottom:5px;">📋 규제 요약</div>
+        <div id="sk-reg-badges2" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+      </div>
+      <!-- 건폐율/용적률 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">건폐율 한도</div>
+          <div id="sk-reg-bcr2" style="font-size:20px;font-weight:800;color:#3b82f6;margin-bottom:3px;">-</div>
+          <div style="height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;">
+            <div id="sk-reg-bcr-bar2" style="height:100%;background:#3b82f6;border-radius:2px;width:0%;transition:width .8s;"></div>
+          </div>
+        </div>
+        <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;">용적률 한도</div>
+          <div id="sk-reg-far2" style="font-size:20px;font-weight:800;color:#8b5cf6;margin-bottom:3px;">-</div>
+          <div style="height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;">
+            <div id="sk-reg-far-bar2" style="height:100%;background:#8b5cf6;border-radius:2px;width:0%;transition:width .8s;"></div>
+          </div>
+        </div>
+      </div>
+      <!-- 규제 섹션 -->
+      <div id="sk-reg-sections2"></div>
+      <!-- 토지이음 -->
+      <button onclick="window.skRegOpenLuris&&skRegOpenLuris()"
+        style="width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;">
+        🔗 토지이음에서 상세 확인
+      </button>
+    </div>
+  </div>
+
   <div id="sk-panel-hist" style="display:none;padding:14px;">
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <button onclick="skSubTab('search')" style="flex:1;padding:9px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;">🔍 새 필지 검색</button>
@@ -1933,8 +1983,7 @@ function switchTab(t){
   const tabs={view:{btn:'tab-view-btn',el:'tab-view-content',display:'block'},
                photo:{btn:'tab-ph-btn',el:'tab-ph-content',display:'flex'},
                stake:{btn:'tab-stake-btn',el:'tab-stake-content',display:'block'},
-               reg:{btn:'tab-reg-btn',el:'tab-reg-content',display:'block'}};
-  if(t==='reg') skRegLoad();
+};
   Object.entries(tabs).forEach(([id,cfg])=>{
     document.getElementById(cfg.btn).classList.toggle('active',t===id);
     const el=document.getElementById(cfg.el);
@@ -1986,7 +2035,7 @@ function switchTab(t){
 
   /* ── 서브탭 ── */
   window.skSubTab=function(t){
-    ['search','result','draw','gps','hist'].forEach(id=>{
+    ['search','result','draw','gps','reg','hist'].forEach(id=>{
       const el=document.getElementById('sk-panel-'+id);
       if(el) el.style.display=t===id?'block':'none';
       const btn=document.getElementById('sk-sub-'+id);
@@ -1994,6 +2043,7 @@ function switchTab(t){
     });
     if(t==='hist') skRenderHist();
     if(t==='draw') skDrawRender();
+    if(t==='reg') window._skRegLoadInner&&_skRegLoadInner();
   };
 
   /* ── 주소 검색 ── */
@@ -2078,7 +2128,7 @@ function switchTab(t){
       skPNU=pnu.slice(0,19);
       skShowSelected(title,skPNU);
       // 주소 선택 즉시 법적규제 자동 조회 시작
-      setTimeout(()=>{if(window._skRegReset){_skRegReset();skRegAutoFetch();}},300);
+      setTimeout(()=>{if(window._skRegReset){_skRegReset();window._skRegLoadInner&&_skRegLoadInner();}},500);
     } else if(x&&y){
       // 좌표로 PNU 조회 (JSONP)
       skShowLoading('PNU 조회 중...');
@@ -2804,9 +2854,9 @@ function switchTab(t){
     // 축척바
     const barM=5;const barPx=barM*scale;
     if(barPx>30&&barPx<W/3){
-      ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(pad,H-24,barPx,3);
+      ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(W-pad-barPx,H-18,barPx,3);
       ctx.font='11px monospace';ctx.textAlign='center';
-      ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText(barM+'m',pad+barPx/2,H-8);
+      ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillText(barM+'m',W-pad-barPx/2,H-5);
     }
   }
 
@@ -5168,6 +5218,8 @@ initDB()
 
     sections.innerHTML=html;
 
+    // 경계말뚝 탭 내부 렌더
+    _renderInner(info);
     // 전체화면 제목
     const ovTitle=document.getElementById('sk-reg-ov-title');
     if(ovTitle) ovTitle.textContent='⚖️ '+(info.addr||'필지 도면')+' · '+(window.skPoints?.length||0)+'개 경계점';
@@ -5290,7 +5342,7 @@ initDB()
 
     // 축척
     const barM=5,barPx=barM*sc;
-    if(barPx>20&&barPx<W/3){
+    if(barPx>20&&barPx<W/2){
       ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1.5;ctx.setLineDash([]);
       ctx.beginPath();ctx.moveTo(10,H-12);ctx.lineTo(10+barPx,H-12);ctx.stroke();
       ctx.beginPath();ctx.moveTo(10,H-10);ctx.lineTo(10,H-14);ctx.stroke();
@@ -5359,6 +5411,117 @@ initDB()
   };
 
   // 주소 조회 후 규제 캐시 리셋 (새 필지)
+
+  /* ── 경계말뚝 탭 내부 규제 렌더 ── */
+  window._skRegLoadInner = function(){
+    const empty  = document.getElementById('sk-reg-empty-inner');
+    const loading= document.getElementById('sk-reg-loading-inner');
+    const body   = document.getElementById('sk-reg-body');
+    if(!window.skPNU){
+      if(empty)   empty.style.display='block';
+      if(loading) loading.style.display='none';
+      if(body)    body.style.display='none';
+      return;
+    }
+    if(empty)   empty.style.display='none';
+    // 이미 로드된 경우
+    if(_regInfo){
+      _renderInner(_regInfo);
+      return;
+    }
+    // 조회
+    if(loading) loading.style.display='block';
+    if(body)    body.style.display='none';
+    skRegFetch();
+  };
+
+  /* ── 경계말뚝 탭 내부에 규제 렌더 ── */
+  function _renderInner(info){
+    const loading= document.getElementById('sk-reg-loading-inner');
+    const body   = document.getElementById('sk-reg-body');
+    if(loading) loading.style.display='none';
+    if(!body)   return;
+    body.style.display='block';
+
+    const addrEl = document.getElementById('sk-reg-addr2');
+    const pnuEl  = document.getElementById('sk-reg-pnu2');
+    const bcrEl  = document.getElementById('sk-reg-bcr2');
+    const farEl  = document.getElementById('sk-reg-far2');
+    const badgesEl= document.getElementById('sk-reg-badges2');
+    const sectEl = document.getElementById('sk-reg-sections2');
+
+    if(addrEl) addrEl.textContent = info.addr||'';
+    if(pnuEl)  pnuEl.textContent  = 'PNU: '+info.pnu;
+    if(bcrEl)  bcrEl.textContent  = info.bcr?info.bcr+'%':'확인필요';
+    if(farEl)  farEl.textContent  = info.far?info.far+'%':'확인필요';
+    setTimeout(()=>{
+      const bb=document.getElementById('sk-reg-bcr-bar2');
+      const fb=document.getElementById('sk-reg-far-bar2');
+      if(bb) bb.style.width=Math.min(info.bcr,100)+'%';
+      if(fb) fb.style.width=Math.min(info.far/15,100)+'%';
+    },100);
+
+    // 요약 뱃지
+    if(badgesEl){
+      const bList=[];
+      if(info.useZone) bList.push({t:info.useZone,c:'#f5a020',bg:'rgba(245,160,32,.15)'});
+      Object.values(info.categorized||{}).forEach(cat=>{
+        if(cat.warn&&cat.items.length){
+          cat.items.slice(0,2).forEach(it=>{
+            bList.push({t:'⚠️ '+it.replace('⚠️저촉:',''),c:'#ef4444',bg:'rgba(239,68,68,.12)'});
+          });
+        }
+      });
+      badgesEl.innerHTML=bList.slice(0,6).map(b=>
+        `<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;background:${b.bg};color:${b.c};">${b.t}</span>`
+      ).join('');
+    }
+
+    // 규제 섹션
+    if(sectEl){
+      let html='';
+      // 용도지역
+      html+=_mkSect2('🗺 용도지역·지구','#3b82f6','국토계획법',[
+        {n:'용도지역',v:info.useZone||'정보없음'},
+        {n:'용도지구',v:info.useZone2||'지정없음'},
+        {n:'건폐율',v:info.bcr?info.bcr+'%':'확인필요'},
+        {n:'용적률',v:info.far?info.far+'%':'확인필요'},
+        {n:'정북 일조',v:info.solar||'조례 확인'},
+      ]);
+      // 카테고리별
+      const priority=['지구단위계획','도시계획시설','개발행위 제한','개발제한구역(그린벨트)',
+        '접도구역','도로구역·예정도로','농업진흥구역','산지·임야 규제','군사시설보호구역',
+        '문화재 보호구역','하천·수변구역','자연공원','환경보전 규제','친환경·특구',
+        '경제자유구역·특구','재해위험 지구','항공·비행 제한','토지거래허가구역',
+        '수도·상하수도 보호구역','도시개발·재개발','기타 행위제한'];
+      priority.forEach(catName=>{
+        const cat=(info.categorized||{})[catName];
+        if(!cat) return;
+        const rows=cat.items.map(it=>{
+          const isHit=it.startsWith('⚠️저촉:');
+          return{n:it.replace('⚠️저촉:',''),v:isHit?'⚠️ 직접 저촉':'해당',warn:isHit||cat.warn};
+        });
+        if(cat.note) rows.push({n:'제한 내용',v:cat.note,warn:cat.warn});
+        html+=_mkSect2(cat.icon+' '+catName,cat.warn?'#ef4444':cat.color,cat.law||'',rows);
+      });
+      if(!html) html='<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">특수 규제 없음 — 용도지역 기준만 적용</div>';
+      sectEl.innerHTML=html;
+    }
+  }
+
+  function _mkSect2(title,color,law,items){
+    const rows=items.map(it=>`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+        <span style="font-size:11px;color:var(--text-muted);flex:1;padding-right:6px;">${it.n}</span>
+        <span style="font-size:11px;font-weight:700;color:${it.warn?'#ef4444':it.v&&(it.v.includes('없음')||it.v.includes('지정없음'))?'#6b7280':'var(--text)'};text-align:right;flex:1.2;">${it.v}</span>
+      </div>`).join('');
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${color};border-radius:10px;padding:11px 13px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;">
+        <div style="font-size:11px;font-weight:700;color:${color};">${title}</div>
+        ${law?`<div style="font-size:8px;color:var(--text-muted);background:rgba(255,255,255,.05);padding:2px 5px;border-radius:3px;">${law}</div>`:''}
+      </div>${rows}</div>`;
+  }
+
   window._skRegReset=function(){_regInfo=null;};
 
   // ── 외부 호출용 전역 노출 ──
