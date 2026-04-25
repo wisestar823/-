@@ -625,6 +625,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <div class="tab active" id="tab-view-btn" onclick="switchTab('view')">📋 자료 보기</div>
   <div class="tab" id="tab-ph-btn" onclick="switchTab('photo')">📷 사진대지</div>
   <div class="tab" id="tab-stake-btn" onclick="switchTab('stake')">📐 경계말뚝</div>
+  <div class="tab" id="tab-reg-btn" onclick="switchTab('reg')">⚖️ 법적규제</div>
 </div>
 
 <!-- ══ VIEW TAB ══ -->
@@ -702,7 +703,6 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;">
     <button class="sk-btn-sub" id="sk-sub-search" onclick="skSubTab('search')" style="background:var(--accent2);color:#000;border-color:transparent;">🔍 주소검색</button>
     <button class="sk-btn-sub" id="sk-sub-draw" onclick="skSubTab('draw')">📐 도면보기</button>
-    <button class="sk-btn-sub" id="sk-sub-reg" onclick="skSubTab('reg')">⚖️ 법적규제</button>
     <button class="sk-btn-sub" id="sk-sub-hist" onclick="skSubTab('hist')">📁 이력</button>
   </div>
 
@@ -1026,65 +1026,6 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 
   <!-- 서브탭: 이력 -->
 
-  <!-- ⚖️ 법적규제 패널 -->
-  <div id="sk-panel-reg" style="display:none;">
-
-    <!-- 주소 미선택 -->
-    <div id="sk-reg-empty-inner" style="text-align:center;padding:50px 20px;color:var(--text-muted);">
-      <div style="font-size:40px;margin-bottom:14px;">⚖️</div>
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">주소를 먼저 검색하세요</div>
-      <div style="font-size:12px;line-height:1.8;">주소검색 탭에서 주소를 검색하면<br>법적 규제 정보가 자동으로 준비됩니다</div>
-      <button onclick="skSubTab('search')"
-        style="margin-top:20px;padding:11px 24px;border:none;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;cursor:pointer;">
-        🔍 주소 검색하러 가기
-      </button>
-    </div>
-
-    <!-- 주소 선택 후 -->
-    <div id="sk-reg-body" style="display:none;padding:14px;">
-
-      <!-- 필지 헤더 -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#ef4444);"></div>
-        <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:.5px;margin-bottom:4px;">📍 조회 필지</div>
-        <div id="sk-reg-addr2" style="font-size:14px;font-weight:800;margin-bottom:4px;"></div>
-        <div id="sk-reg-pnu2" style="font-size:10px;color:var(--text-muted);font-family:monospace;"></div>
-      </div>
-
-      <!-- 토지이음 열기 버튼 (메인) -->
-      <button onclick="skRegOpenLuris()"
-        style="width:100%;padding:18px;border:none;border-radius:14px;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:8px;">
-        🔗 토지이음에서 법적규제 확인
-      </button>
-      <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:20px;">
-        국토교통부 공식 서비스 · 새창으로 열립니다
-      </div>
-
-      <!-- 확인 가능 규제 목록 -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;">
-        <div style="font-size:12px;font-weight:700;margin-bottom:10px;">📋 토지이음에서 확인할 수 있는 규제</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--text-muted);">
-          <div>🗺 용도지역·지구·구역</div>
-          <div>📐 지구단위계획</div>
-          <div>🏗 도시계획시설</div>
-          <div>🛣 접도구역</div>
-          <div>🌾 농업진흥구역</div>
-          <div>🌿 개발제한구역</div>
-          <div>🌲 산지·임야 규제</div>
-          <div>🪖 군사시설보호</div>
-          <div>💧 하천·수변구역</div>
-          <div>🌊 재해위험지구</div>
-          <div>✈️ 항공·비행제한</div>
-          <div>📋 토지거래허가</div>
-          <div>🏛 문화재보호구역</div>
-          <div>🌱 친환경특구</div>
-          <div>🏭 경제자유구역</div>
-          <div>⚠️ 행위제한 전체</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
 
   <div id="sk-panel-hist" style="display:none;padding:14px;">
     <div style="display:flex;gap:8px;margin-bottom:12px;">
@@ -1307,111 +1248,49 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 <!-- ══ 법적규제 TAB ══ -->
 <div id="tab-reg-content">
 
-  <!-- 서브탭 -->
-  <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;">
-    <button id="sk-reg-tab-info" onclick="skRegSubTab('info')"
-      style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(245,160,32,.15);border:1px solid rgba(245,160,32,.4);color:#f5a020;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">
-      📋 규제정보
-    </button>
-    <button id="sk-reg-tab-map" onclick="skRegSubTab('map')"
-      style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">
-      🗺 필지도면
-    </button>
-  </div>
-
-  <!-- 주소 미선택 상태 -->
-  <div id="sk-reg-empty" style="text-align:center;padding:60px 20px;color:var(--text-muted);">
-    <div style="font-size:40px;margin-bottom:12px;">⚖️</div>
+  <!-- 주소 미조회 상태 -->
+  <div id="rg-empty" style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+    <div style="font-size:44px;margin-bottom:14px;">⚖️</div>
     <div style="font-size:14px;font-weight:700;margin-bottom:8px;">필지를 먼저 조회하세요</div>
-    <div style="font-size:12px;line-height:1.7;">경계말뚝 탭에서 주소를 검색하면<br>해당 필지의 법적 규제 정보를 표시합니다</div>
-    <button onclick="switchTab('stake')" style="margin-top:16px;padding:10px 20px;border:none;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">🔍 주소 검색하러 가기</button>
+    <div style="font-size:12px;line-height:1.8;">경계말뚝 탭에서 주소를 검색하면<br>법적 규제 정보가 자동으로 표시됩니다</div>
+    <button onclick="switchTab('stake')"
+      style="margin-top:18px;padding:11px 22px;border:none;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;cursor:pointer;">
+      🔍 주소 검색하러 가기
+    </button>
   </div>
 
-  <!-- 규제정보 패널 -->
-  <div id="sk-reg-panel-info" style="display:none;">
+  <!-- 규제 정보 -->
+  <div id="rg-content" style="display:none;">
 
-    <!-- 로딩 -->
-    <div id="sk-reg-loading" style="text-align:center;padding:30px;display:none;">
-      <div style="font-size:24px;margin-bottom:8px;">🔄</div>
-      <div style="font-size:12px;color:var(--text-muted);">규제 정보 조회 중...</div>
+    <!-- 필지 헤더 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#ef4444);"></div>
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:.5px;margin-bottom:3px;">📍 조회 필지</div>
+      <div id="rg-addr" style="font-size:14px;font-weight:800;margin-bottom:3px;"></div>
+      <div id="rg-pnu" style="font-size:10px;color:var(--text-muted);font-family:monospace;"></div>
     </div>
 
-    <!-- 규제 내용 -->
-    <div id="sk-reg-content" style="display:none;">
-
-      <!-- 주소 헤더 -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
-        <div id="sk-reg-addr" style="font-size:13px;font-weight:700;margin-bottom:4px;"></div>
-        <div id="sk-reg-pnu" style="font-size:10px;color:var(--text-muted);font-family:monospace;"></div>
+    <!-- 도면 미니뷰 -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;">📐 필지 도면</div>
+        <button onclick="switchTab('stake');setTimeout(()=>skSubTab&&skSubTab('draw'),100)"
+          style="font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text-muted);cursor:pointer;font-family:inherit;">
+          도면 상세보기 →
+        </button>
       </div>
-
-      <!-- 요약 뱃지 -->
-      <div id="sk-reg-summary" style="background:rgba(245,160,32,.06);border:1px solid rgba(245,160,32,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
-        <div style="font-size:10px;color:#f5a020;font-weight:700;margin-bottom:6px;">📋 규제 요약</div>
-        <div id="sk-reg-badges" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-      </div>
-
-      <!-- 건폐율/용적률 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:12px;text-align:center;">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">건폐율 한도</div>
-          <div id="sk-reg-bcr" style="font-size:22px;font-weight:800;color:#3b82f6;margin-bottom:4px;">-</div>
-          <div style="height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;">
-            <div id="sk-reg-bcr-bar" style="height:100%;background:#3b82f6;border-radius:2px;width:0%;transition:width .8s;"></div>
-          </div>
-        </div>
-        <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:12px;text-align:center;">
-          <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">용적률 한도</div>
-          <div id="sk-reg-far" style="font-size:22px;font-weight:800;color:#8b5cf6;margin-bottom:4px;">-</div>
-          <div style="height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;">
-            <div id="sk-reg-far-bar" style="height:100%;background:#8b5cf6;border-radius:2px;width:0%;transition:width .8s;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 규제 섹션들 -->
-      <div id="sk-reg-sections"></div>
-
-      <!-- 토지이음 링크 -->
-      <button id="sk-reg-luris-btn" onclick="skRegOpenLuris()"
-        style="width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;">
-        🔗 토지이음에서 상세 확인
-      </button>
+      <canvas id="rg-canvas" style="width:100%;height:140px;display:block;background:#050a0f;border-radius:8px;"></canvas>
     </div>
-  </div>
 
-  <!-- 필지도면 패널 -->
-  <div id="sk-reg-panel-map" style="display:none;">
-    <div class="sk-card" style="padding:14px;">
-      <!-- 헤더 -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div class="sk-hdr" style="margin-bottom:0;"><span class="sk-dot sk-orange"></span>필지 도면</div>
-        <button onclick="skRegOpenFullscreen()" style="padding:5px 10px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;cursor:pointer;">⛶ 전체화면</button>
-      </div>
-
-      <!-- 범례 -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;font-size:10px;color:var(--text-muted);">
-        <span style="color:rgba(239,68,68,.8);">━ 접도구역</span>
-        <span style="color:rgba(245,158,11,.8);">╌ 건축선</span>
-        <span style="color:#9b7df8;">▣ 건물배치</span>
-      </div>
-
-      <!-- 도면 캔버스 -->
-      <div style="background:#0a0f1a;border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;">
-        <canvas id="sk-reg-canvas" style="width:100%;display:block;touch-action:none;"></canvas>
-        <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;">
-          <button onclick="skRegZoom(1.2)" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer;">+</button>
-          <button onclick="skRegZoom(0.8)" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer;">−</button>
-          <button onclick="skRegResetView()" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:10px;cursor:pointer;">⟳</button>
-        </div>
-      </div>
-
-      <!-- 점간 거리 요약 -->
-      <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">
-        둘레: <span id="sk-reg-perimeter" style="color:var(--accent2);font-weight:700;font-family:monospace;">-</span>
-        &nbsp;·&nbsp; 경계점: <span id="sk-reg-pts-cnt" style="color:var(--text);">-</span>개
-      </div>
+    <!-- 규제 카테고리 버튼 -->
+    <div id="rg-cat-wrap" style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;margin-bottom:8px;">📋 규제 항목 선택</div>
+      <div id="rg-cat-btns" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
     </div>
+
+    <!-- 규제 상세 내용 -->
+    <div id="rg-detail" style="min-height:60px;"></div>
+
   </div>
 
 </div>
@@ -1991,15 +1870,20 @@ si.addEventListener('input',e=>{
 
 // ═══ TAB ════════════════════════════════════════════════════════
 function switchTab(t){
-  const tabs={view:{btn:'tab-view-btn',el:'tab-view-content',display:'block'},
-               photo:{btn:'tab-ph-btn',el:'tab-ph-content',display:'flex'},
-               stake:{btn:'tab-stake-btn',el:'tab-stake-content',display:'block'},
-};
+  const tabs={
+    view: {btn:'tab-view-btn', el:'tab-view-content', display:'block'},
+    photo:{btn:'tab-ph-btn',  el:'tab-ph-content',    display:'flex'},
+    stake:{btn:'tab-stake-btn',el:'tab-stake-content', display:'block'},
+    reg:  {btn:'tab-reg-btn', el:'tab-reg-content',   display:'block'},
+  };
   Object.entries(tabs).forEach(([id,cfg])=>{
-    document.getElementById(cfg.btn).classList.toggle('active',t===id);
+    const btn=document.getElementById(cfg.btn);
     const el=document.getElementById(cfg.el);
-    el.style.display=(t===id)?cfg.display:'none';
+    if(btn) btn.classList.toggle('active',t===id);
+    if(el)  el.style.display=(t===id)?cfg.display:'none';
   });
+  // 법적규제 탭 진입 시 렌더
+  if(t==='reg' && window.skRegTabEnter) skRegTabEnter();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2046,7 +1930,7 @@ function switchTab(t){
 
   /* ── 서브탭 ── */
   window.skSubTab=function(t){
-    ['search','result','draw','gps','reg','hist'].forEach(id=>{
+    ['search','result','draw','gps','hist'].forEach(id=>{
       const el=document.getElementById('sk-panel-'+id);
       if(el) el.style.display=t===id?'block':'none';
       const btn=document.getElementById('sk-sub-'+id);
@@ -2054,9 +1938,6 @@ function switchTab(t){
     });
     if(t==='hist') skRenderHist();
     if(t==='draw') skDrawRender();
-    if(t==='reg'){
-      if(window._skRegLoadInner) _skRegLoadInner();
-    }
   };
 
   /* ── 주소 검색 ── */
@@ -4896,59 +4777,232 @@ initDB()
 
 
 /* ═══════════════════════════════════════════════════════════════
-   ⚖️ 법적규제 모듈
+   ⚖️ 법적규제 모듈 v3 — 메인탭 독립 + 도면미니뷰 + 카테고리별 규제
    ══════════════════════════════════════════════════════════════════ */
 (function(){
 
-  /* ── 토지이음 URL ── */
-  function _url(pnu){
-    return 'https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?selSido=&pnu='+pnu+'&isNoShow=&isSuperUser=false';
+  const REG_CATS = [
+    {
+      id:'use', icon:'🗺', name:'용도지역·지구', color:'#3b82f6', bg:'rgba(59,130,246,.12)',
+      items:[
+        {n:'용도지역', desc:'주거·상업·공업·녹지·관리·농림·자연환경보전지역 — 가장 기본적인 토지 이용 구분'},
+        {n:'용도지구', desc:'용도지역 보완 (경관·고도·방화·보존·시설보호·취락지구 등)'},
+        {n:'용도구역', desc:'개발제한구역·수산자원보호구역·도시자연공원구역 등'},
+        {n:'건폐율·용적률', desc:'용도지역별 최대 건폐율·용적률 — 실제 건축 가능 규모 결정'},
+        {n:'건축선 이격', desc:'도로경계선 1m 이상 / 인접대지 경계선 0.5m 이상 의무 이격'},
+        {n:'정북 일조권', desc:'주거지역: 높이 10m 이하→1.5m, 10m 초과→절반 이격 의무'},
+      ]
+    },
+    {
+      id:'plan', icon:'🏗', name:'도시계획', color:'#8b5cf6', bg:'rgba(139,92,246,.12)',
+      items:[
+        {n:'지구단위계획', desc:'구역 내 용도·높이·건폐율 등 별도 기준 적용 — 반드시 계획 확인'},
+        {n:'도시계획시설', desc:'도로·공원·학교·주차장 등 시설 부지 저촉 시 건축 제한'},
+        {n:'개발행위허가 제한', desc:'토지형질변경·건축물 설치 시 허가 필요 구역'},
+        {n:'도시개발·정비구역', desc:'도시개발구역·재개발·재건축 정비구역 지정 시 개별 건축 제한'},
+      ]
+    },
+    {
+      id:'road', icon:'🛣', name:'도로·접도', color:'#10b981', bg:'rgba(16,185,129,.12)',
+      items:[
+        {n:'접도구역', desc:'국도: 도로경계 5m 이내 / 지방도: 3m 이내 건축 금지'},
+        {n:'도로구역·계획선', desc:'도로 확장 예정선 저촉 부분 건축 불가 — 도로가 될 부분'},
+        {n:'건축법 건축선', desc:'도로경계에서 1m 이상 이격 — 건축물·담장 포함'},
+      ]
+    },
+    {
+      id:'agri', icon:'🌾', name:'농지·산지', color:'#16a34a', bg:'rgba(22,163,74,.12)',
+      items:[
+        {n:'농업진흥구역', desc:'농지법 — 농지전용허가 없이 비농업 건축 절대 불가'},
+        {n:'농업보호구역', desc:'농업진흥구역 인접 완충구역 — 비농업 시설 제한'},
+        {n:'보전산지', desc:'산지관리법 — 산지전용허가 후 개발 가능 (엄격)'},
+        {n:'준보전산지', desc:'보전산지보다 완화된 기준 적용'},
+      ]
+    },
+    {
+      id:'restrict', icon:'⚠️', name:'개발제한·특수', color:'#ef4444', bg:'rgba(239,68,68,.12)',
+      items:[
+        {n:'개발제한구역(그린벨트)', desc:'원칙적 건축 금지 — 예외적 허가만 가능 (국토부 승인)'},
+        {n:'군사시설보호구역', desc:'관할 부대 협의 필수 — 층수·높이 제한, 사용 용도 제한'},
+        {n:'문화재보호구역', desc:'문화재청 현상변경 허가 필수 — 반경 내 공사 제한'},
+        {n:'하천·수변구역', desc:'하천법 — 하천구역 내 건축 원칙 금지'},
+        {n:'자연공원구역', desc:'자연공원법 — 공원계획에 따른 건축 제한'},
+        {n:'재해위험지구', desc:'붕괴·침수·산사태 위험 — 안전진단·대책 수립 필수'},
+      ]
+    },
+    {
+      id:'env', icon:'🌱', name:'환경·기타', color:'#06b6d4', bg:'rgba(6,182,212,.12)',
+      items:[
+        {n:'환경보전지역', desc:'생태경관보전·습지보전·야생생물보호구역 등 환경 규제'},
+        {n:'상수원보호구역', desc:'오염원 배출 시설 건축 제한 — 수도법 적용'},
+        {n:'항공장애물 제한', desc:'항공법 — 비행안전구역 내 높이 제한 (관할 공항·군 협의)'},
+        {n:'토지거래허가구역', desc:'관할 구청 허가 없이 토지거래 불가'},
+        {n:'친환경·경제특구', desc:'특구 지정 시 인허가 특례 또는 지원 혜택 가능'},
+      ]
+    },
+  ];
+
+  let _selCat = null;
+  let _regScale=1, _regOffX=0, _regOffY=0, _regDrag=false, _regLX=0, _regLY=0;
+
+  /* ── 메인탭 진입 ── */
+  window.skRegTabEnter = function(){
+    const empty  = document.getElementById('rg-empty');
+    const regCon = document.getElementById('rg-content');
+    const pts    = window.skPoints||[];
+
+    if(!window.skPNU || !pts.length){
+      if(empty)  empty.style.display  = 'block';
+      if(regCon) regCon.style.display = 'none';
+      return;
+    }
+    if(empty)  empty.style.display  = 'none';
+    if(regCon) regCon.style.display = 'block';
+
+    const ae=document.getElementById('rg-addr');
+    const pe=document.getElementById('rg-pnu');
+    if(ae) ae.textContent = window.skLotMeta?.addr||'';
+    if(pe) pe.textContent = 'PNU: '+window.skPNU;
+
+    _renderCatBtns();
+    setTimeout(_drawRegCanvas, 50);
+    if(!_selCat) _selectCat(REG_CATS[0].id);
+    setTimeout(_initDrag, 100);
+  };
+
+  /* ── 카테고리 버튼 렌더 ── */
+  function _renderCatBtns(){
+    const wrap=document.getElementById('rg-cat-btns');
+    if(!wrap) return;
+    wrap.innerHTML=REG_CATS.map(cat=>`
+      <button onclick="window._skRegSelCat('${cat.id}')"
+        id="rg-cat-${cat.id}"
+        style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;
+               background:var(--surface2);color:var(--text-muted);
+               font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;
+               cursor:pointer;transition:all .2s;">
+        ${cat.icon} ${cat.name}
+      </button>`).join('');
   }
 
-  /* ── 주소 선택 / 서브탭 진입 시 호출 ── */
-  window._skRegLoadInner = function(){
-    const empty = document.getElementById('sk-reg-empty-inner');
-    const body  = document.getElementById('sk-reg-body');
+  window._skRegSelCat = function(id){ _selectCat(id); };
 
-    if(!window.skPNU){
-      if(empty) empty.style.display = 'block';
-      if(body)  body.style.display  = 'none';
-      return;
+  function _selectCat(id){
+    _selCat=id;
+    const cat=REG_CATS.find(c=>c.id===id);
+    if(!cat) return;
+
+    REG_CATS.forEach(c=>{
+      const btn=document.getElementById('rg-cat-'+c.id);
+      if(!btn) return;
+      if(c.id===id){
+        btn.style.background=c.bg;
+        btn.style.borderColor=c.color;
+        btn.style.color=c.color;
+      } else {
+        btn.style.background='var(--surface2)';
+        btn.style.borderColor='var(--border)';
+        btn.style.color='var(--text-muted)';
+      }
+    });
+
+    const detail=document.getElementById('rg-detail');
+    if(!detail) return;
+
+    const rows=cat.items.map(item=>`
+      <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:${cat.color};margin-top:5px;flex-shrink:0;"></div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">${item.n}</div>
+            <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">${item.desc}</div>
+          </div>
+        </div>
+      </div>`).join('');
+
+    detail.innerHTML=`
+      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${cat.color};border-radius:12px;padding:12px 14px;">
+        <div style="font-size:12px;font-weight:700;color:${cat.color};margin-bottom:8px;">${cat.icon} ${cat.name}</div>
+        ${rows}
+        <div style="margin-top:10px;padding:9px 11px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--text-muted);line-height:1.7;">
+          💡 정확한 저촉 여부는 <strong style="color:var(--text);">토지이용계획확인서</strong>로 확인하세요
+        </div>
+      </div>`;
+  }
+
+  /* ── 도면 미니뷰 ── */
+  function _drawRegCanvas(){
+    const canvas=document.getElementById('rg-canvas');
+    const pts=window.skPoints||[];
+    if(!canvas||!pts.length) return;
+    const dpr=window.devicePixelRatio||1;
+    const W=canvas.clientWidth, H=canvas.clientHeight||140;
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    const ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    ctx.fillStyle='#050a0f'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=1;
+    for(let i=0;i<W;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
+    for(let i=0;i<H;i+=20){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const midX=(Math.min(...xs)+Math.max(...xs))/2, midY=(Math.min(...ys)+Math.max(...ys))/2;
+    const pad=24;
+    const sc=Math.min((W-pad*2)/(Math.max(...xs)-Math.min(...xs)||1),(H-pad*2)/(Math.max(...ys)-Math.min(...ys)||1))*_regScale;
+    const cX=W/2+_regOffX, cY=H/2+_regOffY;
+    const tc=(x,y)=>[cX+(y-midY)*sc,cY-(x-midX)*sc];
+    ctx.beginPath();
+    const[fx,fy]=tc(pts[0].x,pts[0].y); ctx.moveTo(fx,fy);
+    pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
+    ctx.fillStyle='rgba(59,130,246,.08)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=1.5; ctx.stroke();
+    const bPts=window.skBldgCoordPts||[];
+    if(bPts.length>=3){
+      ctx.beginPath();
+      bPts.forEach((p,i)=>{const[x,y]=tc(p.x,p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+      ctx.closePath(); ctx.fillStyle='rgba(139,92,246,.2)'; ctx.fill();
+      ctx.strokeStyle='#9b7df8'; ctx.lineWidth=1.5; ctx.stroke();
     }
-
-    if(empty) empty.style.display = 'none';
-    if(body)  body.style.display  = 'block';
-
-    // 필지 정보 표시
-    const ae = document.getElementById('sk-reg-addr2');
-    const pe = document.getElementById('sk-reg-pnu2');
-    if(ae) ae.textContent = window.skLotMeta?.addr || '';
-    if(pe) pe.textContent = 'PNU: ' + window.skPNU;
-  };
-
-  /* ── 토지이음 새창 열기 ── */
-  window.skRegOpenLuris = function(){
-    const pnu = window.skPNU || '';
-    if(!pnu){
-      if(window.showToast) showToast('주소를 먼저 검색하세요');
-      return;
+    pts.forEach(p=>{
+      const[px,py]=tc(p.x,p.y);
+      ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2);
+      ctx.fillStyle=p.state==='alive'?'#22c55e':p.state==='lost'?'#ef4444':'#9ca3af'; ctx.fill();
+      ctx.font='bold 8px monospace'; ctx.fillStyle='rgba(255,255,255,.6)'; ctx.textAlign='center';
+      ctx.fillText(p.num,px,py-6);
+    });
+    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='8px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('↑N',W-14,14);
+    const barM=5,barPx=barM*sc;
+    if(barPx>15&&barPx<W/3){
+      ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(W-pad-barPx,H-10); ctx.lineTo(W-pad,H-10); ctx.stroke();
+      ctx.font='7px monospace'; ctx.fillStyle='rgba(255,255,255,.4)';
+      ctx.fillText(barM+'m',W-pad-barPx/2,H-2);
     }
-    window.open(_url(pnu), '_blank');
-  };
+  }
+
+  function _initDrag(){
+    const c=document.getElementById('rg-canvas');
+    if(!c||c._rgEvt) return; c._rgEvt=true;
+    c.addEventListener('touchstart',e=>{if(e.touches.length===1){_regDrag=true;_regLX=e.touches[0].clientX;_regLY=e.touches[0].clientY;}},{passive:true});
+    c.addEventListener('touchmove',e=>{e.preventDefault();if(_regDrag&&e.touches.length===1){_regOffX+=e.touches[0].clientX-_regLX;_regOffY+=e.touches[0].clientY-_regLY;_regLX=e.touches[0].clientX;_regLY=e.touches[0].clientY;_drawRegCanvas();}},{passive:false});
+    c.addEventListener('touchend',()=>{_regDrag=false;});
+  }
 
   /* ── 외부 연동 ── */
-  window._skRegReset      = function(){};
-  window.skRegSyncBadge   = function(){};
-  window.skRegAutoFetch   = function(){ if(window._skRegLoadInner) _skRegLoadInner(); };
-  window.skRegLoad        = function(){ if(window._skRegLoadInner) _skRegLoadInner(); };
-  window.skRegSubTab      = function(){};
-  window.skRegDrawCanvas  = function(){};
-  window.skRegZoom        = function(){};
-  window.skRegResetView   = function(){};
+  window._skRegReset     = function(){_selCat=null;};
+  window.skRegSyncBadge  = function(){};
+  window.skRegAutoFetch  = function(){const el=document.getElementById('tab-reg-content');if(el&&el.style.display!=='none') skRegTabEnter();};
+  window.skRegLoad       = function(){if(window.skRegTabEnter) skRegTabEnter();};
+  window.skRegSubTab     = function(){};
+  window.skRegDrawCanvas = _drawRegCanvas;
+  window.skRegZoom       = function(f){_regScale*=f;_regScale=Math.max(.3,Math.min(_regScale,10));_drawRegCanvas();};
+  window.skRegResetView  = function(){_regScale=1;_regOffX=0;_regOffY=0;_drawRegCanvas();};
+  window.skRegOpenLuris  = function(){if(window.skPNU) window.open('https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?pnu='+window.skPNU,'_blank');};
   window.skRegOpenFullscreen  = function(){};
   window.skRegCloseFullscreen = function(){};
   window.skRegIframeLoaded    = function(){};
   window.skRegIframeFailed    = function(){};
+  window._skRegLoadInner      = function(){if(window.skRegTabEnter) skRegTabEnter();};
 
 })();
 </script>
