@@ -1259,6 +1259,18 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     </button>
   </div>
 
+  <!-- 조회 버튼 (항상 표시) -->
+  <div id="rg-trigger" style="padding:14px 0 0;">
+    <button onclick="if(window.skRegTabEnter) skRegTabEnter();"
+      style="width:100%;padding:15px;border:none;border-radius:12px;
+             background:linear-gradient(135deg,#7c3aed,#6d28d9);
+             color:#fff;font-family:'Noto Sans KR',sans-serif;
+             font-size:15px;font-weight:800;cursor:pointer;
+             display:flex;align-items:center;justify-content:center;gap:8px;">
+      🔄 도면 · 법적규제 조회
+    </button>
+  </div>
+
   <!-- 규제 정보 -->
   <div id="rg-content" style="display:none;">
 
@@ -1883,7 +1895,7 @@ function switchTab(t){
     if(el)  el.style.display=(t===id)?cfg.display:'none';
   });
   // 법적규제 탭 진입 시 렌더
-  if(t==='reg' && window.skRegTabEnter) skRegTabEnter();
+  if(t==='reg' && window.skRegTabEnter) setTimeout(skRegTabEnter, 50);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2209,9 +2221,9 @@ function switchTab(t){
     document.getElementById('sk-res-content').style.display='block';
     skDrawRender();
     skSubTab('draw');
-    // 법적규제: iframe URL 즉시 준비 (탭 열 때 바로 표시)
+    // 법적규제 탭 데이터 준비 (탭 열 때 즉시 표시)
     if(window._skRegReset) _skRegReset();
-    if(window._skRegLoadInner) _skRegLoadInner();
+    if(window.skRegTabEnter) skRegTabEnter();
     showToast('✅ 계산 완료 — 도면보기 확인');
   };
 
@@ -4851,11 +4863,14 @@ initDB()
     const regCon = document.getElementById('rg-content');
     const pts    = window.skPoints||[];
 
-    if(!window.skPNU || !pts.length){
+    // PNU 없으면 안내 표시
+    if(!window.skPNU){
       if(empty)  empty.style.display  = 'block';
       if(regCon) regCon.style.display = 'none';
       return;
     }
+
+    // PNU 있으면 바로 표시
     if(empty)  empty.style.display  = 'none';
     if(regCon) regCon.style.display = 'block';
 
@@ -4864,10 +4879,17 @@ initDB()
     if(ae) ae.textContent = window.skLotMeta?.addr||'';
     if(pe) pe.textContent = 'PNU: '+window.skPNU;
 
-    _renderCatBtns();
-    setTimeout(_drawRegCanvas, 50);
+    // 도면은 탭이 열린 후 그리기 (clientWidth 확보)
+    if(pts.length) setTimeout(_drawRegCanvas, 80);
+
+    // 카테고리 버튼 (이미 있으면 재생성 안 함)
+    const wrap=document.getElementById('rg-cat-btns');
+    if(wrap && !wrap.children.length) _renderCatBtns();
+
+    // 처음 진입 시 첫 카테고리 선택
     if(!_selCat) _selectCat(REG_CATS[0].id);
-    setTimeout(_initDrag, 100);
+
+    setTimeout(_initDrag, 150);
   };
 
   /* ── 카테고리 버튼 렌더 ── */
