@@ -1033,67 +1033,54 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     <div id="sk-reg-empty-inner" style="text-align:center;padding:50px 20px;color:var(--text-muted);">
       <div style="font-size:40px;margin-bottom:14px;">⚖️</div>
       <div style="font-size:14px;font-weight:700;margin-bottom:8px;">주소를 먼저 검색하세요</div>
-      <div style="font-size:12px;line-height:1.8;">주소검색 탭에서 주소를 검색하면<br>법적 규제 정보가 자동으로 표시됩니다</div>
+      <div style="font-size:12px;line-height:1.8;">주소검색 탭에서 주소를 검색하면<br>법적 규제 정보가 자동으로 준비됩니다</div>
       <button onclick="skSubTab('search')"
         style="margin-top:20px;padding:11px 24px;border:none;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:800;cursor:pointer;">
         🔍 주소 검색하러 가기
       </button>
     </div>
 
-    <!-- 주소 선택 후: 헤더 + iframe -->
-    <div id="sk-reg-body" style="display:none;flex-direction:column;height:calc(100vh - 155px);">
+    <!-- 주소 선택 후 -->
+    <div id="sk-reg-body" style="display:none;padding:14px;">
 
-      <!-- 필지 정보 헤더 (고정) -->
-      <div style="padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div>
-            <div id="sk-reg-addr2" style="font-size:13px;font-weight:800;margin-bottom:2px;"></div>
-            <div id="sk-reg-pnu2" style="font-size:10px;color:var(--text-muted);font-family:monospace;"></div>
-          </div>
-          <button onclick="skRegOpenLuris()"
-            style="padding:7px 12px;border:none;border-radius:7px;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-left:8px;">
-            🔗 새창
-          </button>
-        </div>
+      <!-- 필지 헤더 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#ef4444);"></div>
+        <div style="font-size:10px;color:var(--text-muted);font-weight:700;letter-spacing:.5px;margin-bottom:4px;">📍 조회 필지</div>
+        <div id="sk-reg-addr2" style="font-size:14px;font-weight:800;margin-bottom:4px;"></div>
+        <div id="sk-reg-pnu2" style="font-size:10px;color:var(--text-muted);font-family:monospace;"></div>
       </div>
 
-      <!-- 로딩 표시 -->
-      <div id="sk-reg-iframe-loading" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);">
-        <div style="font-size:28px;margin-bottom:10px;">🔄</div>
-        <div style="font-size:12px;">토지이음 불러오는 중...</div>
+      <!-- 토지이음 열기 버튼 (메인) -->
+      <button onclick="skRegOpenLuris()"
+        style="width:100%;padding:18px;border:none;border-radius:14px;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:8px;">
+        🔗 토지이음에서 법적규제 확인
+      </button>
+      <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:20px;">
+        국토교통부 공식 서비스 · 새창으로 열립니다
       </div>
 
-      <!-- iframe -->
-      <iframe id="sk-reg-iframe"
-        style="flex:1;border:none;display:none;width:100%;background:#fff;"
-        onload="if(window.skRegIframeLoaded) skRegIframeLoaded();"
-        onerror="if(window.skRegIframeFailed) skRegIframeFailed();">
-      </iframe>
-
-      <!-- iframe 차단 시 대체 버튼 -->
-      <div id="sk-reg-iframe-blocked" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;">
-        <div style="font-size:36px;margin-bottom:12px;">🔗</div>
-        <div style="font-size:14px;font-weight:800;margin-bottom:8px;">아래 버튼으로 확인하세요</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:20px;line-height:1.7;">
-          토지이음은 보안 정책으로<br>앱 내 표시가 제한될 수 있습니다
+      <!-- 확인 가능 규제 목록 -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;">
+        <div style="font-size:12px;font-weight:700;margin-bottom:10px;">📋 토지이음에서 확인할 수 있는 규제</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--text-muted);">
+          <div>🗺 용도지역·지구·구역</div>
+          <div>📐 지구단위계획</div>
+          <div>🏗 도시계획시설</div>
+          <div>🛣 접도구역</div>
+          <div>🌾 농업진흥구역</div>
+          <div>🌿 개발제한구역</div>
+          <div>🌲 산지·임야 규제</div>
+          <div>🪖 군사시설보호</div>
+          <div>💧 하천·수변구역</div>
+          <div>🌊 재해위험지구</div>
+          <div>✈️ 항공·비행제한</div>
+          <div>📋 토지거래허가</div>
+          <div>🏛 문화재보호구역</div>
+          <div>🌱 친환경특구</div>
+          <div>🏭 경제자유구역</div>
+          <div>⚠️ 행위제한 전체</div>
         </div>
-        <!-- 규제 항목 목록 -->
-        <div style="width:100%;text-align:left;background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:16px;">
-          <div style="font-size:11px;font-weight:700;margin-bottom:8px;color:var(--text);">📋 이 필지에서 확인할 규제</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;color:var(--text-muted);">
-            <div>🗺 용도지역·지구</div><div>📐 지구단위계획</div>
-            <div>🏗 도시계획시설</div><div>🛣 접도구역</div>
-            <div>🌾 농업진흥구역</div><div>🌿 개발제한구역</div>
-            <div>🌲 산지·임야</div><div>🪖 군사시설보호</div>
-            <div>💧 하천·수변</div><div>🌊 재해위험</div>
-            <div>✈️ 항공·비행제한</div><div>📋 토지거래허가</div>
-          </div>
-        </div>
-        <button onclick="skRegOpenLuris()"
-          style="width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:800;cursor:pointer;">
-          🔗 토지이음에서 전체 규제 확인
-        </button>
-        <div style="margin-top:8px;font-size:10px;color:var(--text-muted);">국토교통부 공식 서비스 · 모든 법적 규제 포함</div>
       </div>
 
     </div>
@@ -2155,11 +2142,9 @@ function switchTab(t){
       // 좌표도 저장 (규제 API 공간필터용)
       if(x&&y){ skLotMeta.lon=x; skLotMeta.lat=y; }
       skShowSelected(title,skPNU);
-      // 주소 선택 즉시 법적규제 자동 조회
+      // 주소 선택 즉시 법적규제 iframe 준비
       if(window._skRegReset) _skRegReset();
-      setTimeout(()=>{
-        if(window._skRegLoadInner) _skRegLoadInner();
-      }, 600);
+      if(window._skRegLoadInner) _skRegLoadInner();
     } else if(x&&y){
       // 좌표로 PNU 조회 (JSONP)
       skShowLoading('PNU 조회 중...');
@@ -2173,9 +2158,9 @@ function switchTab(t){
           // 좌표 저장 (규제 API 공간필터용)
           skLotMeta.lon=x; skLotMeta.lat=y;
           skShowSelected(title,p);
-          // 규제 자동 조회
+          // 규제 자동 준비
           if(window._skRegReset) _skRegReset();
-          setTimeout(()=>{ if(window._skRegLoadInner) _skRegLoadInner(); }, 300);
+          if(window._skRegLoadInner) _skRegLoadInner();
         }
         else skShowErr('PNU를 가져올 수 없습니다.');
       });
@@ -2343,9 +2328,9 @@ function switchTab(t){
     document.getElementById('sk-res-content').style.display='block';
     skDrawRender();
     skSubTab('draw');
-    // 법적규제 자동 연동
+    // 법적규제: iframe URL 즉시 준비 (탭 열 때 바로 표시)
     if(window._skRegReset) _skRegReset();
-    setTimeout(()=>{ if(window._skRegLoadInner) _skRegLoadInner(); }, 300);
+    if(window._skRegLoadInner) _skRegLoadInner();
     showToast('✅ 계산 완료 — 도면보기 확인');
   };
 
@@ -4911,122 +4896,59 @@ initDB()
 
 
 /* ═══════════════════════════════════════════════════════════════
-   ⚖️ 법적규제 모듈 — 토지이음 iframe + 폴백
+   ⚖️ 법적규제 모듈
    ══════════════════════════════════════════════════════════════════ */
 (function(){
 
-  let _iframeTimeout = null;
-
-  /* ── 토지이음 URL 생성 ── */
-  function _lurisUrl(pnu){
+  /* ── 토지이음 URL ── */
+  function _url(pnu){
     return 'https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?selSido=&pnu='+pnu+'&isNoShow=&isSuperUser=false';
   }
 
-  /* ── 서브탭 진입 or 주소 설정 시 호출 ── */
+  /* ── 주소 선택 / 서브탭 진입 시 호출 ── */
   window._skRegLoadInner = function(){
-    const empty   = document.getElementById('sk-reg-empty-inner');
-    const body    = document.getElementById('sk-reg-body');
-    const loading = document.getElementById('sk-reg-iframe-loading');
-    const iframe  = document.getElementById('sk-reg-iframe');
-    const blocked = document.getElementById('sk-reg-iframe-blocked');
+    const empty = document.getElementById('sk-reg-empty-inner');
+    const body  = document.getElementById('sk-reg-body');
 
     if(!window.skPNU){
-      if(empty) empty.style.display='block';
-      if(body)  body.style.display='none';
+      if(empty) empty.style.display = 'block';
+      if(body)  body.style.display  = 'none';
       return;
     }
 
-    // 주소 헤더 표시
-    if(empty) empty.style.display='none';
-    if(body){ body.style.display='flex'; }
+    if(empty) empty.style.display = 'none';
+    if(body)  body.style.display  = 'block';
 
+    // 필지 정보 표시
     const ae = document.getElementById('sk-reg-addr2');
     const pe = document.getElementById('sk-reg-pnu2');
-    if(ae) ae.textContent = window.skLotMeta?.addr||'';
-    if(pe) pe.textContent = 'PNU: '+window.skPNU;
-
-    // 이미 같은 PNU가 로드됐으면 재로드 안 함
-    if(iframe && iframe.dataset.pnu === window.skPNU) return;
-
-    // iframe 로드 시작
-    if(loading){ loading.style.display='flex'; }
-    if(iframe){
-      iframe.style.display='none';
-      iframe.dataset.pnu = window.skPNU;
-    }
-    if(blocked) blocked.style.display='none';
-
-    // 타임아웃: 5초 안에 onload 없으면 차단으로 판단
-    clearTimeout(_iframeTimeout);
-    _iframeTimeout = setTimeout(()=>{
-      skRegIframeFailed();
-    }, 5000);
-
-    if(iframe){
-      iframe.src = _lurisUrl(window.skPNU);
-    }
-  };
-
-  /* ── iframe 로드 성공 ── */
-  window.skRegIframeLoaded = function(){
-    clearTimeout(_iframeTimeout);
-    const loading = document.getElementById('sk-reg-iframe-loading');
-    const iframe  = document.getElementById('sk-reg-iframe');
-    const blocked = document.getElementById('sk-reg-iframe-blocked');
-    // X-Frame-Options 차단 시 로드는 되지만 내용이 비어있을 수 있음
-    // contentDocument 접근 시도로 확인
-    try{
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if(!doc || !doc.body || doc.body.innerHTML.trim()===''){
-        skRegIframeFailed(); return;
-      }
-    }catch(e){
-      // cross-origin 오류 = 로드는 됐지만 접근 불가 = 표시는 됨
-    }
-    if(loading) loading.style.display='none';
-    if(iframe)  iframe.style.display='block';
-    if(blocked) blocked.style.display='none';
-  };
-
-  /* ── iframe 차단/실패 ── */
-  window.skRegIframeFailed = function(){
-    clearTimeout(_iframeTimeout);
-    const loading = document.getElementById('sk-reg-iframe-loading');
-    const iframe  = document.getElementById('sk-reg-iframe');
-    const blocked = document.getElementById('sk-reg-iframe-blocked');
-    if(loading) loading.style.display='none';
-    if(iframe){ iframe.style.display='none'; iframe.src='about:blank'; }
-    if(blocked){ blocked.style.display='flex'; }
+    if(ae) ae.textContent = window.skLotMeta?.addr || '';
+    if(pe) pe.textContent = 'PNU: ' + window.skPNU;
   };
 
   /* ── 토지이음 새창 열기 ── */
   window.skRegOpenLuris = function(){
-    const pnu = window.skPNU||'';
-    if(!pnu){ if(window.showToast) showToast('주소를 먼저 검색하세요'); return; }
-    window.open(_lurisUrl(pnu), '_blank');
+    const pnu = window.skPNU || '';
+    if(!pnu){
+      if(window.showToast) showToast('주소를 먼저 검색하세요');
+      return;
+    }
+    window.open(_url(pnu), '_blank');
   };
 
   /* ── 외부 연동 ── */
-  window._skRegReset = function(){
-    const iframe = document.getElementById('sk-reg-iframe');
-    if(iframe){ iframe.src='about:blank'; iframe.dataset.pnu=''; }
-    clearTimeout(_iframeTimeout);
-  };
+  window._skRegReset      = function(){};
   window.skRegSyncBadge   = function(){};
-  window.skRegAutoFetch   = function(){
-    if(window.skPNU && window._skRegLoadInner) _skRegLoadInner();
-  };
-  window.skRegLoad        = function(){
-    if(window._skRegLoadInner) _skRegLoadInner();
-  };
+  window.skRegAutoFetch   = function(){ if(window._skRegLoadInner) _skRegLoadInner(); };
+  window.skRegLoad        = function(){ if(window._skRegLoadInner) _skRegLoadInner(); };
   window.skRegSubTab      = function(){};
   window.skRegDrawCanvas  = function(){};
   window.skRegZoom        = function(){};
   window.skRegResetView   = function(){};
   window.skRegOpenFullscreen  = function(){};
   window.skRegCloseFullscreen = function(){};
-  window.skRegOvZoom      = function(){};
-  window.skRegOvReset     = function(){};
+  window.skRegIframeLoaded    = function(){};
+  window.skRegIframeFailed    = function(){};
 
 })();
 </script>
