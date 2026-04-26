@@ -4913,52 +4913,90 @@ initDB()
     const pnu=window.skPNU||'';
 
     if(!lon||!lat){
-      _renderFallback('좌표 정보 없음 — 경계점 조회 후 다시 시도하세요');
+      _renderFallback('좌표 정보 없음 — 경계점 조회 후 다시 시도');
       return;
     }
 
-    let done=0, r1=null, r2=null;
+    const geom=encodeURIComponent(`POINT(${lon} ${lat})`);
+    let done=0, r1=null, r2=null, r3=null;
+    const total=3;
+
     function tryParse(){
       done++;
-      if(done<2) return;
-      _regResult={r1,r2,lon,lat,pnu};
+      if(done<total) return;
+      _regResult={r1,r2,r3,lon,lat,pnu};
       _renderResult(_regResult);
     }
 
-    const geom=encodeURIComponent(`POINT(${lon} ${lat})`);
-
-    // API1: 용도지역지구
+    // API1: 용도지역지구 (LT_C_UZ)
     const url1=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_UZ&key=${SK_KEY}&geomFilter=${geom}&format=json&size=10`;
-    _jsonp(url1,(d)=>{r1=d;tryParse();});
+    _jsonp(url1,(d)=>{
+      console.log('[규제] LT_C_UZ features:',d?.response?.result?.featureCollection?.features?.length||0);
+      const f=d?.response?.result?.featureCollection?.features?.[0];
+      if(f) console.log('[규제] LT_C_UZ 필드:', JSON.stringify(f.properties).slice(0,200));
+      r1=d; tryParse();
+    });
 
-    // API2: 토지이용계획 (모든 규제)
-    const url2=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_LHBLPN&key=${SK_KEY}&geomFilter=${geom}&format=json&size=30`;
-    _jsonp(url2,(d)=>{r2=d;tryParse();});
+    // API2: 토지특성정보 (LT_P_FNNMAP) - 용도지역명 포함
+    const url2=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_P_FNNMAP&key=${SK_KEY}&geomFilter=${geom}&format=json&size=5`;
+    _jsonp(url2,(d)=>{
+      console.log('[규제] LT_P_FNNMAP features:',d?.response?.result?.featureCollection?.features?.length||0);
+      const f=d?.response?.result?.featureCollection?.features?.[0];
+      if(f) console.log('[규제] LT_P_FNNMAP 필드:', JSON.stringify(f.properties).slice(0,300));
+      r2=d; tryParse();
+    });
+
+    // API3: 토지이용계획 (LT_C_LHBLPN)
+    const url3=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_LHBLPN&key=${SK_KEY}&geomFilter=${geom}&format=json&size=30`;
+    _jsonp(url3,(d)=>{
+      console.log('[규제] LT_C_LHBLPN features:',d?.response?.result?.featureCollection?.features?.length||0);
+      r3=d; tryParse();
+    });
   }
 
   // ── 결과 파싱 + 렌더 ──
   function _renderResult(res){
     if(!res) return;
-    const {r1,r2} = res;
+    const {r1,r2,r3} = res;
 
     // 용도지역 파싱
     let useZone='', useZone2='';
+
+    // 1순위: LT_C_UZ
     const f1=r1?.response?.result?.featureCollection?.features||[];
     f1.forEach((f,i)=>{
       const p=f.properties||{};
       const zn=p.uz_cd_nm||p.znNm||p.use_zone_nm||p.prpos_area_nm||
-               p.prpos_area1_nm||p.lclas_nm||
+               p.prpos_area1_nm||p.lclas_nm||p.mlsfc_nm||
                Object.values(p).find(v=>typeof v==='string'&&v.length>2&&
                  (v.includes('지역')||v.includes('지구')))||'';
       if(zn&&!useZone) useZone=zn;
       else if(zn&&!useZone2&&zn!==useZone) useZone2=zn;
     });
 
-    // 규제 항목 파싱
-    const rawItems=[];
+    // 2순위: LT_P_FNNMAP (토지특성 - 용도지역명 직접 포함)
     const f2=r2?.response?.result?.featureCollection?.features||[];
-    f2.forEach(f=>{
+    if(!useZone && f2.length){
+      const p=f2[0].properties||{};
+      // LT_P_FNNMAP 실제 필드명들
+      useZone = p.prpos_area1_nm||p.prposArea1Nm||p.use_area||
+                p.land_use_nm||p.landUseNm||p.use_zone_nm||
+                p.prpos_area_nm||p.pnuUsePurpCdNm||
+                Object.values(p).find(v=>typeof v==='string'&&v.length>2&&
+                  (v.includes('지역')||v.includes('지구')))||'';
+      useZone2= p.prpos_area2_nm||p.prposArea2Nm||'';
+    }
+
+    // 규제 항목 파싱 (LT_C_LHBLPN = r3)
+    const rawItems=[];
+    const f3=r3?.response?.result?.featureCollection?.features||[];
+    f3.forEach(f=>{
       const p=f.properties||{};
+      // LT_C_LHBLPN에서 용도지역 추출 시도
+      if(!useZone){
+        const zn=p.prpos_area_nm||p.use_nm||p.regl_nm||'';
+        if(zn&&(zn.includes('지역')||zn.includes('지구'))&&!useZone) useZone=zn;
+      }
       const nm=p.reglt_cde_nm||p.regltnNm||p.regl_nm||p.use_nm||
                p.prpos_area_nm||
                Object.values(p).find(v=>typeof v==='string'&&v.length>2&&v!==res.pnu)||'';
@@ -4968,16 +5006,26 @@ initDB()
         rawItems.push('저촉:'+nm);
     });
 
-    // 용도지역도 추가
+    // 3순위: rawItems에서 용도지역 추출
+    if(!useZone){
+      const found=rawItems.find(it=>Object.keys(ZONE_DETAIL).some(k=>it.includes(k)));
+      if(found) useZone=Object.keys(ZONE_DETAIL).find(k=>found.includes(k))||'';
+    }
+    if(!useZone){
+      const zoneKw=['주거지역','상업지역','공업지역','녹지지역','관리지역','농림지역','보전지역'];
+      const found=rawItems.find(it=>zoneKw.some(k=>it.includes(k)));
+      if(found) useZone=found;
+    }
+
     if(useZone&&!rawItems.includes(useZone)) rawItems.unshift(useZone);
     if(useZone2&&!rawItems.includes(useZone2)) rawItems.splice(1,0,useZone2);
 
-    // 전역 저장 (카테고리에서 사용)
     _regResult._useZone=useZone;
     _regResult._useZone2=useZone2;
     _regResult._rawItems=rawItems;
+    _regResult._apiEmpty=(!f1.length&&!f2.length&&!f3.length);
 
-    // 조회결과 탭 선택
+    console.log('[규제] 최종 용도지역:', useZone, '규제항목:', rawItems.length+'건');
     _renderCatContent('result');
   }
 
@@ -5116,9 +5164,10 @@ initDB()
       let html='';
 
       // ① 용도지역 + 건폐율/용적률
+      const zoneDisplay = useZone || (_regResult._apiEmpty ? '브이월드 데이터 없음' : 'API 응답 파싱 중');
       html+=`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:13px 14px;margin-bottom:10px;">
         <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:6px;">🗺 용도지역·지구</div>
-        <div style="font-size:15px;font-weight:800;margin-bottom:2px;">${useZone||'조회 중...'}</div>
+        <div style="font-size:15px;font-weight:800;margin-bottom:2px;">${zoneDisplay}</div>
         ${useZone2?`<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">${useZone2}</div>`:''}
         ${zd?`
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;">
@@ -5134,7 +5183,12 @@ initDB()
             <div style="font-size:9px;color:var(--text-muted);margin-bottom:2px;">층수</div>
             <div style="font-size:13px;font-weight:800;color:#10b981;">${zd.maxFloor?zd.maxFloor+'F':'제한없음'}</div>
           </div>
-        </div>`:''}
+        </div>`:
+        (!useZone?`<div style="margin-top:8px;padding:8px;background:rgba(255,255,255,.04);border-radius:7px;font-size:11px;color:var(--text-muted);">
+          브이월드 API에서 용도지역 데이터를 가져오지 못했습니다.<br>
+          토지이음에서 직접 확인해주세요.
+          <button onclick="skRegOpenLuris()" style="display:block;margin-top:8px;padding:7px 14px;border:none;border-radius:7px;background:#0891b2;color:#fff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;">🔗 토지이음 확인</button>
+        </div>`:'')}
         ${zd?.note?`<div style="margin-top:7px;font-size:10px;color:var(--text-muted);">${zd.note}</div>`:''}
       </div>`;
 
