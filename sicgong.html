@@ -1259,18 +1259,6 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     </button>
   </div>
 
-  <!-- 조회 버튼 (항상 표시) -->
-  <div id="rg-trigger" style="padding:14px 0 0;">
-    <button onclick="if(window.skRegTabEnter) skRegTabEnter();"
-      style="width:100%;padding:15px;border:none;border-radius:12px;
-             background:linear-gradient(135deg,#7c3aed,#6d28d9);
-             color:#fff;font-family:'Noto Sans KR',sans-serif;
-             font-size:15px;font-weight:800;cursor:pointer;
-             display:flex;align-items:center;justify-content:center;gap:8px;">
-      🔄 도면 · 법적규제 조회
-    </button>
-  </div>
-
   <!-- 규제 정보 -->
   <div id="rg-content" style="display:none;">
 
@@ -4794,88 +4782,172 @@ initDB()
 
 
 /* ═══════════════════════════════════════════════════════════════
-   ⚖️ 법적규제 모듈 v3 — 메인탭 독립 + 도면미니뷰 + 카테고리별 규제
+   ⚖️ 법적규제 모듈 v4 — 필지 기반 실제 해당 규제만 표시
    ══════════════════════════════════════════════════════════════════ */
 (function(){
 
+  // ── PNU 기반 지역 정보 추출 ──
+  function _parsePNU(pnu){
+    if(!pnu || pnu.length < 10) return {};
+    const sido = pnu.slice(0,2);
+    const sigungu = pnu.slice(0,5);
+    const umd = pnu.slice(0,8);
+    const jibun = parseInt(pnu.slice(11,15))||0;
+    // 시도 코드
+    const sidoMap={'11':'서울','26':'부산','27':'대구','28':'인천','29':'광주',
+      '30':'대전','31':'울산','36':'세종','41':'경기','42':'강원','43':'충북',
+      '44':'충남','45':'전북','46':'전남','47':'경북','48':'경남','50':'제주'};
+    return { sido:sidoMap[sido]||sido, sigungu, umd, jibun };
+  }
+
+  // ── 용도지역별 건축기준 테이블 ──
+  const USE_ZONE = {
+    '제1종전용주거지역':{bcr:50,far:100,solar:'1.5m/절반',height:'없음',use:'단독주택만 허용'},
+    '제2종전용주거지역':{bcr:50,far:150,solar:'1.5m/절반',height:'없음',use:'공동주택 허용'},
+    '제1종일반주거지역':{bcr:60,far:200,solar:'1.5m/절반',height:'4층이하',use:'저층 주거'},
+    '제2종일반주거지역':{bcr:60,far:250,solar:'1.5m/절반',height:'없음',use:'중층 주거'},
+    '제3종일반주거지역':{bcr:50,far:300,solar:'1.5m/절반',height:'없음',use:'고층 주거'},
+    '준주거지역':{bcr:70,far:500,solar:'없음',height:'없음',use:'주거+상업 혼합'},
+    '중심상업지역':{bcr:90,far:1500,solar:'없음',height:'없음',use:'도심 핵심 상업'},
+    '일반상업지역':{bcr:80,far:1300,solar:'없음',height:'없음',use:'일반 상업'},
+    '근린상업지역':{bcr:70,far:900,solar:'없음',height:'없음',use:'근린 상업'},
+    '유통상업지역':{bcr:80,far:1100,solar:'없음',height:'없음',use:'유통물류'},
+    '전용공업지역':{bcr:70,far:300,solar:'없음',height:'없음',use:'중화학공업'},
+    '일반공업지역':{bcr:70,far:350,solar:'없음',height:'없음',use:'일반 공업'},
+    '준공업지역':{bcr:70,far:400,solar:'없음',height:'없음',use:'공업+주거 혼합'},
+    '보전녹지지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'개발 제한'},
+    '생산녹지지역':{bcr:20,far:100,solar:'없음',height:'없음',use:'농업적 이용'},
+    '자연녹지지역':{bcr:20,far:100,solar:'없음',height:'없음',use:'불가피한 개발만'},
+    '보전관리지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'자연환경 보전'},
+    '생산관리지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'농업·임업'},
+    '계획관리지역':{bcr:40,far:100,solar:'없음',height:'없음',use:'계획적 개발 유도'},
+    '농림지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'농업진흥·보전산지'},
+    '자연환경보전지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'자연생태계 보전'},
+  };
+
+  // ── 규제 카테고리 전체 ──
   const REG_CATS = [
     {
-      id:'use', icon:'🗺', name:'용도지역·지구', color:'#3b82f6', bg:'rgba(59,130,246,.12)',
+      id:'build', icon:'📐', name:'건축기준', color:'#3b82f6', bg:'rgba(59,130,246,.12)',
+      dynamic: true  // PNU 기반으로 동적 생성
+    },
+    {
+      id:'use', icon:'🗺', name:'용도지역·지구', color:'#6366f1', bg:'rgba(99,102,241,.12)',
       items:[
-        {n:'용도지역', desc:'주거·상업·공업·녹지·관리·농림·자연환경보전지역 — 가장 기본적인 토지 이용 구분'},
-        {n:'용도지구', desc:'용도지역 보완 (경관·고도·방화·보존·시설보호·취락지구 등)'},
-        {n:'용도구역', desc:'개발제한구역·수산자원보호구역·도시자연공원구역 등'},
-        {n:'건폐율·용적률', desc:'용도지역별 최대 건폐율·용적률 — 실제 건축 가능 규모 결정'},
-        {n:'건축선 이격', desc:'도로경계선 1m 이상 / 인접대지 경계선 0.5m 이상 의무 이격'},
-        {n:'정북 일조권', desc:'주거지역: 높이 10m 이하→1.5m, 10m 초과→절반 이격 의무'},
+        {n:'용도지역', desc:'주거·상업·공업·녹지·관리·농림·자연환경보전지역'},
+        {n:'용도지구', desc:'경관·고도·방화·보존·시설보호·취락지구 등'},
+        {n:'용도구역', desc:'개발제한구역·수산자원보호구역·도시자연공원구역'},
       ]
     },
     {
       id:'plan', icon:'🏗', name:'도시계획', color:'#8b5cf6', bg:'rgba(139,92,246,.12)',
       items:[
-        {n:'지구단위계획', desc:'구역 내 용도·높이·건폐율 등 별도 기준 적용 — 반드시 계획 확인'},
-        {n:'도시계획시설', desc:'도로·공원·학교·주차장 등 시설 부지 저촉 시 건축 제한'},
-        {n:'개발행위허가 제한', desc:'토지형질변경·건축물 설치 시 허가 필요 구역'},
-        {n:'도시개발·정비구역', desc:'도시개발구역·재개발·재건축 정비구역 지정 시 개별 건축 제한'},
+        {n:'지구단위계획', desc:'구역 내 용도·높이·건폐율 별도 기준 — 계획서 반드시 확인'},
+        {n:'도시계획시설', desc:'도로·공원·학교 등 시설 부지 저촉 시 건축 제한'},
+        {n:'개발행위허가 제한', desc:'형질변경·건축물 설치 시 허가 필요 구역'},
+        {n:'도시개발·정비구역', desc:'재개발·재건축 구역 지정 시 개별 건축 제한'},
       ]
     },
     {
       id:'road', icon:'🛣', name:'도로·접도', color:'#10b981', bg:'rgba(16,185,129,.12)',
       items:[
-        {n:'접도구역', desc:'국도: 도로경계 5m 이내 / 지방도: 3m 이내 건축 금지'},
-        {n:'도로구역·계획선', desc:'도로 확장 예정선 저촉 부분 건축 불가 — 도로가 될 부분'},
-        {n:'건축법 건축선', desc:'도로경계에서 1m 이상 이격 — 건축물·담장 포함'},
+        {n:'접도구역', desc:'국도 5m / 지방도 3m 이내 건축 금지 — 도로법'},
+        {n:'도로구역·계획선', desc:'도로 확장 예정선 저촉 부분 건축 불가'},
+        {n:'건축선', desc:'도로경계 1m 이상 이격 의무'},
       ]
     },
     {
       id:'agri', icon:'🌾', name:'농지·산지', color:'#16a34a', bg:'rgba(22,163,74,.12)',
       items:[
-        {n:'농업진흥구역', desc:'농지법 — 농지전용허가 없이 비농업 건축 절대 불가'},
+        {n:'농업진흥구역', desc:'농지전용허가 없이 비농업 건축 절대 불가 — 농지법'},
         {n:'농업보호구역', desc:'농업진흥구역 인접 완충구역 — 비농업 시설 제한'},
-        {n:'보전산지', desc:'산지관리법 — 산지전용허가 후 개발 가능 (엄격)'},
+        {n:'보전산지', desc:'산지전용허가 필수 — 산지관리법'},
         {n:'준보전산지', desc:'보전산지보다 완화된 기준 적용'},
       ]
     },
     {
       id:'restrict', icon:'⚠️', name:'개발제한·특수', color:'#ef4444', bg:'rgba(239,68,68,.12)',
       items:[
-        {n:'개발제한구역(그린벨트)', desc:'원칙적 건축 금지 — 예외적 허가만 가능 (국토부 승인)'},
-        {n:'군사시설보호구역', desc:'관할 부대 협의 필수 — 층수·높이 제한, 사용 용도 제한'},
-        {n:'문화재보호구역', desc:'문화재청 현상변경 허가 필수 — 반경 내 공사 제한'},
-        {n:'하천·수변구역', desc:'하천법 — 하천구역 내 건축 원칙 금지'},
-        {n:'자연공원구역', desc:'자연공원법 — 공원계획에 따른 건축 제한'},
-        {n:'재해위험지구', desc:'붕괴·침수·산사태 위험 — 안전진단·대책 수립 필수'},
+        {n:'개발제한구역(그린벨트)', desc:'원칙적 건축 금지 — 국토부 예외 허가만 가능'},
+        {n:'군사시설보호구역', desc:'관할 부대 협의 필수 — 층수·높이·용도 제한'},
+        {n:'문화재보호구역', desc:'문화재청 현상변경 허가 필수'},
+        {n:'하천·수변구역', desc:'하천구역 내 건축 원칙 금지 — 하천법'},
+        {n:'재해위험지구', desc:'안전진단·재해대책 수립 필수 — 자연재해대책법'},
       ]
     },
     {
       id:'env', icon:'🌱', name:'환경·기타', color:'#06b6d4', bg:'rgba(6,182,212,.12)',
       items:[
-        {n:'환경보전지역', desc:'생태경관보전·습지보전·야생생물보호구역 등 환경 규제'},
-        {n:'상수원보호구역', desc:'오염원 배출 시설 건축 제한 — 수도법 적용'},
-        {n:'항공장애물 제한', desc:'항공법 — 비행안전구역 내 높이 제한 (관할 공항·군 협의)'},
+        {n:'환경보전지역', desc:'생태경관보전·습지보전·야생생물보호구역 등'},
+        {n:'상수원보호구역', desc:'오염원 배출 시설 건축 제한 — 수도법'},
+        {n:'항공장애물 제한', desc:'비행안전구역 높이 제한 — 항공법'},
         {n:'토지거래허가구역', desc:'관할 구청 허가 없이 토지거래 불가'},
-        {n:'친환경·경제특구', desc:'특구 지정 시 인허가 특례 또는 지원 혜택 가능'},
+        {n:'친환경·경제특구', desc:'인허가 특례 또는 지원 혜택 가능'},
       ]
     },
   ];
 
   let _selCat = null;
-  let _regScale=1, _regOffX=0, _regOffY=0, _regDrag=false, _regLX=0, _regLY=0;
+  let _regScale=1, _regOffX=0, _regOffY=0;
+  let _regDrag=false, _regLX=0, _regLY=0;
 
-  /* ── 메인탭 진입 ── */
+  // ── 건축기준 동적 생성 (PNU 기반) ──
+  function _buildItems(){
+    const pnu = window.skPNU||'';
+    const geo = _parsePNU(pnu);
+    const pts = window.skPoints||[];
+
+    // 둘레로 대략적 규모 추정
+    let perimeter = 0;
+    for(let i=0;i<pts.length;i++){
+      const j=(i+1)%pts.length;
+      perimeter += Math.sqrt((pts[j].x-pts[i].x)**2+(pts[j].y-pts[i].y)**2);
+    }
+    const area = perimeter > 0 ? Math.round(perimeter*perimeter/16) : 0; // 대략
+
+    // 용도지역 (skLotMeta에서 가져올 수 있으면 사용)
+    const meta = window.skLotMeta||{};
+    const useZone = meta.useZone||'';
+    const zoneData = USE_ZONE[useZone]||null;
+
+    const items = [];
+
+    if(zoneData){
+      items.push({n:'용도지역', desc:useZone, highlight:true});
+      items.push({n:'건폐율 한도', desc:zoneData.bcr+'%', highlight:true});
+      items.push({n:'용적률 한도', desc:zoneData.far+'%', highlight:true});
+      if(zoneData.solar!=='없음') items.push({n:'정북 일조 이격', desc:'10m이하 1.5m / 10m초과 절반', highlight:false});
+      if(zoneData.height!=='없음') items.push({n:'층수 제한', desc:zoneData.height, highlight:false});
+      items.push({n:'허용 용도', desc:zoneData.use, highlight:false});
+    } else {
+      items.push({n:'건폐율·용적률', desc:'토지이용계획확인서 확인 필요', highlight:false});
+    }
+
+    // 공통 건축법 기준
+    items.push({n:'건축선 이격', desc:'도로경계선 1m 이상 의무', highlight:false});
+    items.push({n:'인접대지 이격', desc:'경계선 0.5m 이상 의무', highlight:false});
+
+    // 지역별 추가 규제 (PNU 앞자리로 판단)
+    const sid = pnu.slice(0,2);
+    if(sid==='50') items.push({n:'절대보전지역', desc:'제주도 — 지하수 보전 특별 규정 적용', highlight:true});
+    if(['47','48'].includes(sid)) items.push({n:'경관협정', desc:'일부 지역 경관협정 적용 가능', highlight:false});
+
+    if(area>0) items.push({n:'추정 필지면적', desc:'약 '+area+'㎡ (참고용)', highlight:false});
+
+    return items;
+  }
+
+  // ── 메인탭 진입 ──
   window.skRegTabEnter = function(){
     const empty  = document.getElementById('rg-empty');
     const regCon = document.getElementById('rg-content');
     const pts    = window.skPoints||[];
 
-    // PNU 없으면 안내 표시
     if(!window.skPNU){
       if(empty)  empty.style.display  = 'block';
       if(regCon) regCon.style.display = 'none';
       return;
     }
-
-    // PNU 있으면 바로 표시
     if(empty)  empty.style.display  = 'none';
     if(regCon) regCon.style.display = 'block';
 
@@ -4884,20 +4956,16 @@ initDB()
     if(ae) ae.textContent = window.skLotMeta?.addr||'';
     if(pe) pe.textContent = 'PNU: '+window.skPNU;
 
-    // 도면은 탭이 열린 후 그리기 (clientWidth 확보)
     if(pts.length) setTimeout(_drawRegCanvas, 80);
 
-    // 카테고리 버튼 (이미 있으면 재생성 안 함)
     const wrap=document.getElementById('rg-cat-btns');
     if(wrap && !wrap.children.length) _renderCatBtns();
 
-    // 처음 진입 시 첫 카테고리 선택
     if(!_selCat) _selectCat(REG_CATS[0].id);
-
     setTimeout(_initDrag, 150);
   };
 
-  /* ── 카테고리 버튼 렌더 ── */
+  // ── 카테고리 버튼 렌더 ──
   function _renderCatBtns(){
     const wrap=document.getElementById('rg-cat-btns');
     if(!wrap) return;
@@ -4907,7 +4975,7 @@ initDB()
         style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;
                background:var(--surface2);color:var(--text-muted);
                font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;
-               cursor:pointer;transition:all .2s;">
+               cursor:pointer;transition:all .2s;white-space:nowrap;">
         ${cat.icon} ${cat.name}
       </button>`).join('');
   }
@@ -4919,6 +4987,7 @@ initDB()
     const cat=REG_CATS.find(c=>c.id===id);
     if(!cat) return;
 
+    // 버튼 스타일
     REG_CATS.forEach(c=>{
       const btn=document.getElementById('rg-cat-'+c.id);
       if(!btn) return;
@@ -4933,15 +5002,19 @@ initDB()
       }
     });
 
+    // 상세 내용
     const detail=document.getElementById('rg-detail');
     if(!detail) return;
 
-    const rows=cat.items.map(item=>`
+    // 건축기준은 동적 생성
+    const items = cat.dynamic ? _buildItems() : cat.items;
+
+    const rows=items.map(item=>`
       <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
         <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="width:6px;height:6px;border-radius:50%;background:${cat.color};margin-top:5px;flex-shrink:0;"></div>
+          <div style="width:6px;height:6px;border-radius:50%;background:${item.highlight?'#f59e0b':cat.color};margin-top:5px;flex-shrink:0;"></div>
           <div>
-            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">${item.n}</div>
+            <div style="font-size:12px;font-weight:700;color:${item.highlight?'#f59e0b':'var(--text)'};margin-bottom:3px;">${item.n}</div>
             <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">${item.desc}</div>
           </div>
         </div>
@@ -4951,13 +5024,13 @@ initDB()
       <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${cat.color};border-radius:12px;padding:12px 14px;">
         <div style="font-size:12px;font-weight:700;color:${cat.color};margin-bottom:8px;">${cat.icon} ${cat.name}</div>
         ${rows}
-        <div style="margin-top:10px;padding:9px 11px;background:rgba(255,255,255,.03);border-radius:8px;font-size:10px;color:var(--text-muted);line-height:1.7;">
+        <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:7px;font-size:10px;color:var(--text-muted);line-height:1.7;">
           💡 정확한 저촉 여부는 <strong style="color:var(--text);">토지이용계획확인서</strong>로 확인하세요
         </div>
       </div>`;
   }
 
-  /* ── 도면 미니뷰 ── */
+  // ── 도면 미니뷰 ──
   function _drawRegCanvas(){
     const canvas=document.getElementById('rg-canvas');
     const pts=window.skPoints||[];
@@ -5016,7 +5089,7 @@ initDB()
   }
 
   /* ── 외부 연동 ── */
-  window._skRegReset     = function(){_selCat=null;};
+  window._skRegReset     = function(){_selCat=null; const w=document.getElementById('rg-cat-btns'); if(w) w.innerHTML='';};
   window.skRegSyncBadge  = function(){};
   window.skRegAutoFetch  = function(){const el=document.getElementById('tab-reg-content');if(el&&el.style.display!=='none') skRegTabEnter();};
   window.skRegLoad       = function(){if(window.skRegTabEnter) skRegTabEnter();};
