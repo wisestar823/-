@@ -1274,12 +1274,20 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div style="font-size:11px;font-weight:700;">📐 필지 도면</div>
-        <button onclick="switchTab('stake');setTimeout(()=>skSubTab&&skSubTab('draw'),100)"
-          style="font-size:10px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text-muted);cursor:pointer;font-family:inherit;">
-          도면 상세보기 →
-        </button>
+        <div style="display:flex;gap:6px;">
+          <button onclick="skRegOpenFullscreen()"
+            style="font-size:10px;padding:4px 10px;border:1px solid rgba(245,158,11,.3);border-radius:6px;background:rgba(245,158,11,.1);color:#f59e0b;cursor:pointer;font-family:inherit;font-weight:700;">
+            ⛶ 전체화면
+          </button>
+        </div>
       </div>
-      <canvas id="rg-canvas" style="width:100%;height:140px;display:block;background:#050a0f;border-radius:8px;"></canvas>
+      <canvas id="rg-canvas" style="width:100%;height:160px;display:block;background:#050a0f;border-radius:8px;" onclick="skRegOpenFullscreen()"></canvas>
+      <!-- 규제 범례 -->
+      <div id="rg-legend" style="display:none;margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;font-size:10px;color:var(--text-muted);">
+        <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:3px;background:rgba(255,69,96,.7);display:inline-block;border-radius:1px;"></span>접도구역</span>
+        <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:3px;background:rgba(59,130,246,.7);display:inline-block;border-radius:1px;"></span>필지경계</span>
+        <span style="display:flex;align-items:center;gap:3px;"><span style="width:10px;height:3px;background:rgba(139,92,246,.7);display:inline-block;border-radius:1px;"></span>건물</span>
+      </div>
     </div>
 
     <!-- 규제 카테고리 버튼 -->
@@ -5162,50 +5170,189 @@ initDB()
     if(detail) detail.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">${msg}</div>`;
   }
 
-  // ── 도면 미니뷰 ──
-  function _drawRegCanvas(){
-    const canvas=document.getElementById('rg-canvas');
+  // ── 도면 그리기 (미니뷰 + 전체화면 공용) ──
+  function _drawCanvas(canvas, scaleOverride, offXOverride, offYOverride){
     const pts=window.skPoints||[];
     if(!canvas||!pts.length) return;
+    const scale = scaleOverride!==undefined ? scaleOverride : _regScale;
+    const offX  = offXOverride!==undefined ? offXOverride : _regOffX;
+    const offY  = offYOverride!==undefined ? offYOverride : _regOffY;
     const dpr=window.devicePixelRatio||1;
-    const W=canvas.clientWidth,H=canvas.clientHeight||140;
-    canvas.width=W*dpr;canvas.height=H*dpr;
+    const W=canvas.clientWidth, H=canvas.clientHeight||160;
+    canvas.width=W*dpr; canvas.height=H*dpr;
     const ctx=canvas.getContext('2d');
     ctx.scale(dpr,dpr);
-    ctx.fillStyle='#050a0f';ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=1;
+    // 배경
+    ctx.fillStyle='#050a0f'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=1;
     for(let i=0;i<W;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
     for(let i=0;i<H;i+=20){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
-    const midX=(Math.min(...xs)+Math.max(...xs))/2,midY=(Math.min(...ys)+Math.max(...ys))/2;
-    const pad=24;
-    const sc=Math.min((W-pad*2)/(Math.max(...xs)-Math.min(...xs)||1),(H-pad*2)/(Math.max(...ys)-Math.min(...ys)||1))*_regScale;
-    const cX=W/2+_regOffX,cY=H/2+_regOffY;
-    const tc=(x,y)=>[cX+(y-midY)*sc,cY-(x-midX)*sc];
+    const minX=Math.min(...xs),maxX=Math.max(...xs);
+    const minY=Math.min(...ys),maxY=Math.max(...ys);
+    const midX=(minX+maxX)/2, midY=(minY+maxY)/2;
+    const pad=30;
+    const sc=Math.min((W-pad*2)/(maxX-minX||1),(H-pad*2)/(maxY-minY||1))*scale;
+    const cX=W/2+offX, cY=H/2+offY;
+    const tc=(x,y)=>[cX+(y-midY)*sc, cY-(x-midX)*sc];
+
+    // ── 규제 레이어: 접도구역 (필지 외곽에서 5m/3m 이격) ──
+    const rawItems=_regResult?._rawItems||[];
+    const hasJeoptdo=rawItems.some(it=>it.includes('접도구역'));
+    const hasAgri=rawItems.some(it=>it.includes('농업진흥구역'));
+    const hasFlood=rawItems.some(it=>it.includes('하천구역')||it.includes('수변구역'));
+    const hasGreenbelt=rawItems.some(it=>it.includes('개발제한구역'));
+
+    // 접도구역 표시 (필지 경계 안쪽 3m 이격선)
+    if(hasJeoptdo){
+      const isoM=3; // 간략 표시용
+      const isoPx=isoM*sc;
+      ctx.save();
+      // 필지 경로 생성
+      ctx.beginPath();
+      const[ffx,ffy]=tc(pts[0].x,pts[0].y); ctx.moveTo(ffx,ffy);
+      pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
+      // 점선으로 이격선 표시
+      ctx.setLineDash([4,3]);
+      ctx.strokeStyle='rgba(255,69,96,.6)';
+      ctx.lineWidth=1.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+      // 접도구역 라벨
+      const cx=(Math.min(...pts.map(p=>tc(p.x,p.y)[0]))+Math.max(...pts.map(p=>tc(p.x,p.y)[0])))/2;
+      ctx.font='bold 9px sans-serif';
+      ctx.fillStyle='rgba(255,69,96,.9)';
+      ctx.textAlign='center';
+      ctx.fillText('⚠ 접도구역',cx,H-16);
+    }
+
+    // 개발제한구역 배경 표시
+    if(hasGreenbelt){
+      ctx.save();
+      ctx.beginPath();
+      const[gx,gy]=tc(pts[0].x,pts[0].y); ctx.moveTo(gx,gy);
+      pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
+      ctx.fillStyle='rgba(22,163,74,.12)';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 농업진흥구역 배경 표시
+    if(hasAgri&&!hasGreenbelt){
+      ctx.save();
+      ctx.beginPath();
+      const[ax,ay]=tc(pts[0].x,pts[0].y); ctx.moveTo(ax,ay);
+      pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
+      ctx.fillStyle='rgba(245,158,11,.08)';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ── 필지 폴리곤 ──
     ctx.beginPath();
-    const[fx,fy]=tc(pts[0].x,pts[0].y);ctx.moveTo(fx,fy);
-    pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);});ctx.closePath();
-    ctx.fillStyle='rgba(59,130,246,.08)';ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1.5;ctx.stroke();
+    const[fx,fy]=tc(pts[0].x,pts[0].y); ctx.moveTo(fx,fy);
+    pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
+    ctx.fillStyle='rgba(59,130,246,.08)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.8; ctx.stroke();
+
+    // ── 건물 ──
     const bPts=window.skBldgCoordPts||[];
     if(bPts.length>=3){
-      ctx.beginPath();bPts.forEach((p,i)=>{const[x,y]=tc(p.x,p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-      ctx.closePath();ctx.fillStyle='rgba(139,92,246,.2)';ctx.fill();ctx.strokeStyle='#9b7df8';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.beginPath();
+      bPts.forEach((p,i)=>{const[x,y]=tc(p.x,p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+      ctx.closePath();
+      ctx.fillStyle='rgba(139,92,246,.2)'; ctx.fill();
+      ctx.strokeStyle='#9b7df8'; ctx.lineWidth=1.8; ctx.stroke();
     }
+
+    // ── 경계점 ──
     pts.forEach(p=>{
       const[px,py]=tc(p.x,p.y);
-      ctx.beginPath();ctx.arc(px,py,3.5,0,Math.PI*2);
-      ctx.fillStyle=p.state==='alive'?'#22c55e':p.state==='lost'?'#ef4444':'#9ca3af';ctx.fill();
-      ctx.font='bold 8px monospace';ctx.fillStyle='rgba(255,255,255,.6)';ctx.textAlign='center';
+      ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2);
+      ctx.fillStyle=p.state==='alive'?'#22c55e':p.state==='lost'?'#ef4444':'#9ca3af';
+      ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=0.5; ctx.stroke();
+      ctx.font='bold 8px monospace';
+      ctx.fillStyle='rgba(255,255,255,.7)';
+      ctx.textAlign='center';
       ctx.fillText(p.num,px,py-6);
     });
-    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='8px sans-serif';ctx.textAlign='center';ctx.fillText('↑N',W-14,14);
-    const barM=5,barPx=barM*sc;
-    if(barPx>15&&barPx<W/3){
-      ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1.5;
-      ctx.beginPath();ctx.moveTo(W-pad-barPx,H-10);ctx.lineTo(W-pad,H-10);ctx.stroke();
-      ctx.font='7px monospace';ctx.fillStyle='rgba(255,255,255,.4)';ctx.fillText(barM+'m',W-pad-barPx/2,H-2);
+
+    // ── 규제 아이콘 표시 ──
+    const icons=[];
+    if(hasJeoptdo) icons.push({ico:'🛣',lbl:'접도구역'});
+    if(hasGreenbelt) icons.push({ico:'🌿',lbl:'개발제한'});
+    if(hasAgri) icons.push({ico:'🌾',lbl:'농업진흥'});
+    if(hasFlood) icons.push({ico:'💧',lbl:'하천구역'});
+    if(icons.length){
+      icons.forEach((it,i)=>{
+        ctx.font='11px sans-serif';
+        ctx.fillText(it.ico, 10+i*22, 16);
+      });
     }
+
+    // ── 정북/축척 ──
+    ctx.fillStyle='rgba(255,255,255,.3)';
+    ctx.font='8px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('↑N',W-14,14);
+    const barM=5, barPx=barM*sc;
+    if(barPx>15&&barPx<W/3){
+      ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(W-pad-barPx,H-10); ctx.lineTo(W-pad,H-10); ctx.stroke();
+      ctx.font='7px monospace'; ctx.fillStyle='rgba(255,255,255,.4)';
+      ctx.fillText(barM+'m',W-pad-barPx/2,H-2);
+    }
+  }
+
+  function _drawRegCanvas(){ _drawCanvas(document.getElementById('rg-canvas')); }
+
+  // ── 전체화면 ──
+  let _ovScale=1, _ovOffX=0, _ovOffY=0, _ovDrag=false, _ovLX=0, _ovLY=0;
+
+  window.skRegOpenFullscreen=function(){
+    const ov=document.getElementById('sk-reg-overlay');
+    if(!ov) return;
+    ov.style.display='flex';
+    _ovScale=1.5; _ovOffX=0; _ovOffY=0;
+    const title=document.getElementById('sk-reg-ov-title');
+    if(title) title.textContent='⚖️ '+(window.skLotMeta?.addr||'필지 도면');
+    setTimeout(()=>{
+      const c=document.getElementById('sk-reg-ov-canvas');
+      _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
+      _initOvDrag(c);
+    },50);
+  };
+
+  window.skRegCloseFullscreen=function(){
+    const ov=document.getElementById('sk-reg-overlay');
+    if(ov) ov.style.display='none';
+  };
+
+  window.skRegOvZoom=function(f){
+    _ovScale*=f; _ovScale=Math.max(.3,Math.min(_ovScale,20));
+    const c=document.getElementById('sk-reg-ov-canvas');
+    _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
+  };
+  window.skRegOvReset=function(){
+    _ovScale=1.5;_ovOffX=0;_ovOffY=0;
+    const c=document.getElementById('sk-reg-ov-canvas');
+    _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
+  };
+
+  function _initOvDrag(c){
+    if(!c||c._ovEvt) return; c._ovEvt=true;
+    c.addEventListener('touchstart',e=>{if(e.touches.length===1){_ovDrag=true;_ovLX=e.touches[0].clientX;_ovLY=e.touches[0].clientY;}},{passive:true});
+    c.addEventListener('touchmove',e=>{
+      e.preventDefault();
+      if(_ovDrag&&e.touches.length===1){
+        _ovOffX+=e.touches[0].clientX-_ovLX; _ovOffY+=e.touches[0].clientY-_ovLY;
+        _ovLX=e.touches[0].clientX; _ovLY=e.touches[0].clientY;
+        _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
+      }
+    },{passive:false});
+    c.addEventListener('touchend',()=>{_ovDrag=false;});
   }
 
   function _initDrag(){
