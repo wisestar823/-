@@ -4983,7 +4983,7 @@ initDB()
 
   // ── 카테고리 버튼 렌더 ──
   const CATS=[
-    {id:'result', icon:'📋', name:'조회결과', color:'#f59e0b'},
+    {id:'result', icon:'📊', name:'종합 요약', color:'#f59e0b'},
     {id:'build',  icon:'📐', name:'건축기준', color:'#3b82f6'},
     {id:'plan',   icon:'🏗',  name:'도시계획', color:'#8b5cf6'},
     {id:'road',   icon:'🛣',  name:'도로·접도', color:'#10b981'},
@@ -5115,65 +5115,115 @@ initDB()
       }
       let html='';
 
-      // 용도지역 카드
-      if(useZone){
-        html+=`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
-          <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:5px;">🗺 용도지역·지구</div>
-          <div style="font-size:15px;font-weight:800;margin-bottom:2px;">${useZone}</div>
-          ${useZone2?`<div style="font-size:11px;color:var(--text-muted);">${useZone2}</div>`:''}
-          ${zd?`<div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <div style="background:rgba(59,130,246,.12);border-radius:6px;padding:6px 8px;text-align:center;">
-              <div style="font-size:9px;color:var(--text-muted);">건폐율</div>
-              <div style="font-size:16px;font-weight:800;color:#3b82f6;">${zd.bcr}%</div>
-            </div>
-            <div style="background:rgba(139,92,246,.12);border-radius:6px;padding:6px 8px;text-align:center;">
-              <div style="font-size:9px;color:var(--text-muted);">용적률</div>
-              <div style="font-size:16px;font-weight:800;color:#8b5cf6;">${zd.far}%</div>
-            </div>
-          </div>`:''}
-          ${zd?.note?`<div style="margin-top:7px;font-size:10px;color:var(--text-muted);">${zd.note}</div>`:''}
+      // ① 용도지역 + 건폐율/용적률
+      html+=`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:13px 14px;margin-bottom:10px;">
+        <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:6px;">🗺 용도지역·지구</div>
+        <div style="font-size:15px;font-weight:800;margin-bottom:2px;">${useZone||'조회 중...'}</div>
+        ${useZone2?`<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">${useZone2}</div>`:''}
+        ${zd?`
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;">
+          <div style="background:rgba(59,130,246,.12);border-radius:7px;padding:7px;text-align:center;">
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:2px;">건폐율</div>
+            <div style="font-size:17px;font-weight:800;color:#3b82f6;">${zd.bcr}%</div>
+          </div>
+          <div style="background:rgba(139,92,246,.12);border-radius:7px;padding:7px;text-align:center;">
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:2px;">용적률</div>
+            <div style="font-size:17px;font-weight:800;color:#8b5cf6;">${zd.far}%</div>
+          </div>
+          <div style="background:rgba(16,185,129,.1);border-radius:7px;padding:7px;text-align:center;">
+            <div style="font-size:9px;color:var(--text-muted);margin-bottom:2px;">층수</div>
+            <div style="font-size:13px;font-weight:800;color:#10b981;">${zd.maxFloor?zd.maxFloor+'F':'제한없음'}</div>
+          </div>
+        </div>`:''}
+        ${zd?.note?`<div style="margin-top:7px;font-size:10px;color:var(--text-muted);">${zd.note}</div>`:''}
+      </div>`;
+
+      // ② 건축기준 핵심 (용도지역 기반)
+      if(zd){
+        const buildRows=[
+          ['건축선 이격','도로경계선 1m 이상 의무',false],
+          ['인접대지 이격','경계선 0.5m 이상 의무',false],
+          ['정북 일조권',zd.solar,zd.solar!=='없음'],
+          ['건축물 높이',zd.height,false],
+          ['허용 용도',zd.use,false],
+        ];
+        if(hasJeopt) buildRows.unshift(['접도구역 이격','국도 5m / 지방도 3m 추가',true]);
+        if(hasPlan) buildRows.unshift(['지구단위계획','계획서 별도 기준 — 반드시 확인',true]);
+        html+=`<div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-left:3px solid #3b82f6;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:8px;">📐 건축기준</div>
+          ${buildRows.map(([n,v,w])=>`
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            <span style="font-size:11px;color:var(--text-muted);flex:1;">${n}</span>
+            <span style="font-size:11px;font-weight:700;color:${w?'#ef4444':'var(--text)'};text-align:right;flex:1.3;line-height:1.5;">${v}</span>
+          </div>`).join('')}
         </div>`;
       }
 
-      // 경고 규제
-      if(warnHit.length){
-        html+=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
-          <div style="font-size:10px;color:#ef4444;font-weight:700;margin-bottom:8px;">⚠️ 건축 제한 규제 (${warnHit.length}건)</div>
-          ${warnHit.map(it=>{
-            const t=REG_TYPES.find(r=>it.includes(r.key));
-            const isHit=it.startsWith('저촉:');
-            return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-              <span style="font-size:15px;">${t?.icon||'⚠️'}</span>
-              <div><div style="font-size:12px;font-weight:700;color:${isHit?'#ef4444':'var(--text)'};">${it.replace('저촉:','')}</div>
-              ${isHit?'<div style="font-size:10px;color:#ef4444;">직접 저촉</div>':''}</div>
-            </div>`;
-          }).join('')}
+      // ③ 특수규제 해당 여부
+      const restrictList=[
+        [hasGreen, '🌿', '개발제한구역', '원칙적 건축 금지'],
+        [hasMili,  '🪖', '군사시설보호구역', '관할 부대 협의 필수'],
+        [hasCult,  '🏛', '문화재보호구역', '문화재청 허가 필수'],
+        [hasAgri,  '🌾', '농업진흥구역', '농지전용허가 없이 불가'],
+        [hasForest,'🌲', '보전산지', '산지전용허가 필수'],
+        [hasRiver, '💧', '하천·수변구역', '건축 원칙 금지'],
+        [hasFlood, '🌊', '재해위험지구', '안전진단·대책 수립 필수'],
+        [hasJeopt, '🛣', '접도구역', '국도5m/지방도3m 건축 금지'],
+      ];
+      const hitList=restrictList.filter(r=>r[0]);
+      const clearList=restrictList.filter(r=>!r[0]);
+
+      if(hitList.length){
+        html+=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-left:3px solid #ef4444;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:8px;">⚠️ 해당 규제 (${hitList.length}건)</div>
+          ${hitList.map(([,ic,nm,desc])=>`
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+            <span style="font-size:14px;margin-top:1px;">${ic}</span>
+            <div><div style="font-size:12px;font-weight:700;color:#ef4444;">${nm}</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${desc}</div></div>
+          </div>`).join('')}
         </div>`;
       }
 
-      // 기타 지정사항
-      const others=rawItems.filter(it=>!warnHit.includes(it)&&it!==useZone&&it!==useZone2);
+      // ④ API 원시 데이터 (기타)
+      const others=rawItems.filter(it=>!restrictList.some(r=>it.includes(r[2]))&&it!==useZone&&it!==useZone2);
       if(others.length){
-        html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
-          <div style="font-size:10px;color:var(--text-muted);font-weight:700;margin-bottom:8px;">📌 기타 지정사항 (${others.length}건)</div>
+        html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;margin-bottom:7px;">📌 기타 지정사항 (${others.length}건)</div>
           ${others.map(it=>{const t=REG_TYPES.find(r=>it.includes(r.key));
-            return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-              <span>${t?.icon||'📌'}</span><span style="font-size:11px;color:var(--text-muted);">${it.replace('저촉:','')}</span>
+            return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+              <span style="font-size:12px;">${t?.icon||'📌'}</span>
+              <span style="font-size:11px;color:var(--text-muted);">${it.replace('저촉:','')}</span>
             </div>`;}).join('')}
         </div>`;
       }
 
-      if(!rawItems.length){
-        html+=`<div style="text-align:center;padding:20px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;">
-          <div style="font-size:24px;margin-bottom:8px;">✅</div>
+      // ⑤ 이상 없음
+      if(!rawItems.length && !warnHit.length){
+        html+=`<div style="text-align:center;padding:18px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;margin-bottom:10px;">
+          <div style="font-size:22px;margin-bottom:6px;">✅</div>
           <div style="font-size:13px;font-weight:700;color:#10b981;">특수 규제 없음</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">용도지역 기준만 적용됩니다</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">용도지역 기준만 적용됩니다</div>
         </div>`;
       }
 
-      html+=`<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:7px;font-size:10px;color:var(--text-muted);line-height:1.7;">
+      // ⑥ 해당없는 규제 목록 (참고)
+      if(clearList.length){
+        html+=`<details style="margin-bottom:10px;">
+          <summary style="font-size:10px;color:var(--text-muted);cursor:pointer;padding:6px 10px;background:var(--surface);border-radius:7px;list-style:none;">
+            ✅ 해당 없는 규제 ${clearList.length}건 (탭하여 확인)
+          </summary>
+          <div style="background:var(--surface);border-radius:0 0 7px 7px;padding:6px 10px;">
+            ${clearList.map(([,ic,nm])=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:10px;color:var(--text-muted);">
+              <span>${ic}</span><span>${nm} — 해당 없음</span>
+            </div>`).join('')}
+          </div>
+        </details>`;
+      }
+
+      html+=`<div style="padding:8px 10px;background:rgba(255,255,255,.03);border-radius:7px;font-size:10px;color:var(--text-muted);line-height:1.7;">
         📡 브이월드 LT_C_UZ + LT_C_LHBLPN (국토교통부)<br>
-        💡 정확한 저촉 여부는 토지이용계획확인서로 확인하세요
+        💡 정확한 저촉 여부는 토지이용계획확인서로 확인
       </div>`;
       detail.innerHTML=html;
 
