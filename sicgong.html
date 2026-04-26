@@ -4782,217 +4782,228 @@ initDB()
 
 
 /* ═══════════════════════════════════════════════════════════════
-   ⚖️ 법적규제 모듈 v4 — 필지 기반 실제 해당 규제만 표시
+   ⚖️ 법적규제 모듈 v5 — 브이월드 POINT 필터 + 실제 규제 파싱
    ══════════════════════════════════════════════════════════════════ */
 (function(){
 
-  // ── PNU 기반 지역 정보 추출 ──
-  function _parsePNU(pnu){
-    if(!pnu || pnu.length < 10) return {};
-    const sido = pnu.slice(0,2);
-    const sigungu = pnu.slice(0,5);
-    const umd = pnu.slice(0,8);
-    const jibun = parseInt(pnu.slice(11,15))||0;
-    // 시도 코드
-    const sidoMap={'11':'서울','26':'부산','27':'대구','28':'인천','29':'광주',
-      '30':'대전','31':'울산','36':'세종','41':'경기','42':'강원','43':'충북',
-      '44':'충남','45':'전북','46':'전남','47':'경북','48':'경남','50':'제주'};
-    return { sido:sidoMap[sido]||sido, sigungu, umd, jibun };
-  }
+  const SK_KEY    = 'A512471A-C75B-3644-BCCA-B3DC1D95254D';
+  const SK_BASE   = 'https://api.vworld.kr';
+  const SK_DOMAIN = 'wisestar823.github.io';
 
-  // ── 용도지역별 건축기준 테이블 ──
-  const USE_ZONE = {
-    '제1종전용주거지역':{bcr:50,far:100,solar:'1.5m/절반',height:'없음',use:'단독주택만 허용'},
-    '제2종전용주거지역':{bcr:50,far:150,solar:'1.5m/절반',height:'없음',use:'공동주택 허용'},
-    '제1종일반주거지역':{bcr:60,far:200,solar:'1.5m/절반',height:'4층이하',use:'저층 주거'},
-    '제2종일반주거지역':{bcr:60,far:250,solar:'1.5m/절반',height:'없음',use:'중층 주거'},
-    '제3종일반주거지역':{bcr:50,far:300,solar:'1.5m/절반',height:'없음',use:'고층 주거'},
-    '준주거지역':{bcr:70,far:500,solar:'없음',height:'없음',use:'주거+상업 혼합'},
-    '중심상업지역':{bcr:90,far:1500,solar:'없음',height:'없음',use:'도심 핵심 상업'},
-    '일반상업지역':{bcr:80,far:1300,solar:'없음',height:'없음',use:'일반 상업'},
-    '근린상업지역':{bcr:70,far:900,solar:'없음',height:'없음',use:'근린 상업'},
-    '유통상업지역':{bcr:80,far:1100,solar:'없음',height:'없음',use:'유통물류'},
-    '전용공업지역':{bcr:70,far:300,solar:'없음',height:'없음',use:'중화학공업'},
-    '일반공업지역':{bcr:70,far:350,solar:'없음',height:'없음',use:'일반 공업'},
-    '준공업지역':{bcr:70,far:400,solar:'없음',height:'없음',use:'공업+주거 혼합'},
-    '보전녹지지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'개발 제한'},
-    '생산녹지지역':{bcr:20,far:100,solar:'없음',height:'없음',use:'농업적 이용'},
-    '자연녹지지역':{bcr:20,far:100,solar:'없음',height:'없음',use:'불가피한 개발만'},
-    '보전관리지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'자연환경 보전'},
-    '생산관리지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'농업·임업'},
-    '계획관리지역':{bcr:40,far:100,solar:'없음',height:'없음',use:'계획적 개발 유도'},
-    '농림지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'농업진흥·보전산지'},
-    '자연환경보전지역':{bcr:20,far:80,solar:'없음',height:'없음',use:'자연생태계 보전'},
+  // ── 용도지역별 건축기준 ──
+  const USE_TABLE = {
+    '제1종전용주거지역':{bcr:50,far:100,solar:'1.5m/절반',use:'단독주택만'},
+    '제2종전용주거지역':{bcr:50,far:150,solar:'1.5m/절반',use:'공동주택 허용'},
+    '제1종일반주거지역':{bcr:60,far:200,solar:'1.5m/절반',use:'4층 이하'},
+    '제2종일반주거지역':{bcr:60,far:250,solar:'1.5m/절반',use:'중층 주거'},
+    '제3종일반주거지역':{bcr:50,far:300,solar:'1.5m/절반',use:'고층 주거'},
+    '준주거지역':{bcr:70,far:500,solar:'없음',use:'주거+상업 혼합'},
+    '중심상업지역':{bcr:90,far:1500,solar:'없음',use:'도심 상업'},
+    '일반상업지역':{bcr:80,far:1300,solar:'없음',use:'일반 상업'},
+    '근린상업지역':{bcr:70,far:900,solar:'없음',use:'근린 상업'},
+    '유통상업지역':{bcr:80,far:1100,solar:'없음',use:'유통물류'},
+    '전용공업지역':{bcr:70,far:300,solar:'없음',use:'중화학공업'},
+    '일반공업지역':{bcr:70,far:350,solar:'없음',use:'일반 공업'},
+    '준공업지역':{bcr:70,far:400,solar:'없음',use:'공업+주거 혼합'},
+    '보전녹지지역':{bcr:20,far:80,solar:'없음',use:'개발 제한'},
+    '생산녹지지역':{bcr:20,far:100,solar:'없음',use:'농업적 이용'},
+    '자연녹지지역':{bcr:20,far:100,solar:'없음',use:'불가피한 개발만'},
+    '보전관리지역':{bcr:20,far:80,solar:'없음',use:'자연환경 보전'},
+    '생산관리지역':{bcr:20,far:80,solar:'없음',use:'농업·임업'},
+    '계획관리지역':{bcr:40,far:100,solar:'없음',use:'계획적 개발 유도'},
+    '농림지역':{bcr:20,far:80,solar:'없음',use:'농업진흥·보전산지'},
+    '자연환경보전지역':{bcr:20,far:80,solar:'없음',use:'자연생태계 보전'},
   };
 
-  // ── 규제 카테고리 전체 ──
-  const REG_CATS = [
-    {
-      id:'build', icon:'📐', name:'건축기준', color:'#3b82f6', bg:'rgba(59,130,246,.12)',
-      dynamic: true  // PNU 기반으로 동적 생성
-    },
-    {
-      id:'use', icon:'🗺', name:'용도지역·지구', color:'#6366f1', bg:'rgba(99,102,241,.12)',
-      items:[
-        {n:'용도지역', desc:'주거·상업·공업·녹지·관리·농림·자연환경보전지역'},
-        {n:'용도지구', desc:'경관·고도·방화·보존·시설보호·취락지구 등'},
-        {n:'용도구역', desc:'개발제한구역·수산자원보호구역·도시자연공원구역'},
-      ]
-    },
-    {
-      id:'plan', icon:'🏗', name:'도시계획', color:'#8b5cf6', bg:'rgba(139,92,246,.12)',
-      items:[
-        {n:'지구단위계획', desc:'구역 내 용도·높이·건폐율 별도 기준 — 계획서 반드시 확인'},
-        {n:'도시계획시설', desc:'도로·공원·학교 등 시설 부지 저촉 시 건축 제한'},
-        {n:'개발행위허가 제한', desc:'형질변경·건축물 설치 시 허가 필요 구역'},
-        {n:'도시개발·정비구역', desc:'재개발·재건축 구역 지정 시 개별 건축 제한'},
-      ]
-    },
-    {
-      id:'road', icon:'🛣', name:'도로·접도', color:'#10b981', bg:'rgba(16,185,129,.12)',
-      items:[
-        {n:'접도구역', desc:'국도 5m / 지방도 3m 이내 건축 금지 — 도로법'},
-        {n:'도로구역·계획선', desc:'도로 확장 예정선 저촉 부분 건축 불가'},
-        {n:'건축선', desc:'도로경계 1m 이상 이격 의무'},
-      ]
-    },
-    {
-      id:'agri', icon:'🌾', name:'농지·산지', color:'#16a34a', bg:'rgba(22,163,74,.12)',
-      items:[
-        {n:'농업진흥구역', desc:'농지전용허가 없이 비농업 건축 절대 불가 — 농지법'},
-        {n:'농업보호구역', desc:'농업진흥구역 인접 완충구역 — 비농업 시설 제한'},
-        {n:'보전산지', desc:'산지전용허가 필수 — 산지관리법'},
-        {n:'준보전산지', desc:'보전산지보다 완화된 기준 적용'},
-      ]
-    },
-    {
-      id:'restrict', icon:'⚠️', name:'개발제한·특수', color:'#ef4444', bg:'rgba(239,68,68,.12)',
-      items:[
-        {n:'개발제한구역(그린벨트)', desc:'원칙적 건축 금지 — 국토부 예외 허가만 가능'},
-        {n:'군사시설보호구역', desc:'관할 부대 협의 필수 — 층수·높이·용도 제한'},
-        {n:'문화재보호구역', desc:'문화재청 현상변경 허가 필수'},
-        {n:'하천·수변구역', desc:'하천구역 내 건축 원칙 금지 — 하천법'},
-        {n:'재해위험지구', desc:'안전진단·재해대책 수립 필수 — 자연재해대책법'},
-      ]
-    },
-    {
-      id:'env', icon:'🌱', name:'환경·기타', color:'#06b6d4', bg:'rgba(6,182,212,.12)',
-      items:[
-        {n:'환경보전지역', desc:'생태경관보전·습지보전·야생생물보호구역 등'},
-        {n:'상수원보호구역', desc:'오염원 배출 시설 건축 제한 — 수도법'},
-        {n:'항공장애물 제한', desc:'비행안전구역 높이 제한 — 항공법'},
-        {n:'토지거래허가구역', desc:'관할 구청 허가 없이 토지거래 불가'},
-        {n:'친환경·경제특구', desc:'인허가 특례 또는 지원 혜택 가능'},
-      ]
-    },
+  // ── 규제 분류 키워드 ──
+  const REG_TYPES = [
+    {key:'개발제한구역',    icon:'🌿', warn:true},
+    {key:'접도구역',        icon:'🛣',  warn:true},
+    {key:'농업진흥구역',    icon:'🌾', warn:true},
+    {key:'농업보호구역',    icon:'🌾', warn:true},
+    {key:'보전산지',        icon:'🌲', warn:true},
+    {key:'준보전산지',      icon:'🌲', warn:false},
+    {key:'군사시설보호구역',icon:'🪖', warn:true},
+    {key:'문화재보호구역',  icon:'🏛', warn:true},
+    {key:'하천구역',        icon:'💧', warn:true},
+    {key:'수변구역',        icon:'💧', warn:true},
+    {key:'자연공원',        icon:'⛰️', warn:true},
+    {key:'재해위험',        icon:'🌊', warn:true},
+    {key:'비행안전구역',    icon:'✈️', warn:true},
+    {key:'토지거래허가',    icon:'📋', warn:true},
+    {key:'지구단위계획',    icon:'📐', warn:false},
+    {key:'도시계획시설',    icon:'🏗',  warn:false},
+    {key:'개발행위허가제한',icon:'⚠️', warn:true},
+    {key:'환경보전',        icon:'🌍', warn:false},
+    {key:'상수원보호',      icon:'🚰', warn:true},
+    {key:'택지개발',        icon:'🏘',  warn:false},
+    {key:'경제자유구역',    icon:'🏭', warn:false},
+    {key:'친환경',          icon:'🌱', warn:false},
   ];
 
-  let _selCat = null;
+  let _selCat = 'result'; // 기본: 조회결과
+  let _regResult = null;  // API 조회 결과
   let _regScale=1, _regOffX=0, _regOffY=0;
   let _regDrag=false, _regLX=0, _regLY=0;
 
-  // ── 건축기준 동적 생성 (PNU 기반) ──
-  function _buildItems(){
-    const pnu = window.skPNU||'';
-    const geo = _parsePNU(pnu);
-    const pts = window.skPoints||[];
-
-    // 둘레로 대략적 규모 추정
-    let perimeter = 0;
-    for(let i=0;i<pts.length;i++){
-      const j=(i+1)%pts.length;
-      perimeter += Math.sqrt((pts[j].x-pts[i].x)**2+(pts[j].y-pts[i].y)**2);
-    }
-    const area = perimeter > 0 ? Math.round(perimeter*perimeter/16) : 0; // 대략
-
-    // 용도지역 (skLotMeta에서 가져올 수 있으면 사용)
-    const meta = window.skLotMeta||{};
-    const useZone = meta.useZone||'';
-    const zoneData = USE_ZONE[useZone]||null;
-
-    const items = [];
-
-    if(zoneData){
-      items.push({n:'용도지역', desc:useZone, highlight:true});
-      items.push({n:'건폐율 한도', desc:zoneData.bcr+'%', highlight:true});
-      items.push({n:'용적률 한도', desc:zoneData.far+'%', highlight:true});
-      if(zoneData.solar!=='없음') items.push({n:'정북 일조 이격', desc:'10m이하 1.5m / 10m초과 절반', highlight:false});
-      if(zoneData.height!=='없음') items.push({n:'층수 제한', desc:zoneData.height, highlight:false});
-      items.push({n:'허용 용도', desc:zoneData.use, highlight:false});
-    } else {
-      items.push({n:'건폐율·용적률', desc:'토지이용계획확인서 확인 필요', highlight:false});
-    }
-
-    // 공통 건축법 기준
-    items.push({n:'건축선 이격', desc:'도로경계선 1m 이상 의무', highlight:false});
-    items.push({n:'인접대지 이격', desc:'경계선 0.5m 이상 의무', highlight:false});
-
-    // 지역별 추가 규제 (PNU 앞자리로 판단)
-    const sid = pnu.slice(0,2);
-    if(sid==='50') items.push({n:'절대보전지역', desc:'제주도 — 지하수 보전 특별 규정 적용', highlight:true});
-    if(['47','48'].includes(sid)) items.push({n:'경관협정', desc:'일부 지역 경관협정 적용 가능', highlight:false});
-
-    if(area>0) items.push({n:'추정 필지면적', desc:'약 '+area+'㎡ (참고용)', highlight:false});
-
-    return items;
+  // ── JSONP ──
+  function _jsonp(url, cb){
+    const fn='_regCb'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+    const fullUrl=url+'&domain='+SK_DOMAIN+'&callback='+fn;
+    window[fn]=(d)=>{try{delete window[fn];}catch(e){}cb(d);};
+    const s=document.createElement('script');
+    s.onerror=()=>{try{delete window[fn];}catch(e){}cb(null);};
+    s.src=fullUrl;
+    document.head.appendChild(s);
+    setTimeout(()=>{if(window[fn]){delete window[fn];cb(null);}},8000);
   }
 
   // ── 메인탭 진입 ──
   window.skRegTabEnter = function(){
     const empty  = document.getElementById('rg-empty');
     const regCon = document.getElementById('rg-content');
-    const pts    = window.skPoints||[];
-
     if(!window.skPNU){
-      if(empty)  empty.style.display  = 'block';
-      if(regCon) regCon.style.display = 'none';
+      if(empty)  empty.style.display='block';
+      if(regCon) regCon.style.display='none';
       return;
     }
-    if(empty)  empty.style.display  = 'none';
-    if(regCon) regCon.style.display = 'block';
+    if(empty)  empty.style.display='none';
+    if(regCon) regCon.style.display='block';
 
     const ae=document.getElementById('rg-addr');
     const pe=document.getElementById('rg-pnu');
-    if(ae) ae.textContent = window.skLotMeta?.addr||'';
-    if(pe) pe.textContent = 'PNU: '+window.skPNU;
+    if(ae) ae.textContent=window.skLotMeta?.addr||'';
+    if(pe) pe.textContent='PNU: '+window.skPNU;
 
+    const pts=window.skPoints||[];
     if(pts.length) setTimeout(_drawRegCanvas, 80);
 
-    const wrap=document.getElementById('rg-cat-btns');
-    if(wrap && !wrap.children.length) _renderCatBtns();
+    // 카테고리 버튼 생성
+    _renderCatBtns();
 
-    if(!_selCat) _selectCat(REG_CATS[0].id);
+    // API 조회 (이미 결과 있으면 재사용)
+    if(_regResult){
+      _renderResult(_regResult);
+    } else {
+      _fetchReg();
+    }
+
     setTimeout(_initDrag, 150);
   };
 
+  // ── 브이월드 API 조회 (POINT 필터) ──
+  function _fetchReg(){
+    const detail=document.getElementById('rg-detail');
+    if(detail) detail.innerHTML=`
+      <div style="text-align:center;padding:20px;color:var(--text-muted);">
+        <div style="font-size:20px;margin-bottom:8px;">🔄</div>
+        <div style="font-size:12px;">규제 정보 조회 중...</div>
+      </div>`;
+
+    const lon=window.skLotMeta?.lon||'';
+    const lat=window.skLotMeta?.lat||'';
+    const pnu=window.skPNU||'';
+
+    if(!lon||!lat){
+      _renderFallback('좌표 정보 없음 — 경계점 조회 후 다시 시도하세요');
+      return;
+    }
+
+    let done=0, r1=null, r2=null;
+    function tryParse(){
+      done++;
+      if(done<2) return;
+      _regResult={r1,r2,lon,lat,pnu};
+      _renderResult(_regResult);
+    }
+
+    const geom=encodeURIComponent(`POINT(${lon} ${lat})`);
+
+    // API1: 용도지역지구
+    const url1=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_UZ&key=${SK_KEY}&geomFilter=${geom}&format=json&size=10`;
+    _jsonp(url1,(d)=>{r1=d;tryParse();});
+
+    // API2: 토지이용계획 (모든 규제)
+    const url2=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_LHBLPN&key=${SK_KEY}&geomFilter=${geom}&format=json&size=30`;
+    _jsonp(url2,(d)=>{r2=d;tryParse();});
+  }
+
+  // ── 결과 파싱 + 렌더 ──
+  function _renderResult(res){
+    if(!res) return;
+    const {r1,r2} = res;
+
+    // 용도지역 파싱
+    let useZone='', useZone2='';
+    const f1=r1?.response?.result?.featureCollection?.features||[];
+    f1.forEach((f,i)=>{
+      const p=f.properties||{};
+      const zn=p.uz_cd_nm||p.znNm||p.use_zone_nm||p.prpos_area_nm||
+               p.prpos_area1_nm||p.lclas_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&
+                 (v.includes('지역')||v.includes('지구')))||'';
+      if(zn&&!useZone) useZone=zn;
+      else if(zn&&!useZone2&&zn!==useZone) useZone2=zn;
+    });
+
+    // 규제 항목 파싱
+    const rawItems=[];
+    const f2=r2?.response?.result?.featureCollection?.features||[];
+    f2.forEach(f=>{
+      const p=f.properties||{};
+      const nm=p.reglt_cde_nm||p.regltnNm||p.regl_nm||p.use_nm||
+               p.prpos_area_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&v!==res.pnu)||'';
+      if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
+      const hit=p.cnflc_at||p.cnflcAt||'';
+      if(nm&&(hit==='Y'||hit==='1')&&!rawItems.includes('저촉:'+nm))
+        rawItems.push('저촉:'+nm);
+    });
+
+    // 용도지역도 추가
+    if(useZone&&!rawItems.includes(useZone)) rawItems.unshift(useZone);
+    if(useZone2&&!rawItems.includes(useZone2)) rawItems.splice(1,0,useZone2);
+
+    // 전역 저장 (카테고리에서 사용)
+    _regResult._useZone=useZone;
+    _regResult._useZone2=useZone2;
+    _regResult._rawItems=rawItems;
+
+    // 조회결과 탭 선택
+    _renderCatContent('result');
+  }
+
   // ── 카테고리 버튼 렌더 ──
+  const CATS=[
+    {id:'result', icon:'📋', name:'조회결과', color:'#f59e0b'},
+    {id:'build',  icon:'📐', name:'건축기준', color:'#3b82f6'},
+    {id:'plan',   icon:'🏗',  name:'도시계획', color:'#8b5cf6'},
+    {id:'road',   icon:'🛣',  name:'도로·접도', color:'#10b981'},
+    {id:'restrict',icon:'⚠️', name:'특수규제', color:'#ef4444'},
+  ];
+
   function _renderCatBtns(){
     const wrap=document.getElementById('rg-cat-btns');
     if(!wrap) return;
-    wrap.innerHTML=REG_CATS.map(cat=>`
+    wrap.innerHTML=CATS.map(cat=>`
       <button onclick="window._skRegSelCat('${cat.id}')"
         id="rg-cat-${cat.id}"
-        style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;
+        style="padding:6px 11px;border:1.5px solid var(--border);border-radius:8px;
                background:var(--surface2);color:var(--text-muted);
                font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;
-               cursor:pointer;transition:all .2s;white-space:nowrap;">
+               cursor:pointer;white-space:nowrap;">
         ${cat.icon} ${cat.name}
       </button>`).join('');
+    // 현재 선택 버튼 활성화
+    _updateCatBtnStyle(_selCat);
   }
 
-  window._skRegSelCat = function(id){ _selectCat(id); };
-
-  function _selectCat(id){
-    _selCat=id;
-    const cat=REG_CATS.find(c=>c.id===id);
-    if(!cat) return;
-
-    // 버튼 스타일
-    REG_CATS.forEach(c=>{
+  function _updateCatBtnStyle(id){
+    CATS.forEach(c=>{
       const btn=document.getElementById('rg-cat-'+c.id);
       if(!btn) return;
       if(c.id===id){
-        btn.style.background=c.bg;
+        btn.style.background=`rgba(${c.color.slice(1).match(/../g).map(h=>parseInt(h,16)).join(',')}, .15)`;
         btn.style.borderColor=c.color;
         btn.style.color=c.color;
       } else {
@@ -5001,33 +5012,154 @@ initDB()
         btn.style.color='var(--text-muted)';
       }
     });
+  }
 
-    // 상세 내용
+  window._skRegSelCat=function(id){ _selCat=id; _renderCatContent(id); };
+
+  // ── 카테고리별 내용 렌더 ──
+  function _renderCatContent(id){
+    _updateCatBtnStyle(id);
     const detail=document.getElementById('rg-detail');
     if(!detail) return;
 
-    // 건축기준은 동적 생성
-    const items = cat.dynamic ? _buildItems() : cat.items;
+    const useZone=_regResult?._useZone||'';
+    const rawItems=_regResult?._rawItems||[];
+    const zoneData=USE_TABLE[useZone]||null;
 
-    const rows=items.map(item=>`
-      <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <div style="width:6px;height:6px;border-radius:50%;background:${item.highlight?'#f59e0b':cat.color};margin-top:5px;flex-shrink:0;"></div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:${item.highlight?'#f59e0b':'var(--text)'};margin-bottom:3px;">${item.n}</div>
-            <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">${item.desc}</div>
-          </div>
-        </div>
-      </div>`).join('');
+    if(id==='result'){
+      // ── 조회결과: API에서 받은 실제 규제 목록 ──
+      if(!_regResult){
+        detail.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">조회 중...</div>`;
+        return;
+      }
 
-    detail.innerHTML=`
-      <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${cat.color};border-radius:12px;padding:12px 14px;">
-        <div style="font-size:12px;font-weight:700;color:${cat.color};margin-bottom:8px;">${cat.icon} ${cat.name}</div>
-        ${rows}
-        <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:7px;font-size:10px;color:var(--text-muted);line-height:1.7;">
-          💡 정확한 저촉 여부는 <strong style="color:var(--text);">토지이용계획확인서</strong>로 확인하세요
-        </div>
+      const warnItems=rawItems.filter(it=>REG_TYPES.some(r=>it.includes(r.key)&&r.warn));
+      const infoItems=rawItems.filter(it=>!warnItems.includes(it)&&
+        REG_TYPES.some(r=>it.includes(r.key)&&!r.warn));
+      const plainItems=rawItems.filter(it=>!warnItems.includes(it)&&!infoItems.includes(it));
+
+      let html='';
+
+      // 용도지역 요약
+      if(useZone){
+        html+=`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+          <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:6px;">🗺 용도지역</div>
+          <div style="font-size:14px;font-weight:800;margin-bottom:4px;">${useZone}</div>
+          ${_regResult._useZone2?`<div style="font-size:12px;color:var(--text-muted);">${_regResult._useZone2}</div>`:''}
+          ${zoneData?`<div style="margin-top:8px;display:flex;gap:10px;font-size:12px;">
+            <span style="color:#3b82f6;font-weight:700;">건폐율 ${zoneData.bcr}%</span>
+            <span style="color:#8b5cf6;font-weight:700;">용적률 ${zoneData.far}%</span>
+          </div>`:''}
+        </div>`;
+      }
+
+      // 주의 규제
+      if(warnItems.length){
+        html+=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+          <div style="font-size:10px;color:#ef4444;font-weight:700;margin-bottom:8px;">⚠️ 건축 제한 규제 (${warnItems.length}건)</div>
+          ${warnItems.map(it=>{
+            const type=REG_TYPES.find(r=>it.includes(r.key));
+            const isHit=it.startsWith('저촉:');
+            const name=it.replace('저촉:','');
+            return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+              <span style="font-size:14px;">${type?.icon||'⚠️'}</span>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:700;color:${isHit?'#ef4444':'var(--text)'};">${name}</div>
+                ${isHit?'<div style="font-size:10px;color:#ef4444;">직접 저촉</div>':''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }
+
+      // 참고 규제
+      if(infoItems.length||plainItems.length){
+        const others=[...infoItems,...plainItems].filter(it=>it!==useZone&&it!==_regResult._useZone2);
+        if(others.length){
+          html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+            <div style="font-size:10px;color:var(--text-muted);font-weight:700;margin-bottom:8px;">📌 기타 지정사항 (${others.length}건)</div>
+            ${others.map(it=>{
+              const type=REG_TYPES.find(r=>it.includes(r.key));
+              return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);">
+                <span>${type?.icon||'📌'}</span>
+                <div style="font-size:11px;color:var(--text-muted);">${it.replace('저촉:','')}</div>
+              </div>`;
+            }).join('')}
+          </div>`;
+        }
+      }
+
+      if(!rawItems.length){
+        html+=`<div style="text-align:center;padding:20px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;">
+          <div style="font-size:24px;margin-bottom:8px;">✅</div>
+          <div style="font-size:13px;font-weight:700;color:#10b981;">특수 규제 없음</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">용도지역 기준만 적용됩니다</div>
+        </div>`;
+      }
+
+      html+=`<div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,.03);border-radius:7px;font-size:10px;color:var(--text-muted);line-height:1.7;">
+        📡 출처: 브이월드 LT_C_UZ + LT_C_LHBLPN (국토교통부)<br>
+        💡 정확한 저촉 여부는 토지이용계획확인서로 확인하세요
       </div>`;
+
+      detail.innerHTML=html;
+
+    } else if(id==='build'){
+      // ── 건축기준 ──
+      const rows=zoneData?[
+        {n:'용도지역',v:useZone,hi:true},
+        {n:'건폐율 한도',v:zoneData.bcr+'%',hi:true},
+        {n:'용적률 한도',v:zoneData.far+'%',hi:true},
+        {n:'정북 일조 이격',v:zoneData.solar,hi:false},
+        {n:'허용 용도',v:zoneData.use,hi:false},
+        {n:'건축선 이격',v:'도로경계 1m 이상',hi:false},
+        {n:'인접대지 이격',v:'경계선 0.5m 이상',hi:false},
+      ]:[{n:'용도지역',v:'조회 필요',hi:false}];
+      detail.innerHTML=_makeTable('📐 건축기준','#3b82f6',rows);
+
+    } else if(id==='plan'){
+      detail.innerHTML=_makeTable('🏗 도시계획','#8b5cf6',[
+        {n:'지구단위계획',v:'구역 내 별도 기준 — 계획서 확인 필수',hi:false},
+        {n:'도시계획시설',v:'도로·공원 등 시설 부지 저촉 시 건축 제한',hi:false},
+        {n:'개발행위허가제한',v:'형질변경·건축물 설치 허가 필요',hi:false},
+        {n:'정비구역',v:'재개발·재건축 구역 내 개별 건축 제한',hi:false},
+      ]);
+
+    } else if(id==='road'){
+      detail.innerHTML=_makeTable('🛣 도로·접도','#10b981',[
+        {n:'접도구역',v:'국도 5m / 지방도 3m 이내 건축 금지',hi:true},
+        {n:'도로구역',v:'도로 확장 예정선 저촉 시 건축 불가',hi:true},
+        {n:'건축선',v:'도로경계 1m 이상 의무 이격',hi:false},
+      ]);
+
+    } else if(id==='restrict'){
+      detail.innerHTML=_makeTable('⚠️ 특수규제','#ef4444',[
+        {n:'개발제한구역',v:'원칙적 건축 금지 (그린벨트)',hi:true},
+        {n:'군사시설보호구역',v:'관할 부대 협의 필수',hi:true},
+        {n:'문화재보호구역',v:'문화재청 현상변경 허가 필수',hi:true},
+        {n:'농업진흥구역',v:'농지전용허가 없이 비농업 건축 불가',hi:true},
+        {n:'보전산지',v:'산지전용허가 필수',hi:true},
+        {n:'하천구역',v:'건축 원칙 금지',hi:true},
+        {n:'재해위험지구',v:'안전진단·재해대책 수립 필수',hi:false},
+      ]);
+    }
+  }
+
+  function _makeTable(title,color,rows){
+    const rowHtml=rows.map(r=>`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <span style="font-size:11px;color:var(--text-muted);flex:1;padding-right:8px;">${r.n}</span>
+        <span style="font-size:11px;font-weight:700;color:${r.hi?'#f59e0b':'var(--text)'};text-align:right;flex:1.2;">${r.v}</span>
+      </div>`).join('');
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:12px 14px;">
+      <div style="font-size:12px;font-weight:700;color:${color};margin-bottom:8px;">${title}</div>
+      ${rowHtml}
+    </div>`;
+  }
+
+  function _renderFallback(msg){
+    const detail=document.getElementById('rg-detail');
+    if(detail) detail.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">${msg}</div>`;
   }
 
   // ── 도면 미니뷰 ──
@@ -5036,73 +5168,71 @@ initDB()
     const pts=window.skPoints||[];
     if(!canvas||!pts.length) return;
     const dpr=window.devicePixelRatio||1;
-    const W=canvas.clientWidth, H=canvas.clientHeight||140;
-    canvas.width=W*dpr; canvas.height=H*dpr;
+    const W=canvas.clientWidth,H=canvas.clientHeight||140;
+    canvas.width=W*dpr;canvas.height=H*dpr;
     const ctx=canvas.getContext('2d');
     ctx.scale(dpr,dpr);
-    ctx.fillStyle='#050a0f'; ctx.fillRect(0,0,W,H);
-    ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=1;
+    ctx.fillStyle='#050a0f';ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=1;
     for(let i=0;i<W;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
     for(let i=0;i<H;i+=20){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
     const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
-    const midX=(Math.min(...xs)+Math.max(...xs))/2, midY=(Math.min(...ys)+Math.max(...ys))/2;
+    const midX=(Math.min(...xs)+Math.max(...xs))/2,midY=(Math.min(...ys)+Math.max(...ys))/2;
     const pad=24;
     const sc=Math.min((W-pad*2)/(Math.max(...xs)-Math.min(...xs)||1),(H-pad*2)/(Math.max(...ys)-Math.min(...ys)||1))*_regScale;
-    const cX=W/2+_regOffX, cY=H/2+_regOffY;
+    const cX=W/2+_regOffX,cY=H/2+_regOffY;
     const tc=(x,y)=>[cX+(y-midY)*sc,cY-(x-midX)*sc];
     ctx.beginPath();
-    const[fx,fy]=tc(pts[0].x,pts[0].y); ctx.moveTo(fx,fy);
-    pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
-    ctx.fillStyle='rgba(59,130,246,.08)'; ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=1.5; ctx.stroke();
+    const[fx,fy]=tc(pts[0].x,pts[0].y);ctx.moveTo(fx,fy);
+    pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);});ctx.closePath();
+    ctx.fillStyle='rgba(59,130,246,.08)';ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=1.5;ctx.stroke();
     const bPts=window.skBldgCoordPts||[];
     if(bPts.length>=3){
-      ctx.beginPath();
-      bPts.forEach((p,i)=>{const[x,y]=tc(p.x,p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-      ctx.closePath(); ctx.fillStyle='rgba(139,92,246,.2)'; ctx.fill();
-      ctx.strokeStyle='#9b7df8'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.beginPath();bPts.forEach((p,i)=>{const[x,y]=tc(p.x,p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+      ctx.closePath();ctx.fillStyle='rgba(139,92,246,.2)';ctx.fill();ctx.strokeStyle='#9b7df8';ctx.lineWidth=1.5;ctx.stroke();
     }
     pts.forEach(p=>{
       const[px,py]=tc(p.x,p.y);
-      ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2);
-      ctx.fillStyle=p.state==='alive'?'#22c55e':p.state==='lost'?'#ef4444':'#9ca3af'; ctx.fill();
-      ctx.font='bold 8px monospace'; ctx.fillStyle='rgba(255,255,255,.6)'; ctx.textAlign='center';
+      ctx.beginPath();ctx.arc(px,py,3.5,0,Math.PI*2);
+      ctx.fillStyle=p.state==='alive'?'#22c55e':p.state==='lost'?'#ef4444':'#9ca3af';ctx.fill();
+      ctx.font='bold 8px monospace';ctx.fillStyle='rgba(255,255,255,.6)';ctx.textAlign='center';
       ctx.fillText(p.num,px,py-6);
     });
-    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='8px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('↑N',W-14,14);
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='8px sans-serif';ctx.textAlign='center';ctx.fillText('↑N',W-14,14);
     const barM=5,barPx=barM*sc;
     if(barPx>15&&barPx<W/3){
-      ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.moveTo(W-pad-barPx,H-10); ctx.lineTo(W-pad,H-10); ctx.stroke();
-      ctx.font='7px monospace'; ctx.fillStyle='rgba(255,255,255,.4)';
-      ctx.fillText(barM+'m',W-pad-barPx/2,H-2);
+      ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(W-pad-barPx,H-10);ctx.lineTo(W-pad,H-10);ctx.stroke();
+      ctx.font='7px monospace';ctx.fillStyle='rgba(255,255,255,.4)';ctx.fillText(barM+'m',W-pad-barPx/2,H-2);
     }
   }
 
   function _initDrag(){
     const c=document.getElementById('rg-canvas');
-    if(!c||c._rgEvt) return; c._rgEvt=true;
+    if(!c||c._rgEvt) return;c._rgEvt=true;
     c.addEventListener('touchstart',e=>{if(e.touches.length===1){_regDrag=true;_regLX=e.touches[0].clientX;_regLY=e.touches[0].clientY;}},{passive:true});
     c.addEventListener('touchmove',e=>{e.preventDefault();if(_regDrag&&e.touches.length===1){_regOffX+=e.touches[0].clientX-_regLX;_regOffY+=e.touches[0].clientY-_regLY;_regLX=e.touches[0].clientX;_regLY=e.touches[0].clientY;_drawRegCanvas();}},{passive:false});
     c.addEventListener('touchend',()=>{_regDrag=false;});
   }
 
   /* ── 외부 연동 ── */
-  window._skRegReset     = function(){_selCat=null; const w=document.getElementById('rg-cat-btns'); if(w) w.innerHTML='';};
-  window.skRegSyncBadge  = function(){};
-  window.skRegAutoFetch  = function(){const el=document.getElementById('tab-reg-content');if(el&&el.style.display!=='none') skRegTabEnter();};
-  window.skRegLoad       = function(){if(window.skRegTabEnter) skRegTabEnter();};
-  window.skRegSubTab     = function(){};
-  window.skRegDrawCanvas = _drawRegCanvas;
-  window.skRegZoom       = function(f){_regScale*=f;_regScale=Math.max(.3,Math.min(_regScale,10));_drawRegCanvas();};
-  window.skRegResetView  = function(){_regScale=1;_regOffX=0;_regOffY=0;_drawRegCanvas();};
-  window.skRegOpenLuris  = function(){if(window.skPNU) window.open('https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?pnu='+window.skPNU,'_blank');};
-  window.skRegOpenFullscreen  = function(){};
-  window.skRegCloseFullscreen = function(){};
-  window.skRegIframeLoaded    = function(){};
-  window.skRegIframeFailed    = function(){};
-  window._skRegLoadInner      = function(){if(window.skRegTabEnter) skRegTabEnter();};
+  window._skRegReset=function(){
+    _regResult=null;_selCat='result';
+    const w=document.getElementById('rg-cat-btns');if(w)w.innerHTML='';
+    const d=document.getElementById('rg-detail');if(d)d.innerHTML='';
+  };
+  window.skRegSyncBadge=function(){};
+  window.skRegAutoFetch=function(){const el=document.getElementById('tab-reg-content');if(el&&el.style.display!=='none')skRegTabEnter();};
+  window.skRegLoad=function(){if(window.skRegTabEnter)skRegTabEnter();};
+  window.skRegSubTab=function(){};
+  window.skRegDrawCanvas=_drawRegCanvas;
+  window.skRegZoom=function(f){_regScale*=f;_regScale=Math.max(.3,Math.min(_regScale,10));_drawRegCanvas();};
+  window.skRegResetView=function(){_regScale=1;_regOffX=0;_regOffY=0;_drawRegCanvas();};
+  window.skRegOpenLuris=function(){if(window.skPNU)window.open('https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?pnu='+window.skPNU,'_blank');};
+  window.skRegOpenFullscreen=function(){};window.skRegCloseFullscreen=function(){};
+  window.skRegIframeLoaded=function(){};window.skRegIframeFailed=function(){};
+  window._skRegLoadInner=function(){if(window.skRegTabEnter)skRegTabEnter();};
 
 })();
 </script>
