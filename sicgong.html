@@ -1912,6 +1912,10 @@ function switchTab(t){
   }
 
   let skPoints=[], skLotMeta={}, skPNU='', skBase=null, skTarget=null, skTimer=null;
+  // 법적규제 탭에서 접근 가능하도록 window에 노출
+  Object.defineProperty(window,'skPNU',{get:()=>skPNU,set:v=>{skPNU=v;},configurable:true});
+  Object.defineProperty(window,'skPoints',{get:()=>skPoints,configurable:true});
+  Object.defineProperty(window,'skLotMeta',{get:()=>skLotMeta,configurable:true});
   let _cbIdx=0; // JSONP 콜백 인덱스
 
   /* ── JSONP 핵심 함수 ── */
@@ -3520,8 +3524,9 @@ function switchTab(t){
   };
 
   /* ══ 건물 배치 모듈 ══════════════════════════════════════════════ */
-  let skBuilding = null; // {refIdx, ox, oy, w, h, angle}
-  let skBldgCoordPts = []; // 좌표 직접 입력 모서리 [{x,y}]
+  let skBuilding = null;
+  let skBldgCoordPts = [];
+  Object.defineProperty(window,'skBldgCoordPts',{get:()=>skBldgCoordPts,configurable:true});
 
   /* ── 수동 입력 폼 토글 ── */
   function skBldgFillRefSelect(){
