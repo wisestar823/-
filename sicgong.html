@@ -5377,7 +5377,23 @@ initDB()
   window.skRegZoom=function(f){_regScale*=f;_regScale=Math.max(.3,Math.min(_regScale,10));_drawRegCanvas();};
   window.skRegResetView=function(){_regScale=1;_regOffX=0;_regOffY=0;_drawRegCanvas();};
   window.skRegOpenLuris=function(){if(window.skPNU)window.open('https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?pnu='+window.skPNU,'_blank');};
-  window.skRegOpenFullscreen=function(){};window.skRegCloseFullscreen=function(){};
+  window.skRegOpenFullscreen=function(){
+    const ov=document.getElementById('sk-reg-overlay');
+    if(!ov) return;
+    ov.style.display='flex';
+    _ovScale=1.5; _ovOffX=0; _ovOffY=0;
+    const title=document.getElementById('sk-reg-ov-title');
+    if(title) title.textContent='⚖️ '+(window.skLotMeta?.addr||'필지 도면');
+    setTimeout(()=>{
+      const c=document.getElementById('sk-reg-ov-canvas');
+      _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
+      _initOvDrag(c);
+    },50);
+  };
+  window.skRegCloseFullscreen=function(){
+    const ov=document.getElementById('sk-reg-overlay');
+    if(ov) ov.style.display='none';
+  };
   window.skRegIframeLoaded=function(){};window.skRegIframeFailed=function(){};
   window._skRegLoadInner=function(){if(window.skRegTabEnter)skRegTabEnter();};
 
