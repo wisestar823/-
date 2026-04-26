@@ -4790,81 +4790,102 @@ initDB()
 
 
 /* ═══════════════════════════════════════════════════════════════
-   ⚖️ 법적규제 모듈 v5 — 브이월드 POINT 필터 + 실제 규제 파싱
+   ⚖️ 법적규제 모듈 v6
+   - 경계점과 동일한 JSONP 방식 사용
+   - 6개 API 병렬 조회 (용도지역+토지특성+규제+건축+환경+소방)
+   - 건축 모든 제한 한눈에 표시
    ══════════════════════════════════════════════════════════════════ */
 (function(){
-
   const SK_KEY    = 'A512471A-C75B-3644-BCCA-B3DC1D95254D';
   const SK_BASE   = 'https://api.vworld.kr';
   const SK_DOMAIN = 'wisestar823.github.io';
+  let _cbIdx = 0;
 
-  // ── 용도지역별 건축기준 ──
-  const USE_TABLE = {
-    '제1종전용주거지역':{bcr:50,far:100,solar:'1.5m/절반',use:'단독주택만'},
-    '제2종전용주거지역':{bcr:50,far:150,solar:'1.5m/절반',use:'공동주택 허용'},
-    '제1종일반주거지역':{bcr:60,far:200,solar:'1.5m/절반',use:'4층 이하'},
-    '제2종일반주거지역':{bcr:60,far:250,solar:'1.5m/절반',use:'중층 주거'},
-    '제3종일반주거지역':{bcr:50,far:300,solar:'1.5m/절반',use:'고층 주거'},
-    '준주거지역':{bcr:70,far:500,solar:'없음',use:'주거+상업 혼합'},
-    '중심상업지역':{bcr:90,far:1500,solar:'없음',use:'도심 상업'},
-    '일반상업지역':{bcr:80,far:1300,solar:'없음',use:'일반 상업'},
-    '근린상업지역':{bcr:70,far:900,solar:'없음',use:'근린 상업'},
-    '유통상업지역':{bcr:80,far:1100,solar:'없음',use:'유통물류'},
-    '전용공업지역':{bcr:70,far:300,solar:'없음',use:'중화학공업'},
-    '일반공업지역':{bcr:70,far:350,solar:'없음',use:'일반 공업'},
-    '준공업지역':{bcr:70,far:400,solar:'없음',use:'공업+주거 혼합'},
-    '보전녹지지역':{bcr:20,far:80,solar:'없음',use:'개발 제한'},
-    '생산녹지지역':{bcr:20,far:100,solar:'없음',use:'농업적 이용'},
-    '자연녹지지역':{bcr:20,far:100,solar:'없음',use:'불가피한 개발만'},
-    '보전관리지역':{bcr:20,far:80,solar:'없음',use:'자연환경 보전'},
-    '생산관리지역':{bcr:20,far:80,solar:'없음',use:'농업·임업'},
-    '계획관리지역':{bcr:40,far:100,solar:'없음',use:'계획적 개발 유도'},
-    '농림지역':{bcr:20,far:80,solar:'없음',use:'농업진흥·보전산지'},
-    '자연환경보전지역':{bcr:20,far:80,solar:'없음',use:'자연생태계 보전'},
+  // ── 경계점과 완전히 동일한 JSONP 함수 ──
+  function regJsonp(url, cb){
+    const cbName = '_regCb' + (_cbIdx++);
+    const timeout = setTimeout(()=>{
+      delete window[cbName];
+      const s=document.getElementById('_reg_'+cbName);
+      if(s) s.remove();
+      cb(null);
+    }, 10000);
+    window[cbName] = function(data){
+      clearTimeout(timeout);
+      delete window[cbName];
+      const s=document.getElementById('_reg_'+cbName);
+      if(s) s.remove();
+      cb(data);
+    };
+    const s = document.createElement('script');
+    s.id = '_reg_'+cbName;
+    s.onerror = function(){
+      clearTimeout(timeout);
+      delete window[cbName];
+      s.remove();
+      cb(null);
+    };
+    // 경계점과 동일: URL 끝에 callback+domain 추가
+    s.src = url + (url.includes('?')?'&':'?') + 'callback='+cbName + '&domain='+SK_DOMAIN;
+    document.head.appendChild(s);
+  }
+
+  // ── 용도지역별 상세 건축기준 ──
+  const ZONE_DETAIL = {
+    '제1종전용주거지역': {bcr:50,far:100,floor:2,solar:'1.5m/절반',height:'10m이하',setback:'인접0.5m·도로1m',use:'단독주택만',firewall:'내화구조 필요',note:'순수 저층 단독주거'},
+    '제2종전용주거지역': {bcr:50,far:150,floor:4,solar:'1.5m/절반',height:'4층이하',setback:'인접0.5m·도로1m',use:'공동주택(아파트제외)',firewall:'내화구조',note:'연립·다세대 허용'},
+    '제1종일반주거지역': {bcr:60,far:200,floor:4,solar:'1.5m/절반',height:'4층이하',setback:'인접0.5m·도로1m',use:'단독·공동주택·1종근생',firewall:'내화구조',note:'저층 주거 중심'},
+    '제2종일반주거지역': {bcr:60,far:250,floor:null,solar:'1.5m/절반',height:'제한없음',setback:'인접0.5m·도로1m',use:'공동주택·근생·오피스텔',firewall:'내화구조',note:'중층 — 아파트 가능'},
+    '제3종일반주거지역': {bcr:50,far:300,floor:null,solar:'1.5m/절반',height:'제한없음',setback:'인접0.5m·도로1m',use:'공동주택·근생·오피스텔',firewall:'내화구조',note:'고층 주거 가능'},
+    '준주거지역':        {bcr:70,far:500,floor:null,solar:'없음',height:'제한없음',setback:'인접0.5m·도로1m',use:'주거+상업·업무',firewall:'방화지구 검토',note:'주거상업 복합'},
+    '중심상업지역':      {bcr:90,far:1500,floor:null,solar:'없음',height:'제한없음',setback:'도로1m',use:'백화점·호텔·업무',firewall:'방화지구',note:'도심 상업핵'},
+    '일반상업지역':      {bcr:80,far:1300,floor:null,solar:'없음',height:'제한없음',setback:'도로1m',use:'판매·업무·숙박',firewall:'방화지구 검토',note:'일반 상업'},
+    '근린상업지역':      {bcr:70,far:900,floor:null,solar:'없음',height:'제한없음',setback:'도로1m',use:'근린상가·의원·학원',firewall:'방화지구 검토',note:'생활권 상업'},
+    '유통상업지역':      {bcr:80,far:1100,floor:null,solar:'없음',height:'제한없음',setback:'도로1m',use:'유통·물류창고',firewall:'방화지구 검토',note:'물류 유통'},
+    '전용공업지역':      {bcr:70,far:300,floor:null,solar:'없음',height:'제한없음',setback:'도로1m',use:'중화학·첨단공업',firewall:'방화시설 강화',note:'중공업'},
+    '일반공업지역':      {bcr:70,far:350,floor:null,solar:'없음',height:'제한없음',setback:'도로1m',use:'일반 제조업',firewall:'방화시설',note:'일반 공업'},
+    '준공업지역':        {bcr:70,far:400,floor:null,solar:'없음',height:'제한없음',setback:'도로1m',use:'공업+주거+상업',firewall:'방화시설',note:'공업+생활 혼합'},
+    '보전녹지지역':      {bcr:20,far:80,floor:2,solar:'없음',height:'2층이하',setback:'인접0.5m',use:'녹지 보전 목적만',firewall:'해당없음',note:'사실상 개발 불가'},
+    '생산녹지지역':      {bcr:20,far:100,floor:2,solar:'없음',height:'2층이하',setback:'인접0.5m',use:'농업·임업 관련',firewall:'해당없음',note:'농업적 이용'},
+    '자연녹지지역':      {bcr:20,far:100,floor:4,solar:'없음',height:'4층이하',setback:'인접0.5m·도로1m',use:'근린생활·단독(조건)',firewall:'해당없음',note:'불가피한 개발만'},
+    '보전관리지역':      {bcr:20,far:80,floor:4,solar:'없음',height:'4층이하',setback:'인접0.5m·도로1m',use:'창고·농업시설',firewall:'해당없음',note:'자연환경 보전'},
+    '생산관리지역':      {bcr:20,far:80,floor:4,solar:'없음',height:'4층이하',setback:'인접0.5m·도로1m',use:'농·임·어업',firewall:'해당없음',note:'1차산업 중심'},
+    '계획관리지역':      {bcr:40,far:100,floor:4,solar:'없음',height:'4층이하',setback:'인접0.5m·도로1m',use:'단독·근생·공장·창고',firewall:'해당없음',note:'공장·창고 가능'},
+    '농림지역':          {bcr:20,far:80,floor:2,solar:'없음',height:'2층이하',setback:'인접0.5m',use:'농·임업 관련만',firewall:'해당없음',note:'농지법·산지법 적용'},
+    '자연환경보전지역':  {bcr:20,far:80,floor:2,solar:'없음',height:'2층이하',setback:'인접0.5m',use:'자연보전 목적',firewall:'해당없음',note:'사실상 개발 불가'},
   };
 
-  // ── 규제 분류 키워드 ──
+  // ── 규제 키워드 분류 ──
   const REG_TYPES = [
-    {key:'개발제한구역',    icon:'🌿', warn:true},
-    {key:'접도구역',        icon:'🛣',  warn:true},
-    {key:'농업진흥구역',    icon:'🌾', warn:true},
-    {key:'농업보호구역',    icon:'🌾', warn:true},
-    {key:'보전산지',        icon:'🌲', warn:true},
-    {key:'준보전산지',      icon:'🌲', warn:false},
-    {key:'군사시설보호구역',icon:'🪖', warn:true},
-    {key:'문화재보호구역',  icon:'🏛', warn:true},
-    {key:'하천구역',        icon:'💧', warn:true},
-    {key:'수변구역',        icon:'💧', warn:true},
-    {key:'자연공원',        icon:'⛰️', warn:true},
-    {key:'재해위험',        icon:'🌊', warn:true},
-    {key:'비행안전구역',    icon:'✈️', warn:true},
-    {key:'토지거래허가',    icon:'📋', warn:true},
-    {key:'지구단위계획',    icon:'📐', warn:false},
-    {key:'도시계획시설',    icon:'🏗',  warn:false},
-    {key:'개발행위허가제한',icon:'⚠️', warn:true},
-    {key:'환경보전',        icon:'🌍', warn:false},
-    {key:'상수원보호',      icon:'🚰', warn:true},
-    {key:'택지개발',        icon:'🏘',  warn:false},
-    {key:'경제자유구역',    icon:'🏭', warn:false},
-    {key:'친환경',          icon:'🌱', warn:false},
+    {key:'개발제한구역',    icon:'🌿',warn:true},
+    {key:'접도구역',        icon:'🛣', warn:true},
+    {key:'농업진흥구역',    icon:'🌾',warn:true},
+    {key:'농업보호구역',    icon:'🌾',warn:false},
+    {key:'보전산지',        icon:'🌲',warn:true},
+    {key:'준보전산지',      icon:'🌲',warn:false},
+    {key:'군사시설보호구역',icon:'🪖',warn:true},
+    {key:'문화재보호구역',  icon:'🏛',warn:true},
+    {key:'하천구역',        icon:'💧',warn:true},
+    {key:'수변구역',        icon:'💧',warn:true},
+    {key:'자연공원',        icon:'⛰️',warn:true},
+    {key:'재해위험',        icon:'🌊',warn:true},
+    {key:'비행안전구역',    icon:'✈️',warn:true},
+    {key:'토지거래허가',    icon:'📋',warn:true},
+    {key:'지구단위계획',    icon:'📐',warn:false},
+    {key:'도시계획시설',    icon:'🏗', warn:false},
+    {key:'개발행위허가제한',icon:'⚠️',warn:true},
+    {key:'환경보전',        icon:'🌍',warn:false},
+    {key:'상수원보호',      icon:'🚰',warn:true},
+    {key:'수도권정비',      icon:'📊',warn:true},
+    {key:'택지개발',        icon:'🏘', warn:false},
+    {key:'경제자유구역',    icon:'🏭',warn:false},
   ];
 
-  let _selCat = 'result'; // 기본: 조회결과
-  let _regResult = null;  // API 조회 결과
+  let _selCat = 'result';
+  let _regResult = null;
   let _regScale=1, _regOffX=0, _regOffY=0;
   let _regDrag=false, _regLX=0, _regLY=0;
-
-  // ── JSONP ──
-  function _jsonp(url, cb){
-    const fn='_regCb'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
-    const fullUrl=url+'&domain='+SK_DOMAIN+'&callback='+fn;
-    window[fn]=(d)=>{try{delete window[fn];}catch(e){}cb(d);};
-    const s=document.createElement('script');
-    s.onerror=()=>{try{delete window[fn];}catch(e){}cb(null);};
-    s.src=fullUrl;
-    document.head.appendChild(s);
-    setTimeout(()=>{if(window[fn]){delete window[fn];cb(null);}},8000);
-  }
+  let _ovScale=1.5, _ovOffX=0, _ovOffY=0, _ovDrag=false, _ovLX=0, _ovLY=0;
 
   // ── 메인탭 진입 ──
   window.skRegTabEnter = function(){
@@ -4886,156 +4907,169 @@ initDB()
     const pts=window.skPoints||[];
     if(pts.length) setTimeout(_drawRegCanvas, 80);
 
-    // 카테고리 버튼 생성
     _renderCatBtns();
-
-    // API 조회 (이미 결과 있으면 재사용)
-    if(_regResult){
-      _renderResult(_regResult);
-    } else {
-      _fetchReg();
-    }
-
+    if(_regResult){ _renderCatContent(_selCat); }
+    else { _fetchReg(); }
     setTimeout(_initDrag, 150);
   };
 
-  // ── 브이월드 API 조회 (POINT 필터) ──
+  // ── API 조회 (경계점과 동일한 JSONP 방식) ──
   function _fetchReg(){
     const detail=document.getElementById('rg-detail');
-    if(detail) detail.innerHTML=`
-      <div style="text-align:center;padding:20px;color:var(--text-muted);">
-        <div style="font-size:20px;margin-bottom:8px;">🔄</div>
-        <div style="font-size:12px;">규제 정보 조회 중...</div>
-      </div>`;
+    if(detail) detail.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text-muted);">
+      <div style="font-size:22px;margin-bottom:8px;">🔄</div>
+      <div style="font-size:12px;">규제 정보 조회 중...</div>
+    </div>`;
 
-    const lon=window.skLotMeta?.lon||'';
-    const lat=window.skLotMeta?.lat||'';
-    const pnu=window.skPNU||'';
+    const lon = window.skLotMeta?.lon||'';
+    const lat = window.skLotMeta?.lat||'';
+    const pnu = window.skPNU||'';
 
-    if(!lon||!lat){
-      _renderFallback('좌표 정보 없음 — 경계점 조회 후 다시 시도');
-      return;
-    }
+    if(!lon||!lat){ _noCoord(); return; }
 
-    const geom=encodeURIComponent(`POINT(${lon} ${lat})`);
-    let done=0, r1=null, r2=null, r3=null;
-    const total=3;
+    const geom = `POINT(${lon} ${lat})`;
+    const results = {};
+    let done = 0;
+    const apis = [
+      // 경계점과 동일한 방식으로 호출
+      {key:'uz',   data:'LT_C_UZ',       filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},
+      {key:'fnn',  data:'LT_P_FNNMAP',   filter:`geomFilter=${encodeURIComponent(geom)}`,size:5},
+      {key:'lhb',  data:'LT_C_LHBLPN',  filter:`geomFilter=${encodeURIComponent(geom)}`,size:30},
+      {key:'ar',   data:'LT_C_NFARST',  filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},  // 산지
+      {key:'env',  data:'LT_C_UAMTAZ',  filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},  // 환경
+      {key:'plan', data:'LT_C_UQZ',     filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},  // 도시계획구역
+    ];
 
-    function tryParse(){
-      done++;
-      if(done<total) return;
-      _regResult={r1,r2,r3,lon,lat,pnu};
-      _renderResult(_regResult);
-    }
-
-    // API1: 용도지역지구 (LT_C_UZ)
-    const url1=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_UZ&key=${SK_KEY}&geomFilter=${geom}&format=json&size=10`;
-    _jsonp(url1,(d)=>{
-      console.log('[규제] LT_C_UZ features:',d?.response?.result?.featureCollection?.features?.length||0);
-      const f=d?.response?.result?.featureCollection?.features?.[0];
-      if(f) console.log('[규제] LT_C_UZ 필드:', JSON.stringify(f.properties).slice(0,200));
-      r1=d; tryParse();
-    });
-
-    // API2: 토지특성정보 (LT_P_FNNMAP) - 용도지역명 포함
-    const url2=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_P_FNNMAP&key=${SK_KEY}&geomFilter=${geom}&format=json&size=5`;
-    _jsonp(url2,(d)=>{
-      console.log('[규제] LT_P_FNNMAP features:',d?.response?.result?.featureCollection?.features?.length||0);
-      const f=d?.response?.result?.featureCollection?.features?.[0];
-      if(f) console.log('[규제] LT_P_FNNMAP 필드:', JSON.stringify(f.properties).slice(0,300));
-      r2=d; tryParse();
-    });
-
-    // API3: 토지이용계획 (LT_C_LHBLPN)
-    const url3=`${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_LHBLPN&key=${SK_KEY}&geomFilter=${geom}&format=json&size=30`;
-    _jsonp(url3,(d)=>{
-      console.log('[규제] LT_C_LHBLPN features:',d?.response?.result?.featureCollection?.features?.length||0);
-      r3=d; tryParse();
+    apis.forEach(api=>{
+      const url = `${SK_BASE}/req/data?service=data&request=GetFeature&data=${api.data}&key=${SK_KEY}&${api.filter}&format=json&size=${api.size}`;
+      regJsonp(url, (d)=>{
+        const cnt = d?.response?.result?.featureCollection?.features?.length||0;
+        console.log(`[규제] ${api.data} features:${cnt}`);
+        if(cnt>0){
+          const f = d?.response?.result?.featureCollection?.features?.[0];
+          console.log(`[규제] ${api.data} 필드:`, JSON.stringify(f?.properties||{}).slice(0,200));
+        }
+        results[api.key] = d;
+        done++;
+        if(done >= apis.length){
+          _regResult = {...results, lon, lat, pnu};
+          _renderResult(_regResult);
+        }
+      });
     });
   }
 
-  // ── 결과 파싱 + 렌더 ──
-  function _renderResult(res){
-    if(!res) return;
-    const {r1,r2,r3} = res;
+  function _noCoord(){
+    const d=document.getElementById('rg-detail');
+    if(d) d.innerHTML=`<div style="padding:16px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:11px;color:var(--text-muted);">
+      ⚠️ 좌표 정보 없음<br>경계점 탭에서 주소 검색 후 경계점 조회를 먼저 해주세요
+    </div>`;
+  }
 
-    // 용도지역 파싱
+  // ── 파싱 ──
+  function _parseAll(res){
     let useZone='', useZone2='';
+    const rawItems=[];
 
-    // 1순위: LT_C_UZ
-    const f1=r1?.response?.result?.featureCollection?.features||[];
-    f1.forEach((f,i)=>{
+    // LT_C_UZ: 용도지역지구
+    const fuz=(res.uz?.response?.result?.featureCollection?.features||[]);
+    fuz.forEach(f=>{
       const p=f.properties||{};
-      const zn=p.uz_cd_nm||p.znNm||p.use_zone_nm||p.prpos_area_nm||
-               p.prpos_area1_nm||p.lclas_nm||p.mlsfc_nm||
-               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&
-                 (v.includes('지역')||v.includes('지구')))||'';
+      const zn=p.uz_cd_nm||p.znNm||p.use_zone_nm||p.prpos_area_nm||p.lclas_nm||p.mlsfc_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&(v.includes('지역')||v.includes('지구')))||'';
       if(zn&&!useZone) useZone=zn;
-      else if(zn&&!useZone2&&zn!==useZone) useZone2=zn;
+      else if(zn&&zn!==useZone&&!useZone2) useZone2=zn;
     });
 
-    // 2순위: LT_P_FNNMAP (토지특성 - 용도지역명 직접 포함)
-    const f2=r2?.response?.result?.featureCollection?.features||[];
-    if(!useZone && f2.length){
-      const p=f2[0].properties||{};
-      // LT_P_FNNMAP 실제 필드명들
-      useZone = p.prpos_area1_nm||p.prposArea1Nm||p.use_area||
-                p.land_use_nm||p.landUseNm||p.use_zone_nm||
-                p.prpos_area_nm||p.pnuUsePurpCdNm||
-                Object.values(p).find(v=>typeof v==='string'&&v.length>2&&
-                  (v.includes('지역')||v.includes('지구')))||'';
+    // LT_P_FNNMAP: 토지특성 (용도지역명 + 각종 정보)
+    const ffnn=(res.fnn?.response?.result?.featureCollection?.features||[]);
+    if(!useZone && ffnn.length){
+      const p=ffnn[0].properties||{};
+      useZone = p.prpos_area1_nm||p.prposArea1Nm||p.use_area||p.land_use_nm||
+                p.lduse_nm||p.ldUseNm||p.use_zone_nm||p.pnuUsePurpCdNm||
+                Object.values(p).find(v=>typeof v==='string'&&v.length>2&&(v.includes('지역')||v.includes('지구')))||'';
       useZone2= p.prpos_area2_nm||p.prposArea2Nm||'';
     }
 
-    // 규제 항목 파싱 (LT_C_LHBLPN = r3)
-    const rawItems=[];
-    const f3=r3?.response?.result?.featureCollection?.features||[];
-    f3.forEach(f=>{
+    // LT_C_LHBLPN: 토지이용계획 규제
+    const flhb=(res.lhb?.response?.result?.featureCollection?.features||[]);
+    flhb.forEach(f=>{
       const p=f.properties||{};
-      // LT_C_LHBLPN에서 용도지역 추출 시도
       if(!useZone){
-        const zn=p.prpos_area_nm||p.use_nm||p.regl_nm||'';
-        if(zn&&(zn.includes('지역')||zn.includes('지구'))&&!useZone) useZone=zn;
+        const zn=p.prpos_area_nm||p.use_nm||'';
+        if(zn&&(zn.includes('지역')||zn.includes('지구'))) useZone=zn;
       }
-      const nm=p.reglt_cde_nm||p.regltnNm||p.regl_nm||p.use_nm||
-               p.prpos_area_nm||
+      const nm=p.reglt_cde_nm||p.regltnNm||p.regl_nm||p.use_nm||p.prpos_area_nm||
                Object.values(p).find(v=>typeof v==='string'&&v.length>2&&v!==res.pnu)||'';
       if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
       const hit=p.cnflc_at||p.cnflcAt||'';
-      if(nm&&(hit==='Y'||hit==='1')&&!rawItems.includes('저촉:'+nm))
-        rawItems.push('저촉:'+nm);
+      if(nm&&(hit==='Y'||hit==='1')&&!rawItems.includes('저촉:'+nm)) rawItems.push('저촉:'+nm);
     });
 
-    // 3순위: rawItems에서 용도지역 추출
+    // LT_C_NFARST: 산지
+    const far=(res.ar?.response?.result?.featureCollection?.features||[]);
+    far.forEach(f=>{
+      const p=f.properties||{};
+      const nm=p.frst_area_cd_nm||p.frstAreaCdNm||p.use_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&(v.includes('산지')||v.includes('임야')))||'';
+      if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
+    });
+
+    // LT_C_UAMTAZ: 환경
+    const fenv=(res.env?.response?.result?.featureCollection?.features||[]);
+    fenv.forEach(f=>{
+      const p=f.properties||{};
+      const nm=p.zone_nm||p.zoneNm||p.use_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2)||'';
+      if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
+    });
+
+    // 도시계획구역
+    const fplan=(res.plan?.response?.result?.featureCollection?.features||[]);
+    fplan.forEach(f=>{
+      const p=f.properties||{};
+      const nm=p.uqzone_nm||p.uqzNm||p.use_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2)||'';
+      if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
+    });
+
+    // 용도지역 추정 (rawItems 분석)
     if(!useZone){
-      const found=rawItems.find(it=>Object.keys(ZONE_DETAIL).some(k=>it.includes(k)));
-      if(found) useZone=Object.keys(ZONE_DETAIL).find(k=>found.includes(k))||'';
+      const zoneKws=['주거지역','상업지역','공업지역','녹지지역','관리지역','농림지역','보전지역'];
+      const found=rawItems.find(it=>zoneKws.some(k=>it.includes(k)));
+      if(found) useZone=found;
     }
     if(!useZone){
-      const zoneKw=['주거지역','상업지역','공업지역','녹지지역','관리지역','농림지역','보전지역'];
-      const found=rawItems.find(it=>zoneKw.some(k=>it.includes(k)));
-      if(found) useZone=found;
+      const match=rawItems.find(it=>Object.keys(ZONE_DETAIL).some(k=>it.includes(k)));
+      if(match) useZone=Object.keys(ZONE_DETAIL).find(k=>match.includes(k))||'';
     }
 
     if(useZone&&!rawItems.includes(useZone)) rawItems.unshift(useZone);
     if(useZone2&&!rawItems.includes(useZone2)) rawItems.splice(1,0,useZone2);
 
-    _regResult._useZone=useZone;
-    _regResult._useZone2=useZone2;
-    _regResult._rawItems=rawItems;
-    _regResult._apiEmpty=(!f1.length&&!f2.length&&!f3.length);
-
-    console.log('[규제] 최종 용도지역:', useZone, '규제항목:', rawItems.length+'건');
-    _renderCatContent('result');
+    console.log('[규제] 최종 용도지역:', useZone, '/ 규제항목:', rawItems.length+'건');
+    return {useZone, useZone2, rawItems,
+      apiEmpty:(!fuz.length&&!ffnn.length&&!flhb.length)};
   }
 
-  // ── 카테고리 버튼 렌더 ──
+  function _renderResult(res){
+    const parsed = _parseAll(res);
+    _regResult._useZone  = parsed.useZone;
+    _regResult._useZone2 = parsed.useZone2;
+    _regResult._rawItems = parsed.rawItems;
+    _regResult._apiEmpty = parsed.apiEmpty;
+    _renderCatContent(_selCat);
+  }
+
+  // ── 카테고리 ──
   const CATS=[
-    {id:'result', icon:'📊', name:'종합 요약', color:'#f59e0b'},
-    {id:'build',  icon:'📐', name:'건축기준', color:'#3b82f6'},
-    {id:'plan',   icon:'🏗',  name:'도시계획', color:'#8b5cf6'},
-    {id:'road',   icon:'🛣',  name:'도로·접도', color:'#10b981'},
-    {id:'restrict',icon:'⚠️', name:'특수규제', color:'#ef4444'},
+    {id:'result',  icon:'📊', name:'종합 요약',  color:'#f59e0b'},
+    {id:'build',   icon:'📐', name:'건축기준',   color:'#3b82f6'},
+    {id:'plan',    icon:'🏗',  name:'도시계획',  color:'#8b5cf6'},
+    {id:'road',    icon:'🛣',  name:'도로·접도', color:'#10b981'},
+    {id:'restrict',icon:'⚠️', name:'특수규제',  color:'#ef4444'},
+    {id:'fire',    icon:'🚒', name:'소방·안전',  color:'#f97316'},
+    {id:'infra',   icon:'🔌', name:'기반시설',   color:'#06b6d4'},
   ];
 
   function _renderCatBtns(){
@@ -5050,7 +5084,6 @@ initDB()
                cursor:pointer;white-space:nowrap;">
         ${cat.icon} ${cat.name}
       </button>`).join('');
-    // 현재 선택 버튼 활성화
     _updateCatBtnStyle(_selCat);
   }
 
@@ -5058,8 +5091,9 @@ initDB()
     CATS.forEach(c=>{
       const btn=document.getElementById('rg-cat-'+c.id);
       if(!btn) return;
+      const rgb=c.color.slice(1).match(/../g).map(h=>parseInt(h,16)).join(',');
       if(c.id===id){
-        btn.style.background=`rgba(${c.color.slice(1).match(/../g).map(h=>parseInt(h,16)).join(',')}, .15)`;
+        btn.style.background=`rgba(${rgb},.15)`;
         btn.style.borderColor=c.color;
         btn.style.color=c.color;
       } else {
@@ -5072,68 +5106,7 @@ initDB()
 
   window._skRegSelCat=function(id){ _selCat=id; _renderCatContent(id); };
 
-  // ── 용도지역별 상세 건축기준 ──
-  const ZONE_DETAIL={
-    '제1종전용주거지역':{
-      bcr:50, far:100, maxFloor:2, solar:'인접대지 북쪽 경계 1.5m 이상\n(10m 초과 시 절반 이상)',
-      height:'10m 이하 (2층)',
-      setback:'인접대지 0.5m 이상 / 도로경계 1m 이상',
-      use:'단독주택 — 공동주택·상가 불가',
-      note:'순수 저층 주거지역. 단독주택만 허용'
-    },
-    '제2종전용주거지역':{
-      bcr:50, far:150, maxFloor:4, solar:'10m이하 1.5m 이상 / 10m초과 절반 이상',
-      height:'4층 이하',
-      setback:'인접대지 0.5m / 도로경계 1m',
-      use:'공동주택(아파트 제외) 허용',
-      note:'연립·다세대주택 가능'
-    },
-    '제1종일반주거지역':{
-      bcr:60, far:200, maxFloor:4, solar:'10m이하 1.5m / 10m초과 절반',
-      height:'4층 이하',
-      setback:'인접대지 0.5m / 도로경계 1m',
-      use:'단독·공동주택, 1종 근린생활시설',
-      note:'저층 주거 중심'
-    },
-    '제2종일반주거지역':{
-      bcr:60, far:250, maxFloor:null, solar:'10m이하 1.5m / 10m초과 절반',
-      height:'층수제한 없음 (일조 적용)',
-      setback:'인접대지 0.5m / 도로경계 1m',
-      use:'공동주택, 근린생활시설, 오피스텔',
-      note:'중층 주거 — 아파트 가능'
-    },
-    '제3종일반주거지역':{
-      bcr:50, far:300, maxFloor:null, solar:'10m이하 1.5m / 10m초과 절반',
-      height:'층수제한 없음',
-      setback:'인접대지 0.5m / 도로경계 1m',
-      use:'공동주택, 근린생활시설, 오피스텔',
-      note:'고층 주거 가능'
-    },
-    '준주거지역':{
-      bcr:70, far:500, maxFloor:null, solar:'없음(주거복합 개별 검토)',
-      height:'제한 없음',
-      setback:'인접대지 0.5m / 도로경계 1m',
-      use:'주거·상업 혼합, 업무시설',
-      note:'주거+상업 복합 허용'
-    },
-    '중심상업지역':{bcr:90,far:1500,maxFloor:null,solar:'없음',height:'제한없음',setback:'도로경계 1m',use:'백화점·호텔·업무·판매 전반',note:'도심 핵심 상업'},
-    '일반상업지역':{bcr:80,far:1300,maxFloor:null,solar:'없음',height:'제한없음',setback:'도로경계 1m',use:'판매·업무·숙박',note:'일반 상업'},
-    '근린상업지역':{bcr:70,far:900,maxFloor:null,solar:'없음',height:'제한없음',setback:'도로경계 1m',use:'근린상가·의원·학원',note:'근린 생활권 상업'},
-    '유통상업지역':{bcr:80,far:1100,maxFloor:null,solar:'없음',height:'제한없음',setback:'도로경계 1m',use:'유통·물류창고',note:'물류 유통 중심'},
-    '전용공업지역':{bcr:70,far:300,maxFloor:null,solar:'없음',height:'제한없음',setback:'도로경계 1m',use:'중화학·첨단공업',note:'공해산업 가능'},
-    '일반공업지역':{bcr:70,far:350,maxFloor:null,solar:'없음',height:'제한없음',setback:'도로경계 1m',use:'일반 제조업',note:'공해 없는 공업'},
-    '준공업지역':{bcr:70,far:400,maxFloor:null,solar:'없음',height:'제한없음',setback:'도로경계 1m',use:'공업+주거+상업 혼합',note:'공업+생활권 혼합'},
-    '보전녹지지역':{bcr:20,far:80,maxFloor:2,solar:'없음',height:'2층 이하 권고',setback:'인접대지 0.5m',use:'녹지보전 목적 시설만',note:'사실상 개발 불가'},
-    '생산녹지지역':{bcr:20,far:100,maxFloor:2,solar:'없음',height:'2층 이하 권고',setback:'인접대지 0.5m',use:'농업·임업 관련 시설',note:'농업적 이용'},
-    '자연녹지지역':{bcr:20,far:100,maxFloor:4,solar:'없음',height:'4층 이하',setback:'인접대지 0.5m / 도로경계 1m',use:'근린생활시설·단독주택(조건부)',note:'불가피한 개발만 허용'},
-    '보전관리지역':{bcr:20,far:80,maxFloor:4,solar:'없음',height:'4층 이하',setback:'인접대지 0.5m / 도로경계 1m',use:'창고·농업시설 등',note:'자연환경 보전'},
-    '생산관리지역':{bcr:20,far:80,maxFloor:4,solar:'없음',height:'4층 이하',setback:'인접대지 0.5m / 도로경계 1m',use:'농업·임업·어업',note:'1차산업 중심'},
-    '계획관리지역':{bcr:40,far:100,maxFloor:4,solar:'없음',height:'4층 이하',setback:'인접대지 0.5m / 도로경계 1m',use:'단독주택·근생·공장·창고',note:'계획적 개발 유도. 공장·창고 가능'},
-    '농림지역':{bcr:20,far:80,maxFloor:2,solar:'없음',height:'2층 이하',setback:'인접대지 0.5m',use:'농업·임업 관련 시설만',note:'농지법·산지법 적용'},
-    '자연환경보전지역':{bcr:20,far:80,maxFloor:2,solar:'없음',height:'2층 이하',setback:'인접대지 0.5m',use:'자연환경보전 목적 시설',note:'사실상 개발 불가'},
-  };
-
-  // ── 카테고리별 내용 렌더 ──
+  // ── 카테고리 렌더 ──
   function _renderCatContent(id){
     _updateCatBtnStyle(id);
     const detail=document.getElementById('rg-detail');
@@ -5144,17 +5117,19 @@ initDB()
     const rawItems = _regResult?._rawItems||[];
     const zd       = ZONE_DETAIL[useZone]||null;
 
-    // 해당 필지 규제 필터
-    const warnHit  = rawItems.filter(it=>REG_TYPES.some(r=>it.includes(r.key)&&r.warn));
-    const hasJeopt = rawItems.some(it=>it.includes('접도구역'));
-    const hasAgri  = rawItems.some(it=>it.includes('농업진흥구역')||it.includes('농업보호구역'));
-    const hasMili  = rawItems.some(it=>it.includes('군사시설보호구역'));
-    const hasGreen = rawItems.some(it=>it.includes('개발제한구역'));
-    const hasForest= rawItems.some(it=>it.includes('보전산지')||it.includes('준보전산지'));
-    const hasCult  = rawItems.some(it=>it.includes('문화재보호구역'));
-    const hasRiver = rawItems.some(it=>it.includes('하천구역')||it.includes('수변구역'));
-    const hasFlood = rawItems.some(it=>it.includes('재해위험'));
-    const hasPlan  = rawItems.some(it=>it.includes('지구단위계획'));
+    const hasJeopt  = rawItems.some(it=>it.includes('접도구역'));
+    const hasAgri   = rawItems.some(it=>it.includes('농업진흥구역'));
+    const hasMili   = rawItems.some(it=>it.includes('군사시설보호구역'));
+    const hasGreen  = rawItems.some(it=>it.includes('개발제한구역'));
+    const hasForest = rawItems.some(it=>it.includes('보전산지')||it.includes('준보전산지'));
+    const hasCult   = rawItems.some(it=>it.includes('문화재보호구역'));
+    const hasRiver  = rawItems.some(it=>it.includes('하천구역')||it.includes('수변구역'));
+    const hasFlood  = rawItems.some(it=>it.includes('재해위험'));
+    const hasPlan   = rawItems.some(it=>it.includes('지구단위계획'));
+    const hasWater  = rawItems.some(it=>it.includes('상수원보호'));
+    const hasFlight = rawItems.some(it=>it.includes('비행안전구역'));
+    const hasTrade  = rawItems.some(it=>it.includes('토지거래허가'));
+    const warnHit   = rawItems.filter(it=>REG_TYPES.some(r=>it.includes(r.key)&&r.warn));
 
     if(id==='result'){
       if(!_regResult){
@@ -5163,75 +5138,69 @@ initDB()
       }
       let html='';
 
-      // ① 용도지역 + 건폐율/용적률
-      const zoneDisplay = useZone || (_regResult._apiEmpty ? '브이월드 데이터 없음' : 'API 응답 파싱 중');
+      // 용도지역 카드
+      const zoneDisplay=useZone||(_regResult._apiEmpty?'데이터 없음':'조회 실패');
       html+=`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:13px 14px;margin-bottom:10px;">
-        <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:6px;">🗺 용도지역·지구</div>
+        <div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:5px;">🗺 용도지역·지구</div>
         <div style="font-size:15px;font-weight:800;margin-bottom:2px;">${zoneDisplay}</div>
         ${useZone2?`<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">${useZone2}</div>`:''}
-        ${zd?`
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;">
+        ${zd?`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;">
           <div style="background:rgba(59,130,246,.12);border-radius:7px;padding:7px;text-align:center;">
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:2px;">건폐율</div>
+            <div style="font-size:9px;color:var(--text-muted);">건폐율</div>
             <div style="font-size:17px;font-weight:800;color:#3b82f6;">${zd.bcr}%</div>
           </div>
           <div style="background:rgba(139,92,246,.12);border-radius:7px;padding:7px;text-align:center;">
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:2px;">용적률</div>
+            <div style="font-size:9px;color:var(--text-muted);">용적률</div>
             <div style="font-size:17px;font-weight:800;color:#8b5cf6;">${zd.far}%</div>
           </div>
           <div style="background:rgba(16,185,129,.1);border-radius:7px;padding:7px;text-align:center;">
-            <div style="font-size:9px;color:var(--text-muted);margin-bottom:2px;">층수</div>
-            <div style="font-size:13px;font-weight:800;color:#10b981;">${zd.maxFloor?zd.maxFloor+'F':'제한없음'}</div>
+            <div style="font-size:9px;color:var(--text-muted);">층수</div>
+            <div style="font-size:13px;font-weight:800;color:#10b981;">${zd.floor?zd.floor+'F':'제한없음'}</div>
           </div>
-        </div>`:
-        (!useZone?`<div style="margin-top:8px;padding:8px;background:rgba(255,255,255,.04);border-radius:7px;font-size:11px;color:var(--text-muted);">
-          브이월드 API에서 용도지역 데이터를 가져오지 못했습니다.<br>
-          토지이음에서 직접 확인해주세요.
-          <button onclick="skRegOpenLuris()" style="display:block;margin-top:8px;padding:7px 14px;border:none;border-radius:7px;background:#0891b2;color:#fff;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;">🔗 토지이음 확인</button>
-        </div>`:'')}
-        ${zd?.note?`<div style="margin-top:7px;font-size:10px;color:var(--text-muted);">${zd.note}</div>`:''}
+        </div>
+        <div style="margin-top:7px;font-size:10px;color:var(--text-muted);">${zd.note}</div>`
+        :(!useZone?`<div style="margin-top:8px;font-size:11px;color:var(--text-muted);">브이월드 API 응답 없음 — 하단 탭에서 개별 확인</div>`:'')}
       </div>`;
 
-      // ② 건축기준 핵심 (용도지역 기반)
+      // 건축기준 핵심
       if(zd){
         const buildRows=[
           ['건축선 이격','도로경계선 1m 이상 의무',false],
-          ['인접대지 이격','경계선 0.5m 이상 의무',false],
-          ['정북 일조권',zd.solar,zd.solar!=='없음'],
+          ['인접대지 이격','경계선 0.5m 이상 의무 (합의시 불요)',false],
+          ['정북 일조권',zd.solar!=='없음'?`10m이하: 1.5m / 10m초과: 절반`:'적용 안됨',zd.solar!=='없음'],
           ['건축물 높이',zd.height,false],
           ['허용 용도',zd.use,false],
         ];
-        if(hasJeopt) buildRows.unshift(['접도구역 이격','국도 5m / 지방도 3m 추가',true]);
-        if(hasPlan) buildRows.unshift(['지구단위계획','계획서 별도 기준 — 반드시 확인',true]);
+        if(hasJeopt) buildRows.unshift(['🛣 접도구역 이격','국도 5m / 지방도 3m 추가',true]);
+        if(hasPlan)  buildRows.unshift(['📐 지구단위계획','계획서 별도 기준 — 반드시 확인',true]);
         html+=`<div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-left:3px solid #3b82f6;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
           <div style="font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:8px;">📐 건축기준</div>
-          ${buildRows.map(([n,v,w])=>`
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          ${buildRows.map(([n,v,w])=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">
             <span style="font-size:11px;color:var(--text-muted);flex:1;">${n}</span>
             <span style="font-size:11px;font-weight:700;color:${w?'#ef4444':'var(--text)'};text-align:right;flex:1.3;line-height:1.5;">${v}</span>
           </div>`).join('')}
         </div>`;
       }
 
-      // ③ 특수규제 해당 여부
+      // 해당 규제
       const restrictList=[
-        [hasGreen, '🌿', '개발제한구역', '원칙적 건축 금지'],
-        [hasMili,  '🪖', '군사시설보호구역', '관할 부대 협의 필수'],
-        [hasCult,  '🏛', '문화재보호구역', '문화재청 허가 필수'],
-        [hasAgri,  '🌾', '농업진흥구역', '농지전용허가 없이 불가'],
-        [hasForest,'🌲', '보전산지', '산지전용허가 필수'],
-        [hasRiver, '💧', '하천·수변구역', '건축 원칙 금지'],
-        [hasFlood, '🌊', '재해위험지구', '안전진단·대책 수립 필수'],
-        [hasJeopt, '🛣', '접도구역', '국도5m/지방도3m 건축 금지'],
+        [hasGreen, '🌿','개발제한구역','원칙적 건축 금지'],
+        [hasMili,  '🪖','군사시설보호구역','관할 부대 협의 필수'],
+        [hasCult,  '🏛','문화재보호구역','문화재청 허가 필수'],
+        [hasAgri,  '🌾','농업진흥구역','농지전용허가 없이 불가'],
+        [hasForest,'🌲','보전산지','산지전용허가 필수'],
+        [hasRiver, '💧','하천·수변구역','건축 원칙 금지'],
+        [hasFlood, '🌊','재해위험지구','안전진단 필수'],
+        [hasJeopt, '🛣','접도구역','국도5m/지방도3m 건축 금지'],
+        [hasWater, '🚰','상수원보호구역','오염원 배출 금지'],
+        [hasFlight,'✈️','비행안전구역','높이 제한'],
+        [hasTrade, '📋','토지거래허가구역','구청 허가 필요'],
       ];
       const hitList=restrictList.filter(r=>r[0]);
-      const clearList=restrictList.filter(r=>!r[0]);
-
       if(hitList.length){
         html+=`<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-left:3px solid #ef4444;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
           <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:8px;">⚠️ 해당 규제 (${hitList.length}건)</div>
-          ${hitList.map(([,ic,nm,desc])=>`
-          <div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          ${hitList.map(([,ic,nm,desc])=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);">
             <span style="font-size:14px;margin-top:1px;">${ic}</span>
             <div><div style="font-size:12px;font-weight:700;color:#ef4444;">${nm}</div>
             <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${desc}</div></div>
@@ -5239,318 +5208,252 @@ initDB()
         </div>`;
       }
 
-      // ④ API 원시 데이터 (기타)
+      // 기타
       const others=rawItems.filter(it=>!restrictList.some(r=>it.includes(r[2]))&&it!==useZone&&it!==useZone2);
       if(others.length){
         html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:10px;">
           <div style="font-size:10px;color:var(--text-muted);font-weight:700;margin-bottom:7px;">📌 기타 지정사항 (${others.length}건)</div>
           ${others.map(it=>{const t=REG_TYPES.find(r=>it.includes(r.key));
             return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-              <span style="font-size:12px;">${t?.icon||'📌'}</span>
+              <span>${t?.icon||'📌'}</span>
               <span style="font-size:11px;color:var(--text-muted);">${it.replace('저촉:','')}</span>
             </div>`;}).join('')}
         </div>`;
       }
 
-      // ⑤ 이상 없음
-      if(!rawItems.length && !warnHit.length){
+      if(!rawItems.length&&!warnHit.length){
         html+=`<div style="text-align:center;padding:18px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:10px;margin-bottom:10px;">
           <div style="font-size:22px;margin-bottom:6px;">✅</div>
           <div style="font-size:13px;font-weight:700;color:#10b981;">특수 규제 없음</div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">용도지역 기준만 적용됩니다</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">용도지역 기준만 적용</div>
         </div>`;
       }
 
-      // ⑥ 해당없는 규제 목록 (참고)
+      // 해당없음 (접기)
+      const clearList=restrictList.filter(r=>!r[0]);
       if(clearList.length){
-        html+=`<details style="margin-bottom:10px;">
-          <summary style="font-size:10px;color:var(--text-muted);cursor:pointer;padding:6px 10px;background:var(--surface);border-radius:7px;list-style:none;">
-            ✅ 해당 없는 규제 ${clearList.length}건 (탭하여 확인)
-          </summary>
+        html+=`<details style="margin-bottom:10px;"><summary style="font-size:10px;color:var(--text-muted);cursor:pointer;padding:6px 10px;background:var(--surface);border-radius:7px;list-style:none;">
+          ✅ 해당 없는 규제 ${clearList.length}건 ▾</summary>
           <div style="background:var(--surface);border-radius:0 0 7px 7px;padding:6px 10px;">
-            ${clearList.map(([,ic,nm])=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:10px;color:var(--text-muted);">
-              <span>${ic}</span><span>${nm} — 해당 없음</span>
-            </div>`).join('')}
-          </div>
-        </details>`;
+            ${clearList.map(([,ic,nm])=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;color:var(--text-muted);">
+              <span>${ic}</span><span>${nm} — 해당 없음</span></div>`).join('')}
+          </div></details>`;
       }
 
       html+=`<div style="padding:8px 10px;background:rgba(255,255,255,.03);border-radius:7px;font-size:10px;color:var(--text-muted);line-height:1.7;">
-        📡 브이월드 LT_C_UZ + LT_C_LHBLPN (국토교통부)<br>
+        📡 브이월드 LT_C_UZ · LT_P_FNNMAP · LT_C_LHBLPN · LT_C_NFARST · LT_C_UAMTAZ (국토교통부)<br>
         💡 정확한 저촉 여부는 토지이용계획확인서로 확인
       </div>`;
       detail.innerHTML=html;
 
     } else if(id==='build'){
-      // ── 건축기준: 용도지역별 실제 적용 기준 ──
-      if(!zd&&!useZone){
-        detail.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">조회결과 탭에서 먼저 규제를 조회하세요</div>`;
-        return;
-      }
-      const rows=[];
-      if(useZone) rows.push({n:'용도지역',v:useZone,hi:true,warn:false});
-      if(zd){
-        rows.push({n:'건폐율 한도',v:zd.bcr+'%',hi:true,warn:false});
-        rows.push({n:'용적률 한도',v:zd.far+'%',hi:true,warn:false});
-        if(zd.maxFloor) rows.push({n:'층수 제한',v:zd.maxFloor+'층 이하',hi:true,warn:true});
-        else rows.push({n:'층수 제한',v:'법적 층수제한 없음 (일조·높이로 제한)',hi:false,warn:false});
-        rows.push({n:'건축물 높이',v:zd.height,hi:false,warn:false});
-        rows.push({n:'정북 일조권',v:zd.solar,hi:false,warn:!!zd.solar&&zd.solar!=='없음'});
-        rows.push({n:'건축선 이격',v:'도로경계선 1m 이상 의무',hi:false,warn:false});
-        rows.push({n:'인접대지 이격',v:'경계선 0.5m 이상 의무 (합의 시 불요)',hi:false,warn:false});
-        rows.push({n:'허용 용도',v:zd.use,hi:false,warn:false});
-      }
-      // 특수규제에 따른 추가 기준
-      if(hasJeopt) rows.push({n:'접도구역 추가 이격',v:'국도 5m / 지방도 3m 추가 이격',hi:false,warn:true});
-      if(hasMili) rows.push({n:'군사보호구역 높이',v:'관할 부대 협의 필수 (층수 제한 가능)',hi:false,warn:true});
-      if(hasPlan) rows.push({n:'지구단위계획',v:'계획서 별도 기준 적용 — 반드시 확인',hi:false,warn:true});
-      if(hasGreen) rows.push({n:'개발제한구역',v:'원칙적 건축 금지 — 예외허가 필요',hi:false,warn:true});
-      if(hasForest) rows.push({n:'산지 이격',v:'산지전용허가 취득 후 착공 가능',hi:false,warn:true});
-
-      detail.innerHTML=_makeTableAdv('📐 건축기준 종합','#3b82f6',rows);
+      if(!zd&&!useZone){ detail.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">종합 요약에서 규제를 먼저 조회하세요</div>`; return; }
+      const rows=[
+        {n:'용도지역',v:useZone||'확인필요',hi:true,w:false},
+        {n:'건폐율 한도',v:(zd?.bcr||'?')+'%',hi:true,w:false},
+        {n:'용적률 한도',v:(zd?.far||'?')+'%',hi:true,w:false},
+        {n:'층수 제한',v:zd?.floor?zd.floor+'층 이하':'법적 제한 없음',hi:!!zd?.floor,w:!!zd?.floor},
+        {n:'건축물 높이',v:zd?.height||'확인필요',hi:false,w:false},
+        {n:'정북 일조권',v:zd?.solar&&zd.solar!=='없음'?'10m이하 1.5m / 10m초과 절반':'해당 없음',hi:zd?.solar&&zd.solar!=='없음',w:zd?.solar&&zd.solar!=='없음'},
+        {n:'건축선 이격',v:'도로경계선 1m 이상 의무',hi:false,w:false},
+        {n:'인접대지 이격',v:'경계선 0.5m 이상 (합의시 불요)',hi:false,w:false},
+        {n:'대지-도로 접도',v:'2m 이상 도로에 접해야 건축 가능',hi:false,w:false},
+        {n:'방화 구조',v:zd?.firewall||'용도 따라 상이',hi:false,w:false},
+        {n:'허용 용도',v:zd?.use||'확인필요',hi:false,w:false},
+        ...(hasJeopt?[{n:'접도구역 이격',v:'국도 5m / 지방도 3m 추가 이격',hi:false,w:true}]:[]),
+        ...(hasPlan?[{n:'지구단위계획',v:'계획서 별도 기준 적용',hi:false,w:true}]:[]),
+        ...(hasMili?[{n:'군사보호구역',v:'관할 부대 협의 필수 (층수 제한)',hi:false,w:true}]:[]),
+        ...(hasGreen?[{n:'개발제한구역',v:'원칙적 건축 금지',hi:false,w:true}]:[]),
+      ];
+      detail.innerHTML=_makeTable('📐 건축기준 종합','#3b82f6',rows);
 
     } else if(id==='plan'){
       const rows=[
-        {n:'지구단위계획',v:hasPlan?'⚠️ 해당 — 계획서 확인 필수':'해당 없음',hi:hasPlan,warn:hasPlan},
-        {n:'도시계획시설',v:'도로·공원·학교 등 시설 부지 저촉 시 건축 제한',hi:false,warn:false},
-        {n:'개발행위허가',v:'토지형질변경·건축물 설치 시 허가 필요',hi:false,warn:false},
-        {n:'정비구역',v:'재개발·재건축 구역 내 개별 건축 제한',hi:false,warn:false},
-        {n:'성장관리방안',v:'계획관리·자연녹지 지역 일부 적용',hi:false,warn:false},
+        {n:'지구단위계획',v:hasPlan?'⚠️ 해당 — 계획서 확인 필수':'해당 없음',hi:hasPlan,w:hasPlan},
+        {n:'도시계획시설',v:'도로·공원·학교 등 부지 저촉 시 건축 제한',hi:false,w:false},
+        {n:'개발행위허가',v:'형질변경·건축물 설치 시 허가 필요',hi:false,w:false},
+        {n:'정비구역',v:'재개발·재건축 구역 내 개별 건축 제한',hi:false,w:false},
+        {n:'성장관리방안',v:'계획관리·자연녹지 일부 적용',hi:false,w:false},
+        {n:'경관지구',v:'경관위원회 심의 필요 (지정 시)',hi:false,w:false},
+        {n:'고도지구',v:'최고 높이 제한 (지정 시)',hi:false,w:false},
       ];
-      detail.innerHTML=_makeTableAdv('🏗 도시계획','#8b5cf6',rows);
+      detail.innerHTML=_makeTable('🏗 도시계획','#8b5cf6',rows);
 
     } else if(id==='road'){
       const rows=[
-        {n:'접도구역',v:hasJeopt?'⚠️ 해당 — 국도 5m / 지방도 3m 건축 금지':'해당 없음',hi:hasJeopt,warn:hasJeopt},
-        {n:'도로경계선 이격',v:'건축법: 도로경계 1m 이상 의무 이격',hi:false,warn:false},
-        {n:'도로구역·계획선',v:'도로 확장 예정선 저촉 부분 건축 불가',hi:false,warn:false},
-        {n:'소요 접도',v:'대지는 2m 이상 도로에 접해야 건축 가능',hi:false,warn:false},
-        {n:'막다른 도로',v:'10m 미만: 2m 이상 / 35m 이상: 6m 이상 접도',hi:false,warn:false},
-        {n:'건축선 후퇴',v:'도시지역: 도로 너비 따라 건축선 지정 가능',hi:false,warn:false},
+        {n:'접도구역',v:hasJeopt?'⚠️ 해당 — 국도5m/지방도3m 건축 금지':'해당 없음',hi:hasJeopt,w:hasJeopt},
+        {n:'도로경계선 이격',v:'1m 이상 의무 (건축법)',hi:false,w:false},
+        {n:'도로구역·예정선',v:'확장 예정 도로에 저촉 시 건축 불가',hi:false,w:false},
+        {n:'소요 접도',v:'대지는 2m 이상 도로에 접해야 건축 가능',hi:false,w:false},
+        {n:'막다른 도로',v:'10m미만: 2m / 35m이상: 6m 이상 접도',hi:false,w:false},
+        {n:'건축선 후퇴',v:'도로너비에 따라 건축선 지정 가능',hi:false,w:false},
+        {n:'주차장',v:'용도·규모에 따라 부설 주차장 의무 설치',hi:false,w:false},
       ];
-      detail.innerHTML=_makeTableAdv('🛣 도로·접도','#10b981',rows);
+      detail.innerHTML=_makeTable('🛣 도로·접도','#10b981',rows);
 
     } else if(id==='restrict'){
       const rows=[
-        {n:'개발제한구역',v:hasGreen?'⚠️ 해당 — 원칙적 건축 금지':'해당 없음',hi:hasGreen,warn:hasGreen},
-        {n:'군사시설보호구역',v:hasMili?'⚠️ 해당 — 관할 부대 협의 필수':'해당 없음',hi:hasMili,warn:hasMili},
-        {n:'문화재보호구역',v:hasCult?'⚠️ 해당 — 문화재청 허가 필수':'해당 없음',hi:hasCult,warn:hasCult},
-        {n:'농업진흥구역',v:hasAgri?'⚠️ 해당 — 농지전용허가 없이 건축 불가':'해당 없음',hi:hasAgri,warn:hasAgri},
-        {n:'보전산지',v:hasForest?'⚠️ 해당 — 산지전용허가 필수':'해당 없음',hi:hasForest,warn:hasForest},
-        {n:'하천·수변구역',v:hasRiver?'⚠️ 해당 — 건축 원칙 금지':'해당 없음',hi:hasRiver,warn:hasRiver},
-        {n:'재해위험지구',v:hasFlood?'⚠️ 해당 — 안전진단·대책 수립 필수':'해당 없음',hi:hasFlood,warn:hasFlood},
+        {n:'개발제한구역',v:hasGreen?'⚠️ 해당 — 건축 원칙 금지':'해당 없음',hi:hasGreen,w:hasGreen},
+        {n:'군사시설보호구역',v:hasMili?'⚠️ 해당 — 부대 협의 필수':'해당 없음',hi:hasMili,w:hasMili},
+        {n:'문화재보호구역',v:hasCult?'⚠️ 해당 — 문화재청 허가':'해당 없음',hi:hasCult,w:hasCult},
+        {n:'농업진흥구역',v:hasAgri?'⚠️ 해당 — 농지전용허가 필수':'해당 없음',hi:hasAgri,w:hasAgri},
+        {n:'보전산지',v:hasForest?'⚠️ 해당 — 산지전용허가':'해당 없음',hi:hasForest,w:hasForest},
+        {n:'하천·수변구역',v:hasRiver?'⚠️ 해당 — 건축 원칙 금지':'해당 없음',hi:hasRiver,w:hasRiver},
+        {n:'재해위험지구',v:hasFlood?'⚠️ 해당 — 안전진단 필수':'해당 없음',hi:hasFlood,w:hasFlood},
+        {n:'상수원보호구역',v:hasWater?'⚠️ 해당 — 오염원 금지':'해당 없음',hi:hasWater,w:hasWater},
+        {n:'비행안전구역',v:hasFlight?'⚠️ 해당 — 높이 제한':'해당 없음',hi:hasFlight,w:hasFlight},
+        {n:'토지거래허가구역',v:hasTrade?'⚠️ 해당 — 구청 허가':'해당 없음',hi:hasTrade,w:hasTrade},
       ];
-      detail.innerHTML=_makeTableAdv('⚠️ 특수규제 해당 여부','#ef4444',rows);
+      detail.innerHTML=_makeTable('⚠️ 특수규제 해당 여부','#ef4444',rows);
+
+    } else if(id==='fire'){
+      const rows=[
+        {n:'소방차 진입로',v:'건축물 주위에 소방차 통행 가능 도로 확보 의무',hi:false,w:false},
+        {n:'소화기 설치',v:'건축물 용도·규모별 소화기 의무 설치',hi:false,w:false},
+        {n:'스프링클러',v:'11층 이상·1,000㎡이상 지하층 등 의무 설치',hi:false,w:false},
+        {n:'비상구·피난계단',v:'3층 이상·용도별 비상구·피난계단 설치 의무',hi:false,w:false},
+        {n:'방화벽·방화구획',v:'건물 규모·용도별 방화벽·방화구획 필수',hi:false,w:false},
+        {n:'내화구조',v:zd?.firewall||'용도·규모 따라 적용',hi:false,w:false},
+        {n:'소방시설 완공검사',v:'사용승인 전 소방서 완공검사 필수',hi:false,w:false},
+        {n:'성능위주설계',v:'연면적 20만㎡ 이상 또는 50층 이상 적용',hi:false,w:false},
+        {n:'방화지구',v:['중심상업지역','일반상업지역'].includes(useZone)?'⚠️ 해당 — 내화구조 의무':'용도지역별 상이',hi:['중심상업지역','일반상업지역'].includes(useZone),w:['중심상업지역','일반상업지역'].includes(useZone)},
+        {n:'재해위험',v:hasFlood?'⚠️ 재해위험지구 — 안전대책 수립':'해당 없음',hi:hasFlood,w:hasFlood},
+      ];
+      detail.innerHTML=_makeTable('🚒 소방·안전 기준','#f97316',rows);
+
+    } else if(id==='infra'){
+      const rows=[
+        {n:'상수도',v:'건축물 용수 공급 계획 수립 필요',hi:false,w:false},
+        {n:'하수도·오수처리',v:'하수처리구역: 공공하수도 연결 / 외: 개인정화조',hi:false,w:false},
+        {n:'전기 인입',v:'한전 협의 후 전기 인입 계획 수립',hi:false,w:false},
+        {n:'통신 설비',v:'KT등 통신사업자 협의 / 초고속인터넷 배관 의무',hi:false,w:false},
+        {n:'가스 인입',v:'도시가스 공급 구역 여부 확인 후 인입 계획',hi:false,w:false},
+        {n:'에너지 절약',v:'연면적 500㎡ 이상 에너지절약계획서 제출',hi:false,w:false},
+        {n:'친환경 인증',v:'공공건물 의무 / 민간 권장 (녹색건축인증)',hi:false,w:false},
+        {n:'장애인 편의시설',v:'바닥면적 300㎡ 이상 또는 용도별 의무 설치',hi:false,w:false},
+        {n:'주차장',v:'용도·규모별 부설주차장 의무 (조례 확인)',hi:false,w:false},
+        {n:'자전거 주차',v:'연면적 1,000㎡ 이상 용도별 의무 설치',hi:false,w:false},
+        {n:'조경',v:'대지면적 200㎡ 이상 도시지역 조경 의무',hi:false,w:false},
+        {n:'상수원보호구역',v:hasWater?'⚠️ 오염원 배출 금지':'해당 없음',hi:hasWater,w:hasWater},
+      ];
+      detail.innerHTML=_makeTable('🔌 기반시설·환경','#06b6d4',rows);
     }
   }
 
-  function _makeTableAdv(title,color,rows){
-    const rowHtml=rows.map(r=>`
-      <div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-          <span style="font-size:11px;color:var(--text-muted);flex:1;line-height:1.5;">${r.n}</span>
-          <span style="font-size:11px;font-weight:700;color:${r.warn?'#ef4444':r.hi?'#f59e0b':'var(--text)'};text-align:right;flex:1.4;line-height:1.5;">${r.v}</span>
-        </div>
-      </div>`).join('');
+  function _makeTable(title, color, rows){
     return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:12px 14px;">
-      <div style="font-size:12px;font-weight:700;color:${color};margin-bottom:6px;">${title}</div>
-      ${rowHtml}
+      <div style="font-size:12px;font-weight:700;color:${color};margin-bottom:8px;">${title}</div>
+      ${rows.map(r=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <span style="font-size:11px;color:var(--text-muted);flex:1;line-height:1.5;">${r.n}</span>
+        <span style="font-size:11px;font-weight:700;color:${r.w?'#ef4444':r.hi?'#f59e0b':'var(--text)'};text-align:right;flex:1.4;line-height:1.5;">${r.v}</span>
+      </div>`).join('')}
     </div>`;
   }
 
-  function _renderFallback(msg){
-    const detail=document.getElementById('rg-detail');
-    if(detail) detail.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px;">${msg}</div>`;
-  }
-
-  // ── 도면 그리기 (미니뷰 + 전체화면 공용) ──
-  function _drawCanvas(canvas, scaleOverride, offXOverride, offYOverride){
+  // ── 도면 그리기 ──
+  function _drawCanvas(canvas, scale, offX, offY){
     const pts=window.skPoints||[];
     if(!canvas||!pts.length) return;
-    const scale = scaleOverride!==undefined ? scaleOverride : _regScale;
-    const offX  = offXOverride!==undefined ? offXOverride : _regOffX;
-    const offY  = offYOverride!==undefined ? offYOverride : _regOffY;
+    const sc=scale||_regScale, ox=offX||_regOffX, oy=offY||_regOffY;
     const dpr=window.devicePixelRatio||1;
     const W=canvas.clientWidth, H=canvas.clientHeight||160;
     canvas.width=W*dpr; canvas.height=H*dpr;
     const ctx=canvas.getContext('2d');
     ctx.scale(dpr,dpr);
-    // 배경
     ctx.fillStyle='#050a0f'; ctx.fillRect(0,0,W,H);
     ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=1;
     for(let i=0;i<W;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
     for(let i=0;i<H;i+=20){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
-
-    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
-    const minX=Math.min(...xs),maxX=Math.max(...xs);
-    const minY=Math.min(...ys),maxY=Math.max(...ys);
-    const midX=(minX+maxX)/2, midY=(minY+maxY)/2;
-    const pad=30;
-    const sc=Math.min((W-pad*2)/(maxX-minX||1),(H-pad*2)/(maxY-minY||1))*scale;
-    const cX=W/2+offX, cY=H/2+offY;
-    const tc=(x,y)=>[cX+(y-midY)*sc, cY-(x-midX)*sc];
-
-    // ── 규제 레이어: 접도구역 (필지 외곽에서 5m/3m 이격) ──
+    const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+    const midX=(Math.min(...xs)+Math.max(...xs))/2, midY=(Math.min(...ys)+Math.max(...ys))/2;
+    const pad=28;
+    const base=Math.min((W-pad*2)/(Math.max(...xs)-Math.min(...xs)||1),(H-pad*2)/(Math.max(...ys)-Math.min(...ys)||1));
+    const s=base*sc;
+    const cX=W/2+ox, cY=H/2+oy;
+    const tc=(x,y)=>[cX+(y-midY)*s, cY-(x-midX)*s];
+    // 규제 배경
     const rawItems=_regResult?._rawItems||[];
-    const hasJeoptdo=rawItems.some(it=>it.includes('접도구역'));
+    const hasGreen=rawItems.some(it=>it.includes('개발제한구역'));
     const hasAgri=rawItems.some(it=>it.includes('농업진흥구역'));
-    const hasFlood=rawItems.some(it=>it.includes('하천구역')||it.includes('수변구역'));
-    const hasGreenbelt=rawItems.some(it=>it.includes('개발제한구역'));
-
-    // 접도구역 표시 (필지 경계 안쪽 3m 이격선)
-    if(hasJeoptdo){
-      const isoM=3; // 간략 표시용
-      const isoPx=isoM*sc;
-      ctx.save();
-      // 필지 경로 생성
-      ctx.beginPath();
-      const[ffx,ffy]=tc(pts[0].x,pts[0].y); ctx.moveTo(ffx,ffy);
+    if(hasGreen||hasAgri){
+      ctx.beginPath(); const[gx,gy]=tc(pts[0].x,pts[0].y); ctx.moveTo(gx,gy);
       pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
-      // 점선으로 이격선 표시
-      ctx.setLineDash([4,3]);
-      ctx.strokeStyle='rgba(255,69,96,.6)';
-      ctx.lineWidth=1.5;
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-      // 접도구역 라벨
-      const cx=(Math.min(...pts.map(p=>tc(p.x,p.y)[0]))+Math.max(...pts.map(p=>tc(p.x,p.y)[0])))/2;
-      ctx.font='bold 9px sans-serif';
-      ctx.fillStyle='rgba(255,69,96,.9)';
-      ctx.textAlign='center';
-      ctx.fillText('⚠ 접도구역',cx,H-16);
+      ctx.fillStyle=hasGreen?'rgba(22,163,74,.12)':'rgba(245,158,11,.08)'; ctx.fill();
     }
-
-    // 개발제한구역 배경 표시
-    if(hasGreenbelt){
-      ctx.save();
-      ctx.beginPath();
-      const[gx,gy]=tc(pts[0].x,pts[0].y); ctx.moveTo(gx,gy);
-      pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
-      ctx.fillStyle='rgba(22,163,74,.12)';
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // 농업진흥구역 배경 표시
-    if(hasAgri&&!hasGreenbelt){
-      ctx.save();
-      ctx.beginPath();
-      const[ax,ay]=tc(pts[0].x,pts[0].y); ctx.moveTo(ax,ay);
-      pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
-      ctx.fillStyle='rgba(245,158,11,.08)';
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // ── 필지 폴리곤 ──
-    ctx.beginPath();
-    const[fx,fy]=tc(pts[0].x,pts[0].y); ctx.moveTo(fx,fy);
+    // 필지
+    ctx.beginPath(); const[fx,fy]=tc(pts[0].x,pts[0].y); ctx.moveTo(fx,fy);
     pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath();
     ctx.fillStyle='rgba(59,130,246,.08)'; ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.8; ctx.stroke();
-
-    // ── 건물 ──
+    // 접도구역 이격선
+    if(rawItems.some(it=>it.includes('접도구역'))){
+      ctx.setLineDash([4,3]); ctx.strokeStyle='rgba(255,69,96,.7)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(fx,fy);
+      pts.slice(1).forEach(p=>{const[x,y]=tc(p.x,p.y);ctx.lineTo(x,y);}); ctx.closePath(); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    // 건물
     const bPts=window.skBldgCoordPts||[];
     if(bPts.length>=3){
-      ctx.beginPath();
-      bPts.forEach((p,i)=>{const[x,y]=tc(p.x,p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
-      ctx.closePath();
-      ctx.fillStyle='rgba(139,92,246,.2)'; ctx.fill();
-      ctx.strokeStyle='#9b7df8'; ctx.lineWidth=1.8; ctx.stroke();
+      ctx.beginPath(); bPts.forEach((p,i)=>{const[x,y]=tc(p.x,p.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+      ctx.closePath(); ctx.fillStyle='rgba(139,92,246,.2)'; ctx.fill(); ctx.strokeStyle='#9b7df8'; ctx.lineWidth=1.8; ctx.stroke();
     }
-
-    // ── 경계점 ──
+    // 경계점
     pts.forEach(p=>{
       const[px,py]=tc(p.x,p.y);
       ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2);
-      ctx.fillStyle=p.state==='alive'?'#22c55e':p.state==='lost'?'#ef4444':'#9ca3af';
-      ctx.fill();
-      ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=0.5; ctx.stroke();
-      ctx.font='bold 8px monospace';
-      ctx.fillStyle='rgba(255,255,255,.7)';
-      ctx.textAlign='center';
+      ctx.fillStyle=p.state==='alive'?'#22c55e':p.state==='lost'?'#ef4444':'#9ca3af'; ctx.fill();
+      ctx.font='bold 8px monospace'; ctx.fillStyle='rgba(255,255,255,.7)'; ctx.textAlign='center';
       ctx.fillText(p.num,px,py-6);
     });
-
-    // ── 규제 아이콘 표시 ──
+    // 규제 아이콘
     const icons=[];
-    if(hasJeoptdo) icons.push({ico:'🛣',lbl:'접도구역'});
-    if(hasGreenbelt) icons.push({ico:'🌿',lbl:'개발제한'});
-    if(hasAgri) icons.push({ico:'🌾',lbl:'농업진흥'});
-    if(hasFlood) icons.push({ico:'💧',lbl:'하천구역'});
-    if(icons.length){
-      icons.forEach((it,i)=>{
-        ctx.font='11px sans-serif';
-        ctx.fillText(it.ico, 10+i*22, 16);
-      });
-    }
-
-    // ── 정북/축척 ──
-    ctx.fillStyle='rgba(255,255,255,.3)';
-    ctx.font='8px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('↑N',W-14,14);
-    const barM=5, barPx=barM*sc;
+    if(rawItems.some(it=>it.includes('접도구역'))) icons.push('🛣');
+    if(hasGreen) icons.push('🌿');
+    if(hasAgri) icons.push('🌾');
+    if(rawItems.some(it=>it.includes('하천'))) icons.push('💧');
+    icons.forEach((ic,i)=>{ ctx.font='12px sans-serif'; ctx.fillText(ic,10+i*20,16); });
+    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='8px sans-serif'; ctx.textAlign='center'; ctx.fillText('↑N',W-14,14);
+    const barM=5, barPx=barM*s;
     if(barPx>15&&barPx<W/3){
       ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.moveTo(W-pad-barPx,H-10); ctx.lineTo(W-pad,H-10); ctx.stroke();
-      ctx.font='7px monospace'; ctx.fillStyle='rgba(255,255,255,.4)';
-      ctx.fillText(barM+'m',W-pad-barPx/2,H-2);
+      ctx.font='7px monospace'; ctx.fillStyle='rgba(255,255,255,.4)'; ctx.fillText(barM+'m',W-pad-barPx/2,H-2);
     }
   }
 
   function _drawRegCanvas(){ _drawCanvas(document.getElementById('rg-canvas')); }
 
-  // ── 전체화면 ──
-  let _ovScale=1, _ovOffX=0, _ovOffY=0, _ovDrag=false, _ovLX=0, _ovLY=0;
-
+  // 전체화면
   window.skRegOpenFullscreen=function(){
-    const ov=document.getElementById('sk-reg-overlay');
-    if(!ov) return;
-    ov.style.display='flex';
-    _ovScale=1.5; _ovOffX=0; _ovOffY=0;
+    const ov=document.getElementById('sk-reg-overlay'); if(!ov) return;
+    ov.style.display='flex'; _ovScale=1.5; _ovOffX=0; _ovOffY=0;
     const title=document.getElementById('sk-reg-ov-title');
     if(title) title.textContent='⚖️ '+(window.skLotMeta?.addr||'필지 도면');
-    setTimeout(()=>{
-      const c=document.getElementById('sk-reg-ov-canvas');
-      _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
-      _initOvDrag(c);
-    },50);
+    setTimeout(()=>{ const c=document.getElementById('sk-reg-ov-canvas'); _drawCanvas(c,_ovScale,_ovOffX,_ovOffY); _initOvDrag(c); },50);
   };
-
   window.skRegCloseFullscreen=function(){
-    const ov=document.getElementById('sk-reg-overlay');
-    if(ov) ov.style.display='none';
+    const ov=document.getElementById('sk-reg-overlay'); if(ov) ov.style.display='none';
   };
-
   window.skRegOvZoom=function(f){
     _ovScale*=f; _ovScale=Math.max(.3,Math.min(_ovScale,20));
-    const c=document.getElementById('sk-reg-ov-canvas');
-    _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
+    _drawCanvas(document.getElementById('sk-reg-ov-canvas'),_ovScale,_ovOffX,_ovOffY);
   };
   window.skRegOvReset=function(){
     _ovScale=1.5;_ovOffX=0;_ovOffY=0;
-    const c=document.getElementById('sk-reg-ov-canvas');
-    _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
+    _drawCanvas(document.getElementById('sk-reg-ov-canvas'),_ovScale,_ovOffX,_ovOffY);
   };
 
   function _initOvDrag(c){
     if(!c||c._ovEvt) return; c._ovEvt=true;
     c.addEventListener('touchstart',e=>{if(e.touches.length===1){_ovDrag=true;_ovLX=e.touches[0].clientX;_ovLY=e.touches[0].clientY;}},{passive:true});
-    c.addEventListener('touchmove',e=>{
-      e.preventDefault();
-      if(_ovDrag&&e.touches.length===1){
-        _ovOffX+=e.touches[0].clientX-_ovLX; _ovOffY+=e.touches[0].clientY-_ovLY;
-        _ovLX=e.touches[0].clientX; _ovLY=e.touches[0].clientY;
-        _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
-      }
-    },{passive:false});
+    c.addEventListener('touchmove',e=>{e.preventDefault();if(_ovDrag&&e.touches.length===1){_ovOffX+=e.touches[0].clientX-_ovLX;_ovOffY+=e.touches[0].clientY-_ovLY;_ovLX=e.touches[0].clientX;_ovLY=e.touches[0].clientY;_drawCanvas(c,_ovScale,_ovOffX,_ovOffY);}},{passive:false});
     c.addEventListener('touchend',()=>{_ovDrag=false;});
   }
 
   function _initDrag(){
     const c=document.getElementById('rg-canvas');
-    if(!c||c._rgEvt) return;c._rgEvt=true;
+    if(!c||c._rgEvt) return; c._rgEvt=true;
     c.addEventListener('touchstart',e=>{if(e.touches.length===1){_regDrag=true;_regLX=e.touches[0].clientX;_regLY=e.touches[0].clientY;}},{passive:true});
     c.addEventListener('touchmove',e=>{e.preventDefault();if(_regDrag&&e.touches.length===1){_regOffX+=e.touches[0].clientX-_regLX;_regOffY+=e.touches[0].clientY-_regLY;_regLX=e.touches[0].clientX;_regLY=e.touches[0].clientY;_drawRegCanvas();}},{passive:false});
     c.addEventListener('touchend',()=>{_regDrag=false;});
@@ -5558,37 +5461,21 @@ initDB()
 
   /* ── 외부 연동 ── */
   window._skRegReset=function(){
-    _regResult=null;_selCat='result';
-    const w=document.getElementById('rg-cat-btns');if(w)w.innerHTML='';
-    const d=document.getElementById('rg-detail');if(d)d.innerHTML='';
+    _regResult=null; _selCat='result';
+    const w=document.getElementById('rg-cat-btns'); if(w) w.innerHTML='';
+    const d=document.getElementById('rg-detail'); if(d) d.innerHTML='';
   };
   window.skRegSyncBadge=function(){};
-  window.skRegAutoFetch=function(){const el=document.getElementById('tab-reg-content');if(el&&el.style.display!=='none')skRegTabEnter();};
-  window.skRegLoad=function(){if(window.skRegTabEnter)skRegTabEnter();};
+  window.skRegAutoFetch=function(){const el=document.getElementById('tab-reg-content');if(el&&el.style.display!=='none') skRegTabEnter();};
+  window.skRegLoad=function(){if(window.skRegTabEnter) skRegTabEnter();};
   window.skRegSubTab=function(){};
   window.skRegDrawCanvas=_drawRegCanvas;
   window.skRegZoom=function(f){_regScale*=f;_regScale=Math.max(.3,Math.min(_regScale,10));_drawRegCanvas();};
   window.skRegResetView=function(){_regScale=1;_regOffX=0;_regOffY=0;_drawRegCanvas();};
-  window.skRegOpenLuris=function(){if(window.skPNU)window.open('https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?pnu='+window.skPNU,'_blank');};
-  window.skRegOpenFullscreen=function(){
-    const ov=document.getElementById('sk-reg-overlay');
-    if(!ov) return;
-    ov.style.display='flex';
-    _ovScale=1.5; _ovOffX=0; _ovOffY=0;
-    const title=document.getElementById('sk-reg-ov-title');
-    if(title) title.textContent='⚖️ '+(window.skLotMeta?.addr||'필지 도면');
-    setTimeout(()=>{
-      const c=document.getElementById('sk-reg-ov-canvas');
-      _drawCanvas(c,_ovScale,_ovOffX,_ovOffY);
-      _initOvDrag(c);
-    },50);
-  };
-  window.skRegCloseFullscreen=function(){
-    const ov=document.getElementById('sk-reg-overlay');
-    if(ov) ov.style.display='none';
-  };
-  window.skRegIframeLoaded=function(){};window.skRegIframeFailed=function(){};
-  window._skRegLoadInner=function(){if(window.skRegTabEnter)skRegTabEnter();};
+  window.skRegOpenLuris=function(){if(window.skPNU) window.open('https://www.eum.go.kr/web/ar/lu/luLandDtl.jsp?pnu='+window.skPNU,'_blank');};
+  window.skRegIframeLoaded=function(){};
+  window.skRegIframeFailed=function(){};
+  window._skRegLoadInner=function(){if(window.skRegTabEnter) skRegTabEnter();};
 
 })();
 </script>
