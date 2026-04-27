@@ -2110,7 +2110,12 @@ function switchTab(t){
   function skProcessFeature(feature){
     const props=feature.properties;
     const geom=feature.geometry;
-    skLotMeta={pnu:props.pnu||skPNU,addr:props.addr||document.getElementById('sk-sel-txt').textContent};
+    // lon/lat 기존 값 보존하면서 병합
+    skLotMeta={
+      ...skLotMeta,
+      pnu:props.pnu||skPNU,
+      addr:props.addr||document.getElementById('sk-sel-txt').textContent
+    };
     let coords=[];
     if(geom.type==='Polygon')coords=geom.coordinates[0];
     else if(geom.type==='MultiPolygon')coords=geom.coordinates[0][0];
@@ -2221,7 +2226,25 @@ function switchTab(t){
     document.getElementById('sk-res-content').style.display='block';
     skDrawRender();
     skSubTab('draw');
-    // 법적규제 탭 데이터 준비 (탭 열 때 즉시 표시)
+    // 필지 중심 좌표 저장 (규제 API용 WGS84)
+    if(skPoints.length > 0){
+      // skPoints는 TM좌표 — 경계점 조회 시 받은 원본 WGS84 좌표 사용
+      // skLotMeta.lon/lat는 주소 선택 시점에 저장됨 (보존됨)
+      if(!skLotMeta.lon || !skLotMeta.lat){
+        // WGS84 좌표가 없으면 TM→WGS84 역변환으로 중심 계산
+        const midX = skPoints.reduce((s,p)=>s+p.x,0)/skPoints.length;
+        const midY = skPoints.reduce((s,p)=>s+p.y,0)/skPoints.length;
+        if(typeof proj4 !== 'undefined'){
+          try{
+            const wgs = proj4('EPSG:5186','EPSG:4326',[midY,midX]);
+            skLotMeta.lon = wgs[0].toFixed(10);
+            skLotMeta.lat = wgs[1].toFixed(10);
+            console.log('[규제] 좌표 역변환:', skLotMeta.lon, skLotMeta.lat);
+          }catch(e){ console.warn('[규제] 역변환 실패:', e); }
+        }
+      }
+    }
+    // 법적규제 탭 데이터 준비
     if(window._skRegReset) _skRegReset();
     if(window.skRegTabEnter) skRegTabEnter();
     showToast('✅ 계산 완료 — 도면보기 확인');
@@ -4927,17 +4950,19 @@ initDB()
 
     if(!lon||!lat){ _noCoord(); return; }
 
+    console.log('[규제] 좌표:', lon, lat, 'PNU:', pnu);
     const geom = `POINT(${lon} ${lat})`;
+
     const results = {};
     let done = 0;
     const apis = [
-      // 경계점과 동일한 방식으로 호출
-      {key:'uz',   data:'LT_C_UZ',       filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},
-      {key:'fnn',  data:'LT_P_FNNMAP',   filter:`geomFilter=${encodeURIComponent(geom)}`,size:5},
-      {key:'lhb',  data:'LT_C_LHBLPN',  filter:`geomFilter=${encodeURIComponent(geom)}`,size:30},
-      {key:'ar',   data:'LT_C_NFARST',  filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},  // 산지
-      {key:'env',  data:'LT_C_UAMTAZ',  filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},  // 환경
-      {key:'plan', data:'LT_C_UQZ',     filter:`geomFilter=${encodeURIComponent(geom)}`,size:10},  // 도시계획구역
+      // 경계점과 완전히 동일한 URL 방식 (인코딩 없음)
+      {key:'uz',   data:'LT_C_UZ',      filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
+      {key:'fnn',  data:'LT_P_FNNMAP',  filter:`geomFilter=POINT(${lon} ${lat})`, size:5},
+      {key:'lhb',  data:'LT_C_LHBLPN', filter:`geomFilter=POINT(${lon} ${lat})`, size:30},
+      {key:'ar',   data:'LT_C_NFARST', filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
+      {key:'env',  data:'LT_C_UAMTAZ', filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
+      {key:'plan', data:'LT_C_UQZ',    filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
     ];
 
     apis.forEach(api=>{
