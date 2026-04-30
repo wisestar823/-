@@ -4956,13 +4956,19 @@ initDB()
     const results = {};
     let done = 0;
     const apis = [
-      // 경계점과 완전히 동일한 URL 방식 (인코딩 없음)
+      // 도시계획 (도시지역에서만 응답)
       {key:'uz',   data:'LT_C_UZ',      filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
       {key:'fnn',  data:'LT_P_FNNMAP',  filter:`geomFilter=POINT(${lon} ${lat})`, size:5},
       {key:'lhb',  data:'LT_C_LHBLPN', filter:`geomFilter=POINT(${lon} ${lat})`, size:30},
       {key:'ar',   data:'LT_C_NFARST', filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
       {key:'env',  data:'LT_C_UAMTAZ', filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
       {key:'plan', data:'LT_C_UQZ',    filter:`geomFilter=POINT(${lon} ${lat})`, size:10},
+      // 농촌·산지 커버 추가 API
+      {key:'use',  data:'LT_C_USAGE',  filter:`geomFilter=POINT(${lon} ${lat})`, size:10},  // 용도지역 (전국)
+      {key:'cad',  data:'LP_PA_CBND_BUBUN', filter:`geomFilter=POINT(${lon} ${lat})`, size:1}, // 지적도 (지목·면적·용도)
+      {key:'forest',data:'LT_C_NSDSSF',filter:`geomFilter=POINT(${lon} ${lat})`, size:10},  // 산지구분
+      {key:'farm', data:'LT_C_AGRIX',  filter:`geomFilter=POINT(${lon} ${lat})`, size:10},  // 농업진흥지역
+      {key:'mil',  data:'LT_C_MILTRY', filter:`geomFilter=POINT(${lon} ${lat})`, size:10},  // 군사보호구역
     ];
 
     apis.forEach(api=>{
@@ -5058,6 +5064,67 @@ initDB()
       if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
     });
 
+    // ── 농촌·산지 추가 API 파싱 ──
+
+    // LT_C_USAGE: 용도지역 (전국 커버)
+    const fuse=(res.use?.response?.result?.featureCollection?.features||[]);
+    fuse.forEach(f=>{
+      const p=f.properties||{};
+      console.log('[규제] LT_C_USAGE 필드:', JSON.stringify(p).slice(0,300));
+      const zn=p.usage_nm||p.usageNm||p.use_zone_nm||p.prpos_area_nm||
+               p.purpose_nm||p.cd_nm||p.zone_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&(v.includes('지역')||v.includes('지구')))||'';
+      if(zn&&!useZone) useZone=zn;
+      else if(zn&&zn!==useZone&&!useZone2) useZone2=zn;
+    });
+
+    // LP_PA_CBND_BUBUN: 지적도 (지목, 면적, 용도지역명 포함)
+    const fcad=(res.cad?.response?.result?.featureCollection?.features||[]);
+    fcad.forEach(f=>{
+      const p=f.properties||{};
+      console.log('[규제] LP_PA_CBND_BUBUN 필드:', JSON.stringify(p).slice(0,400));
+      // 용도지역
+      if(!useZone){
+        const zn=p.use_zone_nm||p.useZoneNm||p.prpos_area_nm||p.prposArea1Nm||
+                 p.lndcgr_nm||p.lndcgrNm||
+                 Object.values(p).find(v=>typeof v==='string'&&v.length>2&&(v.includes('지역')||v.includes('지구')))||'';
+        if(zn) useZone=zn;
+      }
+      // 지목 정보
+      const jimok=p.lndcgr_code_nm||p.lndcgrCodeNm||p.jimok_nm||'';
+      if(jimok&&!rawItems.includes('지목:'+jimok)) rawItems.push('지목:'+jimok);
+      // 면적
+      const area=p.lndpcl_ar||p.lndpclAr||p.area||'';
+      if(area) console.log('[규제] 필지면적:', area+'㎡');
+    });
+
+    // LT_C_NSDSSF: 산지구분
+    const fforest=(res.forest?.response?.result?.featureCollection?.features||[]);
+    fforest.forEach(f=>{
+      const p=f.properties||{};
+      const nm=p.frst_area_cd_nm||p.usage_nm||p.cd_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&(v.includes('산지')||v.includes('임')))||'';
+      if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
+    });
+
+    // LT_C_AGRIX: 농업진흥지역
+    const ffarm=(res.farm?.response?.result?.featureCollection?.features||[]);
+    ffarm.forEach(f=>{
+      const p=f.properties||{};
+      const nm=p.zone_nm||p.cd_nm||p.usage_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&v.includes('농업'))||'농업진흥구역';
+      if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
+    });
+
+    // LT_C_MILTRY: 군사보호구역
+    const fmil=(res.mil?.response?.result?.featureCollection?.features||[]);
+    fmil.forEach(f=>{
+      const p=f.properties||{};
+      const nm=p.zone_nm||p.cd_nm||p.usage_nm||
+               Object.values(p).find(v=>typeof v==='string'&&v.length>2&&v.includes('군사'))||'군사시설보호구역';
+      if(nm&&!rawItems.includes(nm)) rawItems.push(nm);
+    });
+
     // 용도지역 추정 (rawItems 분석)
     if(!useZone){
       const zoneKws=['주거지역','상업지역','공업지역','녹지지역','관리지역','농림지역','보전지역'];
@@ -5072,9 +5139,12 @@ initDB()
     if(useZone&&!rawItems.includes(useZone)) rawItems.unshift(useZone);
     if(useZone2&&!rawItems.includes(useZone2)) rawItems.splice(1,0,useZone2);
 
-    console.log('[규제] 최종 용도지역:', useZone, '/ 규제항목:', rawItems.length+'건');
+    const totalLen=fuz.length+ffnn.length+flhb.length+far.length+fenv.length+fplan.length
+                  +fuse.length+fcad.length+fforest.length+ffarm.length+fmil.length;
+    console.log('[규제] 최종 용도지역:', useZone, '/ 규제항목:', rawItems.length+'건', '/ 응답총:', totalLen+'건');
+
     return {useZone, useZone2, rawItems,
-      apiEmpty:(!fuz.length&&!ffnn.length&&!flhb.length)};
+      apiEmpty: totalLen===0};
   }
 
   function _renderResult(res){
