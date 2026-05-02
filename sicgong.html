@@ -4214,7 +4214,10 @@ function switchTab(t){
     _alignCorners = [];
     _alignTx=0; _alignTy=0; _alignScale=1; _alignRot=0;
     _alignImgScale=1; _alignImgTx=0; _alignImgTy=0; _alignImgRot=0;
+    _alignMapScale=1; _alignMapTx=0; _alignMapTy=0;
     _alignAlpha=0.55;
+    _alignTarget='img';
+    _alignLastW=0; _alignLastH=0; // 캔버스 크기 추적 초기화
     document.getElementById('sk-align-upload').style.display='flex';
     document.getElementById('sk-align-canvas').style.display='none';
     document.getElementById('sk-align-controls').style.display='none';
@@ -4478,11 +4481,30 @@ function switchTab(t){
     return { x: cX + lx*cosR - ly*sinR, y: cY + lx*sinR + ly*cosR };
   }
 
+  // 이전 캔버스 크기 추적
+  let _alignLastW = 0, _alignLastH = 0;
+
   window.skAlignDraw = function(){
     if(!_alignCanvas) return;
     const c = _alignCanvas;
     const dpr = window.devicePixelRatio||1;
     const W = c.clientWidth, H = c.clientHeight;
+
+    // 캔버스 크기 변경 감지 → 변환값 비율 보정
+    if(_alignLastW > 0 && _alignLastH > 0 && (W !== _alignLastW || H !== _alignLastH)){
+      const dx = (W - _alignLastW)/2;
+      const dy = (H - _alignLastH)/2;
+      // 화면 중심 기준으로 모든 좌표 평행이동
+      _alignImgTx += dx;
+      _alignImgTy += dy;
+      // 이미지 점 (스크린 좌표)도 보정
+      _alignPtsImg.forEach(p=>{
+        if(p.cx !== undefined) p.cx += dx;
+        if(p.cy !== undefined) p.cy += dy;
+      });
+    }
+    _alignLastW = W; _alignLastH = H;
+
     c.width = W*dpr; c.height = H*dpr;
     const ctx = c.getContext('2d');
     ctx.scale(dpr,dpr);
@@ -4641,7 +4663,8 @@ function switchTab(t){
     const tg=document.getElementById('sk-align-img-toggle');
     if(tg) tg.textContent='🖼 이미지 숨기기';
     _updateCornerList();
-    skAlignDraw();
+    // 레이아웃 안정화 대기 후 그리기 (캔버스 크기 변경 자동 보정)
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>skAlignDraw()); });
   };
 
   // 이미지 보기/숨기기 토글
@@ -4657,7 +4680,7 @@ function switchTab(t){
     document.getElementById('sk-align-stage-align').style.display='block';
     document.getElementById('sk-align-stage-corner').style.display='none';
     document.getElementById('sk-align-step-txt').textContent='② 핀치줌·드래그·회전으로 배치도를 지적도에 맞추세요';
-    skAlignDraw();
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>skAlignDraw()); });
   };
 
   window.skAlignClearCorners = function(){
