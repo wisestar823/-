@@ -1367,23 +1367,27 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
         </div>
       </div>
 
-      <!-- 단계 B: 건물 모서리 배치 -->
+      <!-- 단계 B: 건물 모서리 배치 (조준점 방식) -->
       <div id="sk-align-stage-corner" style="display:none;">
-        <div style="font-size:11px;color:#9b7df8;font-weight:700;margin-bottom:6px;">🏗 배치도의 건물 모서리를 차례로 탭하세요 (3개 이상)</div>
+        <div style="font-size:11px;color:#9b7df8;font-weight:700;margin-bottom:4px;">🎯 화면 중앙 ⊕ 십자에 모서리를 맞춘 후 [+ 추가]</div>
         <div id="sk-align-corner-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;font-size:10px;min-height:24px;"></div>
-        <!-- 줌·이동 대상 토글 (모서리 단계에서도) -->
+        <!-- 핵심: 모서리 추가 버튼 (큼직) -->
+        <button id="sk-align-add-corner" onclick="skAlignAddAtCenter()" style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;box-shadow:0 4px 12px rgba(6,182,212,.3);">
+          ⊕ 이 위치를 모서리로 추가
+        </button>
+        <!-- 줌·이동 대상 토글 -->
         <div style="display:flex;gap:5px;margin-bottom:6px;background:rgba(255,255,255,.04);border-radius:8px;padding:3px;">
-          <button id="sk-align-tg-img-c" onclick="skAlignSetTarget('img')" style="flex:1;padding:6px;border:none;border-radius:6px;background:rgba(6,200,216,.2);color:#06c8d8;font-size:9px;font-weight:800;cursor:pointer;">🖼 배치도 줌</button>
-          <button id="sk-align-tg-map-c" onclick="skAlignSetTarget('map')" style="flex:1;padding:6px;border:none;border-radius:6px;background:transparent;color:#9ca3af;font-size:9px;font-weight:800;cursor:pointer;">🗺 통합 줌</button>
+          <button id="sk-align-tg-img-c" onclick="skAlignSetTarget('img')" style="flex:1;padding:6px;border:none;border-radius:6px;background:transparent;color:#9ca3af;font-size:9px;font-weight:800;cursor:pointer;">🖼 배치도만</button>
+          <button id="sk-align-tg-map-c" onclick="skAlignSetTarget('map')" style="flex:1;padding:6px;border:none;border-radius:6px;background:rgba(155,125,248,.2);color:#9b7df8;font-size:9px;font-weight:800;cursor:pointer;">🗺 통합</button>
         </div>
-        <!-- 액션 버튼 -->
-        <div style="display:flex;gap:6px;margin-bottom:6px;">
-          <button id="sk-align-img-toggle" onclick="skAlignToggleImg()" style="flex:1;padding:8px;border:1px solid rgba(6,200,216,.3);border-radius:7px;background:rgba(6,200,216,.08);color:#06c8d8;font-size:10px;font-weight:700;cursor:pointer;">🖼 이미지 숨김</button>
-          <button onclick="skAlignUndoCorner()" style="flex:1;padding:8px;border:1px solid rgba(245,158,11,.3);border-radius:7px;background:rgba(245,158,11,.08);color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer;">↶ 1개 취소</button>
-          <button onclick="skAlignClearCorners()" style="flex:1;padding:8px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">🔄 다시</button>
-          <button onclick="skAlignBack()" style="flex:1;padding:8px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">← 정렬</button>
+        <!-- 보조 액션 -->
+        <div style="display:flex;gap:5px;margin-bottom:6px;">
+          <button id="sk-align-img-toggle" onclick="skAlignToggleImg()" style="flex:1;padding:7px;border:1px solid rgba(6,200,216,.3);border-radius:7px;background:rgba(6,200,216,.08);color:#06c8d8;font-size:10px;font-weight:700;cursor:pointer;">🖼 이미지</button>
+          <button onclick="skAlignUndoCorner()" style="flex:1;padding:7px;border:1px solid rgba(245,158,11,.3);border-radius:7px;background:rgba(245,158,11,.08);color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer;">↶ 취소</button>
+          <button onclick="skAlignClearCorners()" style="flex:1;padding:7px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">🔄 다시</button>
+          <button onclick="skAlignBack()" style="flex:1;padding:7px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">← 정렬</button>
         </div>
-        <button onclick="skAlignApply()" style="width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:13px;font-weight:800;cursor:pointer;">✅ 배치 완료 → 도면에 적용</button>
+        <button onclick="skAlignApply()" style="width:100%;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">✅ 배치 완료 → 도면에 적용</button>
         <div id="sk-align-dist-info" style="margin-top:8px;padding:9px 11px;background:rgba(155,125,248,.06);border:1px solid rgba(155,125,248,.15);border-radius:7px;font-size:10px;color:#9ca3af;line-height:1.8;display:none;"></div>
       </div>
     </div>
@@ -4369,23 +4373,19 @@ function switchTab(t){
       skAlignDraw();
     },{passive:false});
 
-    // 통합 클릭 처리 (touch와 mouse 모두 click 이벤트로 발동)
-    c.addEventListener('click', e=>{
-      if(_alignStage!=='corner') return;
-      // 드래그/핀치 중이면 click 무시
-      if(_alignTwoFinger) return;
-      const r = c.getBoundingClientRect();
-      const cx = e.clientX - r.left, cy = e.clientY - r.top;
-      // 터치 시작점에서 5px 이상 이동했으면 드래그로 판정 → 무시
-      if(_alignTouchStartX !== 0 || _alignTouchStartY !== 0){
-        const moved = Math.hypot(cx + r.left - _alignTouchStartX, cy + r.top - _alignTouchStartY);
-        _alignTouchStartX = 0; _alignTouchStartY = 0;
-        if(moved > 8) return;
-      }
-      _onAlignTap(cx, cy);
-    });
+    // 모서리 추가는 [+ 모서리 추가] 버튼으로만 (탭 비활성화)
+    // → 손가락 탭 시 화면 흔들림/위치 어긋남 문제 해결
   }
   let _alignTouchStartX=0, _alignTouchStartY=0;
+
+  // 화면 중앙 ⊕ 십자 위치를 모서리로 추가
+  window.skAlignAddAtCenter = function(){
+    if(!_alignCanvas){ return; }
+    const W = _alignCanvas.clientWidth, H = _alignCanvas.clientHeight;
+    const cx = W/2, cy = H/2;
+    _onAlignTap(cx, cy);
+    showToast('⊕ 모서리 '+_alignCorners.length+' 추가됨');
+  };
 
   function _onAlignTap(cx, cy){
     if(_alignStage!=='corner') return;
@@ -4612,6 +4612,48 @@ function switchTab(t){
         ctx.font='bold 10px sans-serif'; ctx.fillStyle='#fff';
         ctx.textAlign='center'; ctx.fillText(i+1, s.x, s.y+3);
       });
+    }
+
+    // 조준점 (모서리 단계에서만 화면 중앙에 표시)
+    if(_alignStage==='corner'){
+      const cx = W/2, cy = H/2;
+      // 경계점 근접 시 색상 변경 (스냅 미리보기)
+      const tm = _screenToTM(cx, cy);
+      let nearD = Infinity;
+      if(tm && skPoints.length){
+        skPoints.forEach(p=>{
+          const d=Math.hypot(p.x-tm.x, p.y-tm.y);
+          if(d<nearD) nearD=d;
+        });
+      }
+      const isSnap = nearD < 1.5;
+      const color = isSnap ? '#fbbf24' : '#06c8d8';
+
+      // 외부 원 (반투명)
+      ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI*2);
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+      ctx.setLineDash([3,3]); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 십자 (긴 선)
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx-18, cy); ctx.lineTo(cx-6, cy);
+      ctx.moveTo(cx+6, cy); ctx.lineTo(cx+18, cy);
+      ctx.moveTo(cx, cy-18); ctx.lineTo(cx, cy-6);
+      ctx.moveTo(cx, cy+6); ctx.lineTo(cx, cy+18);
+      ctx.stroke();
+
+      // 중심 점
+      ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke();
+
+      // 스냅 표시
+      if(isSnap){
+        ctx.font='bold 11px sans-serif'; ctx.fillStyle='#fbbf24';
+        ctx.textAlign='center'; ctx.fillText('🔗 스냅', cx, cy-30);
+      }
     }
   };
 
