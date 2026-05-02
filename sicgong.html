@@ -1339,11 +1339,11 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
         <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
           <span style="font-size:11px;color:#9ca3af;width:42px;">회전</span>
           <button onclick="skAlignRotate(-1)" style="padding:4px 7px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">↺-1°</button>
-          <button onclick="skAlignRotate(-0.1)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">-0.1°</button>
-          <input type="range" id="sk-align-rot" min="-180" max="180" value="0" step="0.1"
+          <button onclick="skAlignRotate(-0.5)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">-0.5°</button>
+          <input type="range" id="sk-align-rot" min="-180" max="180" value="0" step="0.5"
             oninput="skAlignSetRot(this.value)"
             style="flex:1;accent-color:#06c8d8;">
-          <button onclick="skAlignRotate(0.1)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">+0.1°</button>
+          <button onclick="skAlignRotate(0.5)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">+0.5°</button>
           <button onclick="skAlignRotate(1)" style="padding:4px 7px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">↻+1°</button>
           <span id="sk-align-rot-val" style="font-size:10px;color:#06c8d8;width:38px;text-align:right;">0.0°</span>
         </div>
@@ -1371,11 +1371,17 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
       <div id="sk-align-stage-corner" style="display:none;">
         <div style="font-size:11px;color:#9b7df8;font-weight:700;margin-bottom:6px;">🏗 배치도의 건물 모서리를 차례로 탭하세요 (3개 이상)</div>
         <div id="sk-align-corner-list" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;font-size:10px;min-height:24px;"></div>
-        <!-- 이미지 토글 -->
+        <!-- 줌·이동 대상 토글 (모서리 단계에서도) -->
+        <div style="display:flex;gap:5px;margin-bottom:6px;background:rgba(255,255,255,.04);border-radius:8px;padding:3px;">
+          <button id="sk-align-tg-img-c" onclick="skAlignSetTarget('img')" style="flex:1;padding:6px;border:none;border-radius:6px;background:rgba(6,200,216,.2);color:#06c8d8;font-size:9px;font-weight:800;cursor:pointer;">🖼 배치도 줌</button>
+          <button id="sk-align-tg-map-c" onclick="skAlignSetTarget('map')" style="flex:1;padding:6px;border:none;border-radius:6px;background:transparent;color:#9ca3af;font-size:9px;font-weight:800;cursor:pointer;">🗺 통합 줌</button>
+        </div>
+        <!-- 액션 버튼 -->
         <div style="display:flex;gap:6px;margin-bottom:6px;">
-          <button id="sk-align-img-toggle" onclick="skAlignToggleImg()" style="flex:1;padding:8px;border:1px solid rgba(6,200,216,.3);border-radius:7px;background:rgba(6,200,216,.08);color:#06c8d8;font-size:10px;font-weight:700;cursor:pointer;">🖼 이미지 숨기기</button>
-          <button onclick="skAlignClearCorners()" style="flex:1;padding:8px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">🔄 모서리 다시</button>
-          <button onclick="skAlignBack()" style="flex:1;padding:8px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">← 정렬로</button>
+          <button id="sk-align-img-toggle" onclick="skAlignToggleImg()" style="flex:1;padding:8px;border:1px solid rgba(6,200,216,.3);border-radius:7px;background:rgba(6,200,216,.08);color:#06c8d8;font-size:10px;font-weight:700;cursor:pointer;">🖼 이미지 숨김</button>
+          <button onclick="skAlignUndoCorner()" style="flex:1;padding:8px;border:1px solid rgba(245,158,11,.3);border-radius:7px;background:rgba(245,158,11,.08);color:#f59e0b;font-size:10px;font-weight:700;cursor:pointer;">↶ 1개 취소</button>
+          <button onclick="skAlignClearCorners()" style="flex:1;padding:8px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">🔄 다시</button>
+          <button onclick="skAlignBack()" style="flex:1;padding:8px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">← 정렬</button>
         </div>
         <button onclick="skAlignApply()" style="width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:13px;font-weight:800;cursor:pointer;">✅ 배치 완료 → 도면에 적용</button>
         <div id="sk-align-dist-info" style="margin-top:8px;padding:9px 11px;background:rgba(155,125,248,.06);border:1px solid rgba(155,125,248,.15);border-radius:7px;font-size:10px;color:#9ca3af;line-height:1.8;display:none;"></div>
@@ -4266,7 +4272,9 @@ function switchTab(t){
   function _initAlignEvents(c){
     if(c._alignEvt) return; c._alignEvt = true;
 
-    // 핀치 줌 헬퍼 — _alignTarget이 'img'면 이미지, 'map'이면 지적도만 줌
+    // 핀치 줌 헬퍼
+    // 정렬 단계: 'img' = 배치도만, 'map' = 지적도만 (각각 독립)
+    // 모서리 단계: 'img' = 배치도만, 'map' = 이미지+지적도 통합
     const applyPinch = (cx, cy, factor)=>{
       if(_alignTarget==='img'){
         const newScale = _alignImgScale*factor;
@@ -4274,12 +4282,20 @@ function switchTab(t){
         _alignImgTy = cy - (cy-_alignImgTy)*factor;
         _alignImgScale = Math.max(.1,Math.min(newScale,15));
       } else {
+        // 지적도 줌
         const W = c.clientWidth, H = c.clientHeight;
         const rcx = W/2 + _alignMapTx, rcy = H/2 + _alignMapTy;
         const newScale = _alignMapScale*factor;
         _alignMapTx = cx - W/2 - (cx - rcx)*factor;
         _alignMapTy = cy - H/2 - (cy - rcy)*factor;
         _alignMapScale = Math.max(.3,Math.min(newScale,15));
+        // 모서리 단계에서는 이미지도 동시에 변환 (통합 줌)
+        if(_alignStage==='corner'){
+          const newImgScale = _alignImgScale*factor;
+          _alignImgTx = cx - (cx-_alignImgTx)*factor;
+          _alignImgTy = cy - (cy-_alignImgTy)*factor;
+          _alignImgScale = Math.max(.05,Math.min(newImgScale,30));
+        }
       }
     };
 
@@ -4289,6 +4305,10 @@ function switchTab(t){
         _alignImgTx += dx; _alignImgTy += dy;
       } else {
         _alignMapTx += dx; _alignMapTy += dy;
+        // 모서리 단계에서는 이미지도 동시에 이동
+        if(_alignStage==='corner'){
+          _alignImgTx += dx; _alignImgTy += dy;
+        }
       }
     };
 
@@ -4603,6 +4623,7 @@ function switchTab(t){
 
   window.skAlignSetTarget = function(t){
     _alignTarget = t;
+    // 정렬 단계 토글 (배치도/지적도 독립)
     const ti = document.getElementById('sk-align-tg-img');
     const tm = document.getElementById('sk-align-tg-map');
     if(ti && tm){
@@ -4612,6 +4633,18 @@ function switchTab(t){
       } else {
         tm.style.background='rgba(245,158,11,.2)'; tm.style.color='#f59e0b';
         ti.style.background='transparent'; ti.style.color='#9ca3af';
+      }
+    }
+    // 모서리 단계 토글 (배치도/통합)
+    const tic = document.getElementById('sk-align-tg-img-c');
+    const tmc = document.getElementById('sk-align-tg-map-c');
+    if(tic && tmc){
+      if(t==='img'){
+        tic.style.background='rgba(6,200,216,.2)'; tic.style.color='#06c8d8';
+        tmc.style.background='transparent'; tmc.style.color='#9ca3af';
+      } else {
+        tmc.style.background='rgba(155,125,248,.2)'; tmc.style.color='#9b7df8';
+        tic.style.background='transparent'; tic.style.color='#9ca3af';
       }
     }
   };
@@ -4657,12 +4690,15 @@ function switchTab(t){
     _alignStage = 'corner';
     _alignCorners = [];
     _alignShowImg = true; // 모서리 탭을 위해 이미지 표시
+    _alignTarget = 'map'; // 자동으로 통합 줌 모드 (이미지+지적도 함께)
     document.getElementById('sk-align-stage-align').style.display='none';
     document.getElementById('sk-align-stage-corner').style.display='block';
-    document.getElementById('sk-align-step-txt').textContent='③ 배치도의 건물 모서리를 차례로 탭하세요 (3개 이상)';
+    document.getElementById('sk-align-step-txt').textContent='③ 핀치줌으로 확대하여 건물 모서리를 정밀하게 탭하세요';
     const tg=document.getElementById('sk-align-img-toggle');
-    if(tg) tg.textContent='🖼 이미지 숨기기';
+    if(tg) tg.textContent='🖼 이미지 숨김';
     _updateCornerList();
+    // 토글 UI 동기화
+    skAlignSetTarget('map');
     // 레이아웃 안정화 대기 후 그리기 (캔버스 크기 변경 자동 보정)
     requestAnimationFrame(()=>{ requestAnimationFrame(()=>skAlignDraw()); });
   };
@@ -4689,13 +4725,33 @@ function switchTab(t){
     skAlignDraw();
   };
 
+  // 마지막 모서리 1개 취소 (뒤로가기)
+  window.skAlignUndoCorner = function(){
+    if(!_alignCorners.length){
+      showToast('취소할 모서리 없음'); return;
+    }
+    _alignCorners.pop();
+    _updateCornerList();
+    skAlignDraw();
+    showToast('↶ 마지막 모서리 취소됨');
+  };
+
+  // 특정 모서리 삭제 (X 버튼)
+  window.skAlignDelCorner = function(idx){
+    if(idx<0 || idx>=_alignCorners.length) return;
+    _alignCorners.splice(idx, 1);
+    _updateCornerList();
+    skAlignDraw();
+  };
+
   function _updateCornerList(){
     const wrap = document.getElementById('sk-align-corner-list');
     if(!wrap) return;
     wrap.innerHTML = _alignCorners.map((p,i)=>{
       const color = p.snap ? '#fbbf24' : '#9b7df8';
-      return `<span style="padding:3px 8px;background:rgba(155,125,248,.15);border:1px solid ${color};border-radius:5px;color:${color};font-weight:700;">
+      return `<span style="padding:3px 5px 3px 9px;background:rgba(155,125,248,.15);border:1px solid ${color};border-radius:5px;color:${color};font-weight:700;display:inline-flex;align-items:center;gap:5px;">
         ${i+1}${p.snap?' 🔗':''}
+        <button onclick="window.skAlignDelCorner(${i})" style="border:none;background:rgba(0,0,0,.3);color:${color};width:16px;height:16px;border-radius:3px;font-size:10px;cursor:pointer;padding:0;line-height:14px;">✕</button>
       </span>`;
     }).join('') || '<span style="color:#9ca3af;font-size:10px;">건물 모서리를 탭하세요 (3개 이상)</span>';
 
