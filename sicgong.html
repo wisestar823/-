@@ -4198,6 +4198,8 @@ function switchTab(t){
   // 지적도 별도 변환 (사용자가 별도로 줌/이동)
   let _alignMapScale = 1, _alignMapTx = 0, _alignMapTy = 0;
   let _alignMapRot = 0;
+  // 통합 뷰 변환 (모서리 단계 — 이미지+지적도 하나로 묶어서 줌/이동)
+  let _alignViewScale = 1, _alignViewTx = 0, _alignViewTy = 0;
   let _alignAlpha = 0.55;
   let _alignPtsImg = []; // 이미지 위 클릭점 (캔버스 좌표)
   let _alignPtsApp = []; // 지적도 위 대응점 (TM 좌표)
@@ -4225,6 +4227,7 @@ function switchTab(t){
     _alignTx=0; _alignTy=0; _alignScale=1; _alignRot=0;
     _alignImgScale=1; _alignImgTx=0; _alignImgTy=0; _alignImgRot=0;
     _alignMapScale=1; _alignMapTx=0; _alignMapTy=0;
+    _alignViewScale=1; _alignViewTx=0; _alignViewTy=0;
     _alignAlpha=0.55;
     _alignTarget='img';
     _alignLastW=0; _alignLastH=0; // 캔버스 크기 추적 초기화
@@ -4277,29 +4280,28 @@ function switchTab(t){
     if(c._alignEvt) return; c._alignEvt = true;
 
     // 핀치 줌 헬퍼
-    // 정렬 단계: 'img' = 배치도만, 'map' = 지적도만 (각각 독립)
-    // 모서리 단계: 'img' = 배치도만, 'map' = 이미지+지적도 통합
+    // 정렬 단계: 'img' = 배치도만, 'map' = 지적도만 (각각 독립 정렬용)
+    // 모서리 단계: 'img' = 배치도 미세조정, 'map' = 통합뷰(이미지+지적도 함께 줌)
     const applyPinch = (cx, cy, factor)=>{
       if(_alignTarget==='img'){
         const newScale = _alignImgScale*factor;
         _alignImgTx = cx - (cx-_alignImgTx)*factor;
         _alignImgTy = cy - (cy-_alignImgTy)*factor;
         _alignImgScale = Math.max(.1,Math.min(newScale,15));
+      } else if(_alignStage==='corner'){
+        // 통합뷰만 변경 (이미지/지적도는 그대로) - 핵심
+        const newScale = _alignViewScale*factor;
+        _alignViewTx = cx - (cx-_alignViewTx)*factor;
+        _alignViewTy = cy - (cy-_alignViewTy)*factor;
+        _alignViewScale = Math.max(.3,Math.min(newScale,30));
       } else {
-        // 지적도 줌
+        // 정렬 단계 지적도만 줌
         const W = c.clientWidth, H = c.clientHeight;
         const rcx = W/2 + _alignMapTx, rcy = H/2 + _alignMapTy;
         const newScale = _alignMapScale*factor;
         _alignMapTx = cx - W/2 - (cx - rcx)*factor;
         _alignMapTy = cy - H/2 - (cy - rcy)*factor;
         _alignMapScale = Math.max(.3,Math.min(newScale,15));
-        // 모서리 단계에서는 이미지도 동시에 변환 (통합 줌)
-        if(_alignStage==='corner'){
-          const newImgScale = _alignImgScale*factor;
-          _alignImgTx = cx - (cx-_alignImgTx)*factor;
-          _alignImgTy = cy - (cy-_alignImgTy)*factor;
-          _alignImgScale = Math.max(.05,Math.min(newImgScale,30));
-        }
       }
     };
 
@@ -4307,12 +4309,10 @@ function switchTab(t){
     const applyPan = (dx, dy)=>{
       if(_alignTarget==='img'){
         _alignImgTx += dx; _alignImgTy += dy;
+      } else if(_alignStage==='corner'){
+        _alignViewTx += dx; _alignViewTy += dy;
       } else {
         _alignMapTx += dx; _alignMapTy += dy;
-        // 모서리 단계에서는 이미지도 동시에 이동
-        if(_alignStage==='corner'){
-          _alignImgTx += dx; _alignImgTy += dy;
-        }
       }
     };
 
@@ -4458,6 +4458,12 @@ function switchTab(t){
   function _screenToTM(cx, cy){
     if(!_alignCanvas) return null;
     if(!skPoints.length) return null;
+    // 모서리 단계 통합뷰 역변환 (스크린 → 캔버스 원본 좌표)
+    let lcx = cx, lcy = cy;
+    if(_alignStage==='corner'){
+      lcx = (cx - _alignViewTx) / _alignViewScale;
+      lcy = (cy - _alignViewTy) / _alignViewScale;
+    }
     const W = _alignCanvas.clientWidth, H = _alignCanvas.clientHeight;
     const xs = skPoints.map(p=>p.x), ys = skPoints.map(p=>p.y);
     const midX = (Math.min(...xs)+Math.max(...xs))/2;
@@ -4469,7 +4475,7 @@ function switchTab(t){
     const cX = W/2 + _alignMapTx;
     const cY = H/2 + _alignMapTy;
     // 회전 역변환
-    const dx = cx - cX, dy = cy - cY;
+    const dx = lcx - cX, dy = lcy - cY;
     const cosR = Math.cos(-_alignMapRot * Math.PI/180);
     const sinR = Math.sin(-_alignMapRot * Math.PI/180);
     const rx = dx*cosR - dy*sinR;
@@ -4530,10 +4536,17 @@ function switchTab(t){
     ctx.scale(dpr,dpr);
     ctx.fillStyle='#0a0e16'; ctx.fillRect(0,0,W,H);
 
-    // 격자
+    // 격자 (배경 - 변환 안 함)
     ctx.strokeStyle='rgba(255,255,255,.03)'; ctx.lineWidth=1;
     for(let i=0;i<W;i+=24){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,H);ctx.stroke();}
     for(let i=0;i<H;i+=24){ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(W,i);ctx.stroke();}
+
+    // ★ 모서리 단계 통합뷰 변환 적용 (이미지+지적도+모서리 모두 함께 줌)
+    if(_alignStage==='corner'){
+      ctx.save();
+      ctx.translate(_alignViewTx, _alignViewTy);
+      ctx.scale(_alignViewScale, _alignViewScale);
+    }
 
     // 이미지 그리기 (회전·축척·이동) - 정렬/모서리 단계 모두
     if(_alignImg && _alignShowImg){
@@ -4601,20 +4614,26 @@ function switchTab(t){
       });
       if(_alignCorners.length>=3) ctx.closePath();
       ctx.fillStyle='rgba(155,125,248,.25)'; ctx.fill();
-      ctx.strokeStyle='#9b7df8'; ctx.lineWidth=2.5;
+      ctx.strokeStyle='#9b7df8'; ctx.lineWidth=2.5/(_alignStage==='corner'?_alignViewScale:1);
       ctx.stroke();
       _alignCorners.forEach((p,i)=>{
         const s = _tmToScreen(p.x, p.y);
-        ctx.beginPath(); ctx.arc(s.x, s.y, 6, 0, Math.PI*2);
+        const r = 6/(_alignStage==='corner'?_alignViewScale:1);
+        ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2);
         ctx.fillStyle = p.snap ? '#fbbf24' : '#9b7df8';
         ctx.fill();
-        ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-        ctx.font='bold 10px sans-serif'; ctx.fillStyle='#fff';
-        ctx.textAlign='center'; ctx.fillText(i+1, s.x, s.y+3);
+        ctx.strokeStyle='#fff'; ctx.lineWidth=1.5/(_alignStage==='corner'?_alignViewScale:1); ctx.stroke();
+        ctx.font='bold '+(10/(_alignStage==='corner'?_alignViewScale:1))+'px sans-serif'; ctx.fillStyle='#fff';
+        ctx.textAlign='center'; ctx.fillText(i+1, s.x, s.y+3/(_alignStage==='corner'?_alignViewScale:1));
       });
     }
 
-    // 조준점 (모서리 단계에서만 화면 중앙에 표시)
+    // ★ 통합뷰 변환 종료
+    if(_alignStage==='corner'){
+      ctx.restore();
+    }
+
+    // 조준점은 변환 밖에서 (화면 중앙 고정)
     if(_alignStage==='corner'){
       const cx = W/2, cy = H/2;
       // 경계점 근접 시 색상 변경 (스냅 미리보기)
@@ -4731,17 +4750,17 @@ function switchTab(t){
     // 수동 정렬 방식: 점 매칭 없이 이미지 변환값 그대로 저장
     _alignStage = 'corner';
     _alignCorners = [];
-    _alignShowImg = true; // 모서리 탭을 위해 이미지 표시
-    _alignTarget = 'map'; // 자동으로 통합 줌 모드 (이미지+지적도 함께)
+    _alignShowImg = true;
+    _alignTarget = 'map';
+    // 통합뷰 변환 초기화 (정렬 그대로 유지하면서 자유롭게 줌/이동 가능)
+    _alignViewScale = 1; _alignViewTx = 0; _alignViewTy = 0;
     document.getElementById('sk-align-stage-align').style.display='none';
     document.getElementById('sk-align-stage-corner').style.display='block';
-    document.getElementById('sk-align-step-txt').textContent='③ 핀치줌으로 확대하여 건물 모서리를 정밀하게 탭하세요';
+    document.getElementById('sk-align-step-txt').textContent='③ 핀치줌으로 확대 → 십자에 모서리 맞춤 → [+ 추가]';
     const tg=document.getElementById('sk-align-img-toggle');
-    if(tg) tg.textContent='🖼 이미지 숨김';
+    if(tg) tg.textContent='🖼 이미지';
     _updateCornerList();
-    // 토글 UI 동기화
     skAlignSetTarget('map');
-    // 레이아웃 안정화 대기 후 그리기 (캔버스 크기 변경 자동 보정)
     requestAnimationFrame(()=>{ requestAnimationFrame(()=>skAlignDraw()); });
   };
 
