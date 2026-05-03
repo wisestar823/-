@@ -1216,10 +1216,16 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <div style="font-size:12px;font-weight:700;">📐 건축한계선 검토</div>
-        <button onclick="skRegOpenFullscreen()"
-          style="font-size:11px;padding:5px 11px;border:1px solid rgba(245,158,11,.3);border-radius:7px;background:rgba(245,158,11,.1);color:#f59e0b;cursor:pointer;font-family:inherit;font-weight:700;">
-          ⛶ 전체화면
-        </button>
+        <div style="display:flex;gap:5px;">
+          <button onclick="if(window._skDetectRoads)window._skDetectRoads()"
+            style="font-size:10px;padding:5px 9px;border:1px solid rgba(34,197,94,.3);border-radius:7px;background:rgba(34,197,94,.1);color:#22c55e;cursor:pointer;font-family:inherit;font-weight:700;">
+            🛣 도로재감지
+          </button>
+          <button onclick="skRegOpenFullscreen()"
+            style="font-size:11px;padding:5px 11px;border:1px solid rgba(245,158,11,.3);border-radius:7px;background:rgba(245,158,11,.1);color:#f59e0b;cursor:pointer;font-family:inherit;font-weight:700;">
+            ⛶ 전체화면
+          </button>
+        </div>
       </div>
       <canvas id="rg-canvas" style="width:100%;height:280px;display:block;background:#050a0f;border-radius:8px;touch-action:none;"></canvas>
       <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;font-size:10px;color:var(--text-muted);">
@@ -2314,6 +2320,10 @@ function switchTab(t){
     // 법적규제 탭 데이터 준비
     if(window._skRegReset) _skRegReset();
     if(window.skRegTabEnter) skRegTabEnter();
+    // 도로변 자동 감지 (브이월드 도로명주소 API)
+    if(window._skDetectRoads){
+      setTimeout(()=>window._skDetectRoads(), 500);
+    }
     showToast('✅ 계산 완료 — 도면보기 확인');
   };
 
@@ -3601,13 +3611,20 @@ function switchTab(t){
     if(!wrap||!tbl) return;
     wrap.style.display='block';
 
-    // 가장 긴 변 = 도로변 추정
-    let roadIdx=0, roadLen=0;
-    for(let i=0;i<skPoints.length;i++){
-      const j=(i+1)%skPoints.length;
-      const len=Math.hypot(skPoints[j].x-skPoints[i].x, skPoints[j].y-skPoints[i].y);
-      if(len>roadLen){roadLen=len; roadIdx=i;}
+    // 도로변 인덱스: API 감지된 모든 도로변 또는 가장 긴 변
+    let allRoadIdx = [];
+    if(typeof _detectedRoadIndices !== 'undefined' && _detectedRoadIndices && _detectedRoadIndices.length){
+      allRoadIdx = _detectedRoadIndices.slice();
+    } else {
+      let roadIdx=0, roadLen=0;
+      for(let i=0;i<skPoints.length;i++){
+        const j=(i+1)%skPoints.length;
+        const len=Math.hypot(skPoints[j].x-skPoints[i].x, skPoints[j].y-skPoints[i].y);
+        if(len>roadLen){roadLen=len; roadIdx=i;}
+      }
+      allRoadIdx = [roadIdx];
     }
+    const roadIdx = allRoadIdx[0]; // 첫 도로변 (호환성)
 
     // 점-선분 거리 함수
     const distToSeg = (px,py,ax,ay,bx,by)=>{
@@ -3629,11 +3646,15 @@ function switchTab(t){
       return {c:i+1, pt:nearPt?nearPt.num:'?', d:minD};
     });
 
-    // 2. 모서리 → 도로변 거리
+    // 2. 모서리 → 도로변 거리 (모든 도로변 중 최단)
     const roadDists = skBldgCoordPts.map((c,i)=>{
-      const a=skPoints[roadIdx], b=skPoints[(roadIdx+1)%skPoints.length];
-      const d=distToSeg(c.x,c.y, a.x,a.y, b.x,b.y);
-      return {c:i+1, d, ok: d>=1.0};
+      let minD = Infinity;
+      allRoadIdx.forEach(rIdx=>{
+        const a=skPoints[rIdx], b=skPoints[(rIdx+1)%skPoints.length];
+        const d=distToSeg(c.x,c.y, a.x,a.y, b.x,b.y);
+        if(d<minD) minD=d;
+      });
+      return {c:i+1, d:minD, ok: minD>=1.0};
     });
     const minRoad = Math.min(...roadDists.map(r=>r.d));
 
@@ -3641,7 +3662,7 @@ function switchTab(t){
     const adjDists = skBldgCoordPts.map((c,i)=>{
       let minD=Infinity, edgeIdx=-1;
       for(let j=0;j<skPoints.length;j++){
-        if(j===roadIdx) continue;
+        if(allRoadIdx.includes(j)) continue;
         const a=skPoints[j], b=skPoints[(j+1)%skPoints.length];
         const d=distToSeg(c.x,c.y, a.x,a.y, b.x,b.y);
         if(d<minD){minD=d; edgeIdx=j;}
@@ -6374,8 +6395,20 @@ initDB()
   }
 
   // ── 도면 그리기 ──
-  // ── 도로변 자동 감지: 가장 긴 변을 도로변으로 가정 ──
+  // 도로변 정보 (API로 감지된 도로변 인덱스 배열)
+  let _detectedRoadIndices = null; // [0, 2, 3] 같은 형태. null이면 미감지
+  let _roadDetectInProgress = false;
+
+  // 도로변 자동 감지: 캐시 사용. 캐시 없으면 가장 긴 변 반환
   function _detectRoadEdge(pts){
+    if(_detectedRoadIndices && _detectedRoadIndices.length){
+      // 첫 번째 도로변을 메인 인덱스로 반환
+      const idx = _detectedRoadIndices[0];
+      const j=(idx+1)%pts.length;
+      const dx=pts[j].x-pts[idx].x, dy=pts[j].y-pts[idx].y;
+      return {idx, length:Math.sqrt(dx*dx+dy*dy), all: _detectedRoadIndices};
+    }
+    // 폴백: 가장 긴 변
     let maxIdx=0, maxLen=0;
     for(let i=0;i<pts.length;i++){
       const j=(i+1)%pts.length;
@@ -6383,8 +6416,110 @@ initDB()
       const len=Math.sqrt(dx*dx+dy*dy);
       if(len>maxLen){ maxLen=len; maxIdx=i; }
     }
-    return {idx:maxIdx, length:maxLen};
+    return {idx:maxIdx, length:maxLen, all:[maxIdx]};
   }
+
+  // 도로변 자동 감지 - 브이월드 도로명주소 API 사용
+  // 각 변의 중점 외측 1m 지점에서 도로명주소가 조회되면 도로변으로 판정
+  function _detectRoadsFromAPI(){
+    if(_roadDetectInProgress) return;
+    if(!skPoints||skPoints.length<3) return;
+    if(!window.proj4){ console.warn('[도로감지] proj4 미로드'); return; }
+
+    _roadDetectInProgress = true;
+    console.log('[도로감지] API 호출 시작');
+
+    const pts = skPoints;
+    const n = pts.length;
+    // 폴리곤 중심
+    const cx = pts.reduce((s,p)=>s+p.x,0)/n;
+    const cy = pts.reduce((s,p)=>s+p.y,0)/n;
+
+    let pendingChecks = n;
+    const roadIndices = [];
+
+    pts.forEach((p, i)=>{
+      const next = pts[(i+1)%n];
+      // 변의 중점
+      const midX = (p.x+next.x)/2;
+      const midY = (p.y+next.y)/2;
+      // 외측 방향: 변의 법선벡터 (중심에서 멀어지는 방향)
+      const dx = midY - cy; // 90도 회전
+      const dy = -(midX - cx);
+      // 단위벡터로 정규화
+      const len = Math.sqrt(dx*dx+dy*dy)||1;
+      // 외측 1.5m
+      const outX = midX + (dx/len)*1.5;
+      const outY = midY + (dy/len)*1.5;
+      // TM5186 → WGS84
+      let lon, lat;
+      try {
+        const wgs = proj4('EPSG:5186','EPSG:4326',[outY, outX]);
+        lon = wgs[0]; lat = wgs[1];
+      } catch(e){
+        console.warn('[도로감지] 좌표 변환 실패', e);
+        pendingChecks--; if(pendingChecks===0) finalize(); return;
+      }
+
+      // 도로명주소 API 호출 (JSONP)
+      const cb = '_roadCb'+i+'_'+Date.now();
+      window[cb] = function(data){
+        try {
+          const status = data?.response?.status;
+          if(status === 'OK'){
+            // 도로명주소 반환됨 → 이 변은 도로변
+            roadIndices.push(i);
+            console.log(`[도로감지] 변${i+1} → 도로변 ✅`,
+              data.response.result?.[0]?.text || '');
+          } else {
+            console.log(`[도로감지] 변${i+1} → 도로 아님`);
+          }
+        } catch(e){ console.warn(e); }
+        delete window[cb];
+        const s = document.getElementById(cb);
+        if(s) s.remove();
+        pendingChecks--;
+        if(pendingChecks===0) finalize();
+      };
+
+      const url = `https://api.vworld.kr/req/address?service=address&request=getAddress&version=2.0&crs=epsg:4326&format=json&type=road&zipcode=false&simple=true&point=${lon},${lat}&key=A512471A-C75B-3644-BCCA-B3DC1D95254D&domain=wisestar823.github.io&callback=${cb}`;
+      const s = document.createElement('script');
+      s.id = cb;
+      s.src = url;
+      s.onerror = ()=>{
+        delete window[cb]; s.remove();
+        pendingChecks--;
+        if(pendingChecks===0) finalize();
+      };
+      // 5초 타임아웃
+      setTimeout(()=>{
+        if(window[cb]){
+          delete window[cb];
+          const ss = document.getElementById(cb); if(ss) ss.remove();
+          pendingChecks--;
+          if(pendingChecks===0) finalize();
+        }
+      }, 5000);
+      document.head.appendChild(s);
+    });
+
+    function finalize(){
+      _roadDetectInProgress = false;
+      if(roadIndices.length){
+        _detectedRoadIndices = roadIndices.sort((a,b)=>a-b);
+        console.log('[도로감지] 완료 - 도로변 인덱스:', _detectedRoadIndices);
+        showToast('🛣 도로변 '+roadIndices.length+'개 자동 감지됨');
+      } else {
+        console.log('[도로감지] 도로변 미발견 - 가장 긴 변 사용');
+        _detectedRoadIndices = null;
+      }
+      // 도면 갱신
+      if(window.skDrawRender) skDrawRender();
+      if(window.skRegDrawCanvas) skRegDrawCanvas();
+      if(window.skUpdateCoordDistTable) skUpdateCoordDistTable();
+    }
+  }
+  window._skDetectRoads = _detectRoadsFromAPI;
 
   // ── 폴리곤 안쪽으로 이격된 경로 계산 ──
   function _offsetPolygon(pts, dist){
@@ -6427,35 +6562,42 @@ initDB()
     const cX=W/2+ox, cY=H/2+oy;
     const tc=(x,y)=>[cX+(y-midY)*s, cY-(x-midX)*s];
 
-    // ── 1. 도로변 감지 (가장 긴 변) ──
+    // ── 1. 도로변 감지 (API 기반 또는 가장 긴 변) ──
     const roadEdge=_detectRoadEdge(pts);
     const roadIdx=roadEdge.idx;
     const roadIdx2=(roadIdx+1)%pts.length;
+    // 모든 도로변 인덱스 (API 감지된 경우 여러 개)
+    const allRoadIndices = roadEdge.all || [roadIdx];
 
-    // ── 2. 도로 표시 (도로변 외부) ──
-    // 도로변 중점 외부 방향 추정
+    // ── 2. 도로 표시 (감지된 모든 도로변) ──
     const cx=pts.reduce((s,p)=>s+p.x,0)/pts.length;
     const cy=pts.reduce((s,p)=>s+p.y,0)/pts.length;
-    const rx=(pts[roadIdx].x+pts[roadIdx2].x)/2;
-    const ry=(pts[roadIdx].y+pts[roadIdx2].y)/2;
-    const outDx=(rx-cx), outDy=(ry-cy);
-    const outLen=Math.sqrt(outDx*outDx+outDy*outDy)||1;
     const roadW=4; // 4m 도로 가정
-    const ox1=outDx/outLen*roadW, oy1=outDy/outLen*roadW;
 
-    // 도로 영역 (어두운 회색)
-    ctx.beginPath();
-    const[r1x,r1y]=tc(pts[roadIdx].x, pts[roadIdx].y);
-    const[r2x,r2y]=tc(pts[roadIdx2].x, pts[roadIdx2].y);
-    const[r3x,r3y]=tc(pts[roadIdx2].x+ox1, pts[roadIdx2].y+oy1);
-    const[r4x,r4y]=tc(pts[roadIdx].x+ox1, pts[roadIdx].y+oy1);
-    ctx.moveTo(r1x,r1y); ctx.lineTo(r2x,r2y); ctx.lineTo(r3x,r3y); ctx.lineTo(r4x,r4y); ctx.closePath();
-    ctx.fillStyle='rgba(120,120,140,.25)'; ctx.fill();
-    ctx.strokeStyle='rgba(180,180,200,.5)'; ctx.lineWidth=1; ctx.stroke();
-    // 도로 라벨
-    const rmx=(r1x+r3x)/2, rmy=(r1y+r3y)/2;
-    ctx.font='bold 10px sans-serif'; ctx.fillStyle='rgba(255,255,255,.6)';
-    ctx.textAlign='center'; ctx.fillText('도로', rmx, rmy);
+    allRoadIndices.forEach((rIdx, idx)=>{
+      const rIdx2 = (rIdx+1)%pts.length;
+      const rx=(pts[rIdx].x+pts[rIdx2].x)/2;
+      const ry=(pts[rIdx].y+pts[rIdx2].y)/2;
+      const outDx=(rx-cx), outDy=(ry-cy);
+      const outLen=Math.sqrt(outDx*outDx+outDy*outDy)||1;
+      const ox1=outDx/outLen*roadW, oy1=outDy/outLen*roadW;
+
+      // 도로 영역 (어두운 회색)
+      ctx.beginPath();
+      const[r1x,r1y]=tc(pts[rIdx].x, pts[rIdx].y);
+      const[r2x,r2y]=tc(pts[rIdx2].x, pts[rIdx2].y);
+      const[r3x,r3y]=tc(pts[rIdx2].x+ox1, pts[rIdx2].y+oy1);
+      const[r4x,r4y]=tc(pts[rIdx].x+ox1, pts[rIdx].y+oy1);
+      ctx.moveTo(r1x,r1y); ctx.lineTo(r2x,r2y); ctx.lineTo(r3x,r3y); ctx.lineTo(r4x,r4y); ctx.closePath();
+      ctx.fillStyle='rgba(120,120,140,.25)'; ctx.fill();
+      ctx.strokeStyle='rgba(180,180,200,.5)'; ctx.lineWidth=1; ctx.stroke();
+      // 도로 라벨 (첫 도로에만)
+      if(idx===0){
+        const rmx=(r1x+r3x)/2, rmy=(r1y+r3y)/2;
+        ctx.font='bold 10px sans-serif'; ctx.fillStyle='rgba(255,255,255,.6)';
+        ctx.textAlign='center'; ctx.fillText('도로', rmx, rmy);
+      }
+    });
 
     // ── 3. 필지 ──
     ctx.beginPath();
@@ -6464,26 +6606,29 @@ initDB()
     ctx.fillStyle='rgba(59,130,246,.06)'; ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=2; ctx.stroke();
 
-    // ── 4. 도로경계 1m 이격선 (도로변에만) ──
+    // ── 4. 도로경계 1m 이격선 (감지된 모든 도로변) ──
     const roadOffset = _offsetPolygon(pts, 1);
     ctx.setLineDash([6,3]);
     ctx.strokeStyle='#ff4560'; ctx.lineWidth=2;
-    ctx.beginPath();
-    const[r1ox,r1oy]=tc(roadOffset[roadIdx].x, roadOffset[roadIdx].y);
-    const[r2ox,r2oy]=tc(roadOffset[roadIdx2].x, roadOffset[roadIdx2].y);
-    ctx.moveTo(r1ox,r1oy); ctx.lineTo(r2ox,r2oy); ctx.stroke();
+    allRoadIndices.forEach((rIdx, idx)=>{
+      const rIdx2 = (rIdx+1)%pts.length;
+      const[r1ox,r1oy]=tc(roadOffset[rIdx].x, roadOffset[rIdx].y);
+      const[r2ox,r2oy]=tc(roadOffset[rIdx2].x, roadOffset[rIdx2].y);
+      ctx.beginPath();
+      ctx.moveTo(r1ox,r1oy); ctx.lineTo(r2ox,r2oy); ctx.stroke();
+      // 라벨 (각 도로변에)
+      const lblX=(r1ox+r2ox)/2, lblY=(r1oy+r2oy)/2;
+      ctx.fillStyle='#ff4560'; ctx.font='bold 9px sans-serif';
+      ctx.fillText('도로 1m', lblX, lblY-4);
+    });
     ctx.setLineDash([]);
-    // 라벨
-    const lblX=(r1ox+r2ox)/2, lblY=(r1oy+r2oy)/2;
-    ctx.fillStyle='#ff4560'; ctx.font='bold 9px sans-serif';
-    ctx.fillText('도로 1m', lblX, lblY-4);
 
-    // ── 5. 인접대지 0.5m 이격선 (도로변 외) ──
+    // ── 5. 인접대지 0.5m 이격선 (도로변이 아닌 변) ──
     const adjOffset = _offsetPolygon(pts, 0.5);
     ctx.setLineDash([3,2]);
     ctx.strokeStyle='#22c55e'; ctx.lineWidth=1.5;
     for(let i=0;i<pts.length;i++){
-      if(i===roadIdx) continue;
+      if(allRoadIndices.includes(i)) continue;
       const j=(i+1)%pts.length;
       const[ax,ay]=tc(adjOffset[i].x, adjOffset[i].y);
       const[bx,by]=tc(adjOffset[j].x, adjOffset[j].y);
@@ -6524,7 +6669,9 @@ initDB()
     // ── 7. 건축 가능 영역 (모든 이격선 안쪽) ──
     // 도로 1m + 인접 0.5m로 폴리곤 축소
     const buildArea = pts.map((p,i)=>{
-      const isRoad = (i===roadIdx || i===roadIdx2);
+      // 이 점이 도로변에 인접한지: 양 옆 변 중 하나라도 도로변인지
+      const prevIdx = (i-1+pts.length)%pts.length;
+      const isRoad = allRoadIndices.includes(i) || allRoadIndices.includes(prevIdx);
       const dist = isRoad ? 1.0 : 0.5;
       const dx=cx-p.x, dy=cy-p.y;
       const len=Math.sqrt(dx*dx+dy*dy)||1;
