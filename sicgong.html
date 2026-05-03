@@ -3651,10 +3651,22 @@ function switchTab(t){
     const minAdj = Math.min(...adjDists.map(r=>r.d));
 
     // 4. 모서리 → 북쪽 변 거리 (일조)
-    let northIdx=0, maxN=-Infinity;
-    skPoints.forEach((p,i)=>{ if(p.x>maxN){maxN=p.x; northIdx=i;} });
+    // 정확한 북쪽 변 찾기: 필지 중심점 기준으로 가장 북쪽(X 최대)에 있고 동서 방향(Y축 변화)이 큰 변
+    const cxAll = skPoints.reduce((s,p)=>s+p.x,0)/skPoints.length;
+    let northEdgeIdx = 0, bestScore = -Infinity;
+    for(let i=0;i<skPoints.length;i++){
+      const a = skPoints[i], b = skPoints[(i+1)%skPoints.length];
+      const midX_e = (a.x+b.x)/2;
+      const dy_e = Math.abs(b.y-a.y); // 동서 방향 길이
+      const dx_e = Math.abs(b.x-a.x); // 남북 방향 길이
+      // 필지 중심보다 북쪽(midX_e > cxAll)이면서 동서 방향(dy)이 큰 변일수록 점수 높음
+      if(midX_e > cxAll){
+        const score = (midX_e - cxAll) * 2 + dy_e - dx_e;
+        if(score > bestScore){ bestScore = score; northEdgeIdx = i; }
+      }
+    }
     const northDists = skBldgCoordPts.map((c,i)=>{
-      const a=skPoints[northIdx], b=skPoints[(northIdx+1)%skPoints.length];
+      const a=skPoints[northEdgeIdx], b=skPoints[(northEdgeIdx+1)%skPoints.length];
       return {c:i+1, d:distToSeg(c.x,c.y, a.x,a.y, b.x,b.y)};
     });
     const minNorth = Math.min(...northDists.map(r=>r.d));
@@ -4653,8 +4665,8 @@ function switchTab(t){
       ctx.moveTo(cx, cy+6); ctx.lineTo(cx, cy+18);
       ctx.stroke();
 
-      // 중심 점
-      ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2);
+      // 중심 점 (작게)
+      ctx.beginPath(); ctx.arc(cx, cy, 1.5, 0, Math.PI*2);
       ctx.fillStyle = color; ctx.fill();
       ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke();
 
@@ -6504,9 +6516,20 @@ initDB()
     ctx.setLineDash([]);
 
     // ── 6. 정북 일조사선 (층수별 동적) ──
-    let northIdx=0, maxN=-Infinity;
-    pts.forEach((p,i)=>{ if(p.x>maxN){maxN=p.x; northIdx=i;} });
-    const northIdx2=(northIdx+1)%pts.length;
+    // 필지 중심 기준 북쪽이고 동서 방향이 가장 긴 변 찾기
+    const cxLot = pts.reduce((s,p)=>s+p.x,0)/pts.length;
+    let northIdx = 0, bestNorthScore = -Infinity;
+    for(let i=0;i<pts.length;i++){
+      const a = pts[i], b = pts[(i+1)%pts.length];
+      const midX_e = (a.x+b.x)/2;
+      const dy_e = Math.abs(b.y-a.y);
+      const dx_e = Math.abs(b.x-a.x);
+      if(midX_e > cxLot){
+        const score = (midX_e - cxLot) * 2 + dy_e - dx_e;
+        if(score > bestNorthScore){ bestNorthScore = score; northIdx = i; }
+      }
+    }
+    const northIdx2 = (northIdx+1)%pts.length;
     // 층수에 따른 이격거리 계산
     const floorH = (_solarFloor||2)*3;
     const solarDist = floorH<=10 ? 1.5 : floorH/2;
