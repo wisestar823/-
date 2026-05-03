@@ -4404,15 +4404,7 @@ function switchTab(t){
     if(_alignStage!=='corner') return;
     const tm = _screenToTM(cx, cy);
     if(!tm) return;
-    let nearest=null, minD=Infinity;
-    skPoints.forEach(p=>{
-      const d=Math.hypot(p.x-tm.x, p.y-tm.y);
-      if(d<minD){minD=d; nearest=p;}
-    });
-    const target = (minD<1.5 && nearest)
-      ? {x:nearest.x, y:nearest.y, snap:true, snapTo:nearest.num||(skPoints.indexOf(nearest)+1)}
-      : {x:tm.x, y:tm.y, snap:false};
-    _alignCorners.push(target);
+    _alignCorners.push({x:tm.x, y:tm.y});
     _updateCornerList();
     skAlignDraw();
   }
@@ -4622,7 +4614,7 @@ function switchTab(t){
         const s = _tmToScreen(p.x, p.y);
         const r = 6/(_alignStage==='corner'?_alignViewScale:1);
         ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2);
-        ctx.fillStyle = p.snap ? '#fbbf24' : '#9b7df8';
+        ctx.fillStyle = '#9b7df8';
         ctx.fill();
         ctx.strokeStyle='#fff'; ctx.lineWidth=1.5/(_alignStage==='corner'?_alignViewScale:1); ctx.stroke();
         ctx.font='bold '+(10/(_alignStage==='corner'?_alignViewScale:1))+'px sans-serif'; ctx.fillStyle='#fff';
@@ -4638,17 +4630,7 @@ function switchTab(t){
     // 조준점은 변환 밖에서 (화면 중앙 고정)
     if(_alignStage==='corner'){
       const cx = W/2, cy = H/2;
-      // 경계점 근접 시 색상 변경 (스냅 미리보기)
-      const tm = _screenToTM(cx, cy);
-      let nearD = Infinity;
-      if(tm && skPoints.length){
-        skPoints.forEach(p=>{
-          const d=Math.hypot(p.x-tm.x, p.y-tm.y);
-          if(d<nearD) nearD=d;
-        });
-      }
-      const isSnap = nearD < 1.5;
-      const color = isSnap ? '#fbbf24' : '#06c8d8';
+      const color = '#06c8d8';
 
       // 외부 원 (반투명)
       ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI*2);
@@ -4669,12 +4651,6 @@ function switchTab(t){
       ctx.beginPath(); ctx.arc(cx, cy, 1.5, 0, Math.PI*2);
       ctx.fillStyle = color; ctx.fill();
       ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke();
-
-      // 스냅 표시
-      if(isSnap){
-        ctx.font='bold 11px sans-serif'; ctx.fillStyle='#fbbf24';
-        ctx.textAlign='center'; ctx.fillText('🔗 스냅', cx, cy-30);
-      }
     }
   };
 
@@ -4816,9 +4792,9 @@ function switchTab(t){
     const wrap = document.getElementById('sk-align-corner-list');
     if(!wrap) return;
     wrap.innerHTML = _alignCorners.map((p,i)=>{
-      const color = p.snap ? '#fbbf24' : '#9b7df8';
+      const color = '#9b7df8';
       return `<span style="padding:3px 5px 3px 9px;background:rgba(155,125,248,.15);border:1px solid ${color};border-radius:5px;color:${color};font-weight:700;display:inline-flex;align-items:center;gap:5px;">
-        ${i+1}${p.snap?' 🔗':''}
+        ${i+1}
         <button onclick="window.skAlignDelCorner(${i})" style="border:none;background:rgba(0,0,0,.3);color:${color};width:16px;height:16px;border-radius:3px;font-size:10px;cursor:pointer;padding:0;line-height:14px;">✕</button>
       </span>`;
     }).join('') || '<span style="color:#9ca3af;font-size:10px;">건물 모서리를 탭하세요 (3개 이상)</span>';
