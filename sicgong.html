@@ -1339,11 +1339,11 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
         <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
           <span style="font-size:11px;color:#9ca3af;width:42px;">회전</span>
           <button onclick="skAlignRotate(-1)" style="padding:4px 7px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">↺-1°</button>
-          <button onclick="skAlignRotate(-0.5)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">-0.5°</button>
-          <input type="range" id="sk-align-rot" min="-180" max="180" value="0" step="0.5"
+          <button onclick="skAlignRotate(-0.1)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">-0.1°</button>
+          <input type="range" id="sk-align-rot" min="-180" max="180" value="0" step="0.1"
             oninput="skAlignSetRot(this.value)"
             style="flex:1;accent-color:#06c8d8;">
-          <button onclick="skAlignRotate(0.5)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">+0.5°</button>
+          <button onclick="skAlignRotate(0.1)" style="padding:4px 6px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">+0.1°</button>
           <button onclick="skAlignRotate(1)" style="padding:4px 7px;border:1px solid #1e2a3e;border-radius:6px;background:#0d1117;color:#06c8d8;font-size:9px;cursor:pointer;font-weight:700;">↻+1°</button>
           <span id="sk-align-rot-val" style="font-size:10px;color:#06c8d8;width:38px;text-align:right;">0.0°</span>
         </div>
@@ -1388,7 +1388,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
           <button onclick="skAlignBack()" style="flex:1;padding:7px;border:1px solid #1e2a3e;border-radius:7px;background:#0d1117;color:#9ca3af;font-size:10px;font-weight:700;cursor:pointer;">← 정렬</button>
         </div>
         <button onclick="skAlignApply()" style="width:100%;padding:11px;border:none;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:12px;font-weight:800;cursor:pointer;">✅ 배치 완료 → 도면에 적용</button>
-        <div id="sk-align-dist-info" style="margin-top:8px;padding:9px 11px;background:rgba(155,125,248,.06);border:1px solid rgba(155,125,248,.15);border-radius:7px;font-size:10px;color:#9ca3af;line-height:1.8;display:none;"></div>
+        <div id="sk-align-dist-info" style="margin-top:8px;padding:9px 11px;background:rgba(155,125,248,.06);border:1px solid rgba(155,125,248,.15);border-radius:7px;font-size:10px;color:#9ca3af;line-height:1.8;min-height:60px;">모서리 2개 이상 추가 시 거리 정보 표시</div>
       </div>
     </div>
 
@@ -4516,14 +4516,13 @@ function switchTab(t){
     const dpr = window.devicePixelRatio||1;
     const W = c.clientWidth, H = c.clientHeight;
 
-    // 캔버스 크기 변경 감지 → 변환값 비율 보정
-    if(_alignLastW > 0 && _alignLastH > 0 && (W !== _alignLastW || H !== _alignLastH)){
+    // 캔버스 크기 변경 감지 → 변환값 비율 보정 (정렬 단계만)
+    // 모서리 단계에선 통합뷰 변환이 캔버스 크기와 독립적이므로 보정 불필요
+    if(_alignStage==='align' && _alignLastW > 0 && _alignLastH > 0 && (W !== _alignLastW || H !== _alignLastH)){
       const dx = (W - _alignLastW)/2;
       const dy = (H - _alignLastH)/2;
-      // 화면 중심 기준으로 모든 좌표 평행이동
       _alignImgTx += dx;
       _alignImgTy += dy;
-      // 이미지 점 (스크린 좌표)도 보정
       _alignPtsImg.forEach(p=>{
         if(p.cx !== undefined) p.cx += dx;
         if(p.cy !== undefined) p.cy += dy;
@@ -4816,38 +4815,37 @@ function switchTab(t){
       </span>`;
     }).join('') || '<span style="color:#9ca3af;font-size:10px;">건물 모서리를 탭하세요 (3개 이상)</span>';
 
-    // 거리 정보
+    // 거리 정보 (영역은 항상 표시 - 캔버스 크기 변동 방지)
     const info = document.getElementById('sk-align-dist-info');
-    if(info && _alignCorners.length>=2){
-      let html='';
-      // 모서리간 거리
-      const distances = [];
-      for(let i=0;i<_alignCorners.length;i++){
-        const j=(i+1)%_alignCorners.length;
-        if(j===0 && _alignCorners.length<3) break;
-        const d = Math.hypot(_alignCorners[j].x-_alignCorners[i].x, _alignCorners[j].y-_alignCorners[i].y);
-        distances.push({from:i+1, to:j+1, d:d.toFixed(2)});
-      }
-      html += '<div style="font-weight:700;color:#9b7df8;margin-bottom:4px;">📏 모서리 간격</div>';
-      html += distances.map(d=>`${d.from}→${d.to}: <strong style="color:#fbbf24;">${d.d}m</strong>`).join(' · ');
-      // 경계점까지 최단거리
-      if(skPoints.length){
-        let minD = Infinity, minPair=null;
-        _alignCorners.forEach((c,ci)=>{
-          skPoints.forEach((p,pi)=>{
-            const d = Math.hypot(c.x-p.x, c.y-p.y);
-            if(d<minD){ minD=d; minPair={c:ci+1, p:pi+1, d}; }
-          });
-        });
-        if(minPair){
-          html += `<div style="margin-top:4px;font-weight:700;color:#22c55e;">↔️ 최단 이격: 모서리${minPair.c} → 경계점${minPair.p}</div>`;
-          html += `<strong style="color:#22c55e;">${minPair.d.toFixed(2)}m</strong>`;
+    if(info){
+      if(_alignCorners.length>=2){
+        let html='';
+        const distances = [];
+        for(let i=0;i<_alignCorners.length;i++){
+          const j=(i+1)%_alignCorners.length;
+          if(j===0 && _alignCorners.length<3) break;
+          const d = Math.hypot(_alignCorners[j].x-_alignCorners[i].x, _alignCorners[j].y-_alignCorners[i].y);
+          distances.push({from:i+1, to:j+1, d:d.toFixed(2)});
         }
+        html += '<div style="font-weight:700;color:#9b7df8;margin-bottom:4px;">📏 모서리 간격</div>';
+        html += distances.map(d=>`${d.from}→${d.to}: <strong style="color:#fbbf24;">${d.d}m</strong>`).join(' · ');
+        if(skPoints.length){
+          let minD = Infinity, minPair=null;
+          _alignCorners.forEach((c,ci)=>{
+            skPoints.forEach((p,pi)=>{
+              const d = Math.hypot(c.x-p.x, c.y-p.y);
+              if(d<minD){ minD=d; minPair={c:ci+1, p:pi+1, d}; }
+            });
+          });
+          if(minPair){
+            html += `<div style="margin-top:4px;font-weight:700;color:#22c55e;">↔️ 최단 이격: 모서리${minPair.c} → 경계점${minPair.p}</div>`;
+            html += `<strong style="color:#22c55e;">${minPair.d.toFixed(2)}m</strong>`;
+          }
+        }
+        info.innerHTML = html;
+      } else {
+        info.innerHTML = '<span style="color:#9ca3af;font-size:10px;">모서리 2개 이상 추가 시 거리 정보 표시</span>';
       }
-      info.style.display='block';
-      info.innerHTML = html;
-    } else if(info){
-      info.style.display='none';
     }
   }
 
