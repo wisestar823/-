@@ -4228,6 +4228,7 @@ function switchTab(t){
     _alignImgScale=1; _alignImgTx=0; _alignImgTy=0; _alignImgRot=0;
     _alignMapScale=1; _alignMapTx=0; _alignMapTy=0;
     _alignViewScale=1; _alignViewTx=0; _alignViewTy=0;
+    _alignFrozenW=0; _alignFrozenH=0;
     _alignAlpha=0.55;
     _alignTarget='img';
     _alignLastW=0; _alignLastH=0; // 캔버스 크기 추적 초기화
@@ -4455,6 +4456,9 @@ function switchTab(t){
     };
   }
 
+  // 정렬 시점 캔버스 크기를 기억 (이후 크기 변동에도 동일 좌표계 유지)
+  let _alignFrozenW = 0, _alignFrozenH = 0;
+
   function _screenToTM(cx, cy){
     if(!_alignCanvas) return null;
     if(!skPoints.length) return null;
@@ -4464,7 +4468,9 @@ function switchTab(t){
       lcx = (cx - _alignViewTx) / _alignViewScale;
       lcy = (cy - _alignViewTy) / _alignViewScale;
     }
-    const W = _alignCanvas.clientWidth, H = _alignCanvas.clientHeight;
+    // 정렬 시점 동결된 W, H 사용 (캔버스 크기 변동 무관)
+    const W = _alignFrozenW || _alignCanvas.clientWidth;
+    const H = _alignFrozenH || _alignCanvas.clientHeight;
     const xs = skPoints.map(p=>p.x), ys = skPoints.map(p=>p.y);
     const midX = (Math.min(...xs)+Math.max(...xs))/2;
     const midY = (Math.min(...ys)+Math.max(...ys))/2;
@@ -4474,21 +4480,19 @@ function switchTab(t){
     const sc = base * _alignMapScale;
     const cX = W/2 + _alignMapTx;
     const cY = H/2 + _alignMapTy;
-    // 회전 역변환
     const dx = lcx - cX, dy = lcy - cY;
     const cosR = Math.cos(-_alignMapRot * Math.PI/180);
     const sinR = Math.sin(-_alignMapRot * Math.PI/180);
     const rx = dx*cosR - dy*sinR;
     const ry = dx*sinR + dy*cosR;
-    return {
-      x: midX - ry/sc,
-      y: midY + rx/sc
-    };
+    return { x: midX - ry/sc, y: midY + rx/sc };
   }
 
   function _tmToScreen(x, y){
     if(!_alignCanvas) return {x:0,y:0};
-    const W = _alignCanvas.clientWidth, H = _alignCanvas.clientHeight;
+    // 정렬 시점 동결된 W, H 사용 (캔버스 크기 변동 무관)
+    const W = _alignFrozenW || _alignCanvas.clientWidth;
+    const H = _alignFrozenH || _alignCanvas.clientHeight;
     const xs = skPoints.map(p=>p.x), ys = skPoints.map(p=>p.y);
     const midX = (Math.min(...xs)+Math.max(...xs))/2;
     const midY = (Math.min(...ys)+Math.max(...ys))/2;
@@ -4498,10 +4502,8 @@ function switchTab(t){
     const sc = base * _alignMapScale;
     const cX = W/2 + _alignMapTx;
     const cY = H/2 + _alignMapTy;
-    // 기본 좌표 → 스크린
     const lx = (y-midY)*sc;
     const ly = -(x-midX)*sc;
-    // 회전 적용
     const cosR = Math.cos(_alignMapRot * Math.PI/180);
     const sinR = Math.sin(_alignMapRot * Math.PI/180);
     return { x: cX + lx*cosR - ly*sinR, y: cY + lx*sinR + ly*cosR };
@@ -4516,18 +4518,7 @@ function switchTab(t){
     const dpr = window.devicePixelRatio||1;
     const W = c.clientWidth, H = c.clientHeight;
 
-    // 캔버스 크기 변경 감지 → 변환값 비율 보정 (정렬 단계만)
-    // 모서리 단계에선 통합뷰 변환이 캔버스 크기와 독립적이므로 보정 불필요
-    if(_alignStage==='align' && _alignLastW > 0 && _alignLastH > 0 && (W !== _alignLastW || H !== _alignLastH)){
-      const dx = (W - _alignLastW)/2;
-      const dy = (H - _alignLastH)/2;
-      _alignImgTx += dx;
-      _alignImgTy += dy;
-      _alignPtsImg.forEach(p=>{
-        if(p.cx !== undefined) p.cx += dx;
-        if(p.cy !== undefined) p.cy += dy;
-      });
-    }
+    // 캔버스 크기 추적만 (보정은 하지 않음 - 변환값은 사용자가 명시적으로만 변경)
     _alignLastW = W; _alignLastH = H;
 
     c.width = W*dpr; c.height = H*dpr;
@@ -4746,13 +4737,16 @@ function switchTab(t){
   };
 
   window.skAlignConfirm = function(){
-    // 수동 정렬 방식: 점 매칭 없이 이미지 변환값 그대로 저장
     _alignStage = 'corner';
     _alignCorners = [];
     _alignShowImg = true;
     _alignTarget = 'map';
-    // 통합뷰 변환 초기화 (정렬 그대로 유지하면서 자유롭게 줌/이동 가능)
     _alignViewScale = 1; _alignViewTx = 0; _alignViewTy = 0;
+    // 정렬 시점 캔버스 크기를 동결 → 이후 컨트롤 영역 변동에도 좌표계 유지
+    if(_alignCanvas){
+      _alignFrozenW = _alignCanvas.clientWidth;
+      _alignFrozenH = _alignCanvas.clientHeight;
+    }
     document.getElementById('sk-align-stage-align').style.display='none';
     document.getElementById('sk-align-stage-corner').style.display='block';
     document.getElementById('sk-align-step-txt').textContent='③ 핀치줌으로 확대 → 십자에 모서리 맞춤 → [+ 추가]';
@@ -4773,6 +4767,8 @@ function switchTab(t){
 
   window.skAlignBack = function(){
     _alignStage = 'align';
+    // 동결 해제 - 정렬 단계는 실시간 W/H 사용
+    _alignFrozenW = 0; _alignFrozenH = 0;
     document.getElementById('sk-align-stage-align').style.display='block';
     document.getElementById('sk-align-stage-corner').style.display='none';
     document.getElementById('sk-align-step-txt').textContent='② 핀치줌·드래그·회전으로 배치도를 지적도에 맞추세요';
