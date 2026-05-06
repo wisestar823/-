@@ -5296,7 +5296,7 @@ let phSlots=[],phEditId=null,phIdx=0;
 const phGet=id=>phSlots.find(s=>s.id===id);
 const phEsc=s=>(s||'').replace(/"/g,'&quot;');
 function phMkSlot(src){phSlots.push({id:'ph'+(++phIdx),src:src||null,f0:'양호',f1:'현장전경',f2:'',bt:undefined,bl:undefined});}
-function phCompressImg(src,cb){const img=new Image();img.onload=function(){const MAX=1200;let w=img.width,h=img.height;if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',.78));};img.src=src;}
+function phCompressImg(src,cb){const img=new Image();img.onload=function(){const MAX=900;let w=img.width,h=img.height;if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);cb(c.toDataURL('image/jpeg',.75));};img.onerror=function(){cb(src);};img.src=src;}
 function phOnFiles(inp){const files=[...inp.files];if(!files.length)return;phShowProg('사진 불러오는 중...');phUpdProg(0,files.length);let done=0;const res=new Array(files.length);files.forEach((f,i)=>{const r=new FileReader();r.onload=e=>{phCompressImg(e.target.result,c=>{res[i]=c;phUpdProg(++done,files.length);if(done===files.length){res.forEach(s=>phMkSlot(s));phRebuild();phHideProg();}});};r.readAsDataURL(f);});inp.value='';}
 function phOnEditFile(inp){if(!inp.files[0]||!phEditId)return;const r=new FileReader();r.onload=e=>{phCompressImg(e.target.result,c=>{const sl=phGet(phEditId);if(sl)sl.src=c;phRebuild();phCloseSh();});};r.readAsDataURL(inp.files[0]);inp.value='';}
 function phAddBlank(){phMkSlot(null);phMkSlot(null);phRebuild();}
@@ -5347,9 +5347,38 @@ function phDoPrint(){
   const eC=()=>`<div style="width:100%;border:1.5px solid #333;box-sizing:border-box;"><div style="height:9mm;border-bottom:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:11pt;font-weight:700;letter-spacing:.6em;font-family:sans-serif;">사 진 대 지</div><div style="height:104mm;border-bottom:1.5px solid #333;"></div><div style="height:9mm;border-bottom:1.5px solid #333;display:flex;align-items:stretch;"><div style="width:18mm;flex-shrink:0;border-right:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700;font-family:sans-serif;">상&nbsp;태</div><div style="flex:1;border-right:1.5px solid #333;"></div><div style="width:18mm;flex-shrink:0;border-right:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700;font-family:sans-serif;">위&nbsp;치</div><div style="flex:1;"></div></div><div style="height:9mm;border-bottom:1.5px solid #333;display:flex;align-items:stretch;"><div style="width:18mm;flex-shrink:0;border-right:1.5px solid #333;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700;font-family:sans-serif;">내&nbsp;용</div><div style="flex:1;"></div></div></div>`;
   const pairs=[];for(let i=0;i<phSlots.length;i+=2)pairs.push([phSlots[i],phSlots[i+1]||null]);
   const pages=pairs.map(p=>`<div class="a4"><div class="cards"><div class="cw" style="border-bottom:1.5px solid #333;">${cH(p[0])}</div><div class="gap"></div><div class="cw">${p[1]?cH(p[1]):eC()}</div></div></div>`).join('');
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><'+'style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}body{background:#666;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;display:flex;flex-direction:column;align-items:center;padding:10mm 0;gap:10mm;}.a4{width:190mm;height:287mm;background:#fff;display:flex;flex-direction:column;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.5);flex-shrink:0;overflow:hidden;}.cards{width:190mm;height:287mm;display:flex;flex-direction:column;margin-top:5mm;}.cw{width:100%;height:131mm;flex-shrink:0;overflow:hidden;}.gap{width:100%;height:5mm;background:#fff;flex-shrink:0;}@page{size:A4 portrait;margin:0}@media print{body{background:#fff;padding:0;gap:0;}.a4{box-shadow:none;page-break-after:always;margin:0;}.cards{width:190mm;height:287mm;}}<'+'/'+'style></head><body>${pages}<'+'script>window.onload=function(){var imgs=document.images,total=imgs.length,loaded=0;function tryPrint(){if(++loaded>=total)setTimeout(function(){window.print();},400);}if(total===0){setTimeout(function(){window.print();},400);return;}for(var i=0;i<total;i++){if(imgs[i].complete){tryPrint();}else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}}<\/script></body></html>`;
-  const win=window.open('','_blank');if(!win){alert('팝업이 차단되었어요.');return;}
-  win.document.open();win.document.write(html);win.document.close();
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
+    +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
+    +'body{background:#666;font-family:\'Apple SD Gothic Neo\',\'Noto Sans KR\',sans-serif;display:flex;flex-direction:column;align-items:center;padding:10mm 0;gap:10mm;}'
+    +'.a4{width:190mm;height:287mm;background:#fff;display:flex;flex-direction:column;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.5);flex-shrink:0;overflow:hidden;}'
+    +'.cards{width:190mm;height:287mm;display:flex;flex-direction:column;margin-top:5mm;}'
+    +'.cw{width:100%;height:131mm;flex-shrink:0;overflow:hidden;}'
+    +'.gap{width:100%;height:5mm;background:#fff;flex-shrink:0;}'
+    +'@page{size:A4 portrait;margin:0}'
+    +'@media print{body{background:#fff;padding:0;gap:0;}.a4{box-shadow:none;page-break-after:always;margin:0;}.cards{width:190mm;height:287mm;}}'
+    +'</style></head><body>'
+    +pages
+    +'<scr'+'ipt>(function(){function go(){var imgs=document.images,total=imgs.length,loaded=0;function tryPrint(){if(++loaded>=total){setTimeout(function(){try{window.focus();}catch(e){}window.print();},600);}}if(total===0){setTimeout(function(){try{window.focus();}catch(e){}window.print();},600);return;}for(var i=0;i<total;i++){if(imgs[i].complete&&imgs[i].naturalWidth>0){tryPrint();}else{imgs[i].onload=tryPrint;imgs[i].onerror=tryPrint;}}}if(document.readyState===\'complete\')go();else window.addEventListener(\'load\',go);})();</scr'+'ipt>'
+    +'</body></html>';
+
+  // Blob URL 방식 (모바일 호환성 우수 - dujon_v7 패턴)
+  try {
+    const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if(!win){
+      URL.revokeObjectURL(url);
+      alert('팝업이 차단되었어요. 브라우저 팝업 차단을 해제해주세요.');
+      return;
+    }
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(e){} }, 60000);
+  } catch(e) {
+    const win = window.open('','_blank');
+    if(!win){alert('팝업이 차단되었어요.');return;}
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
