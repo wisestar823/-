@@ -48,6 +48,26 @@ input:focus{border-color:var(--blue);}
 .role-admin{background:rgba(239,68,68,.15);color:var(--red);}
 .role-viewer{background:rgba(59,130,246,.15);color:var(--blue);}
 .user-del{padding:4px 10px;border:1px solid rgba(239,68,68,.25);border-radius:5px;background:rgba(239,68,68,.08);color:var(--red);font-size:10px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+
+/* ── 📁 공정자료 탭 CSS (신규 블록) ── */
+.mat-fitem{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px;margin-bottom:6px;}
+.mat-fthumb{width:40px;height:40px;border-radius:6px;background:var(--s1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden;}
+.mat-fthumb img{width:100%;height:100%;object-fit:cover;}
+.mat-fbody{flex:1;min-width:0;}
+.mat-fname{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.mat-fmeta{font-size:10px;color:var(--soft);font-family:monospace;}
+.mat-fwarn{font-size:10px;color:var(--orange);margin-top:2px;}
+.mat-ferr{font-size:10px;color:var(--red);margin-top:2px;}
+.mat-fdel{padding:4px 8px;border:1px solid rgba(239,68,68,.25);border-radius:5px;background:rgba(239,68,68,.08);color:var(--red);font-size:10px;cursor:pointer;font-family:inherit;}
+.mat-prog{height:8px;background:var(--s2);border-radius:4px;overflow:hidden;margin:8px 0 4px;}
+.mat-prog-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#10b981);transition:width .3s;width:0%;}
+.mat-prog-txt{font-size:10px;color:var(--soft);text-align:center;font-family:monospace;}
+.mat-new-box{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:12px;margin-bottom:12px;}
+.mat-new-box label{color:var(--orange);}
+.mat-result{display:flex;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid var(--b1);}
+.mat-result:last-child{border-bottom:none;}
+.mat-result.ok{color:var(--green);}
+.mat-result.err{color:var(--red);}
 </style>
 </head>
 <body>
@@ -63,6 +83,7 @@ input:focus{border-color:var(--blue);}
   <button class="tab-btn active" onclick="switchTab('upload')">📤 파일 배포</button>
   <button class="tab-btn" onclick="switchTab('user')">👤 사용자</button>
   <button class="tab-btn" onclick="switchTab('setting')">⚙️ 설정</button>
+  <button class="tab-btn" onclick="switchTab('material')">📁 공정자료</button>
 </div>
 
 <!-- 파일 배포 탭 -->
@@ -77,7 +98,8 @@ input:focus{border-color:var(--blue);}
     </div>
     <div id="file-info" style="display:none;background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span style="color:var(--soft);">파일명</span><span id="fi-name" style="font-family:monospace;"></span></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--soft);">크기</span><span id="fi-size" style="font-family:monospace;"></span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span style="color:var(--soft);">크기</span><span id="fi-size" style="font-family:monospace;"></span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--soft);">업로드 경로</span><span id="fi-path" style="font-family:monospace;color:var(--green);font-size:10px;"></span></div>
     </div>
     <label>커밋 메시지</label>
     <input type="text" id="commit-msg" value="시공관리 업데이트">
@@ -146,20 +168,110 @@ input:focus{border-color:var(--blue);}
     <input type="text" id="repo" value="wisestar823/-" oninput="saveSettings()">
     <label>브랜치</label>
     <input type="text" id="branch" value="main" oninput="saveSettings()">
-    <label>앱 파일 경로</label>
-    <input type="text" id="filepath" value="sicgong.html" oninput="saveSettings()">
-    <label>사용자 목록 파일 경로</label>
-    <input type="text" id="allowlist-path" value="allowlist.json" oninput="saveSettings()">
+
+    <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--soft);line-height:1.7;">
+      ✅ <strong style="color:var(--green);">업로드 경로 자동 지정</strong><br>
+      • 📤 파일 배포 → 선택한 파일명 그대로<br>
+      • 👤 사용자 → <code style="color:#10b981;">allowlist.json</code> 고정<br>
+      • 📁 공정자료 → <code style="color:#10b981;">files/{공정폴더}/</code>
+    </div>
+
     <button class="btn btn-blue" onclick="testConnection()" id="btn-test">🔗 연결 테스트</button>
     <div class="status" id="test-status"></div>
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════════════ -->
+<!-- 📁 공정자료 탭 (신규 블록 · 다른 탭 영향 없음)         -->
+<!-- ════════════════════════════════════════════════════ -->
+<div id="tab-material" class="tab-panel">
+
+  <!-- ── 블록 A: 공정 선택 ── -->
+  <div class="card">
+    <div class="card-title">📁 공정 선택</div>
+    <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--soft);line-height:1.7;">
+      💡 자료를 업로드할 공정을 선택하세요.<br>
+      파일은 <span style="color:#3b82f6;font-family:monospace;">files/{공정폴더}/</span> 에 저장되고<br>
+      <span style="color:#3b82f6;font-family:monospace;">index.json</span>이 자동 갱신됩니다.
+    </div>
+
+    <label>공정 선택</label>
+    <select id="mat-process" onchange="mat_onProcessChange()">
+      <option value="">— 공정을 선택하세요 —</option>
+    </select>
+
+    <!-- 신규 공정 직접 입력 -->
+    <div id="mat-new-form" class="mat-new-box" style="display:none;">
+      <div style="font-size:11px;font-weight:700;color:var(--orange);margin-bottom:8px;">✏️ 신규 공정 직접 입력</div>
+      <div style="font-size:10px;color:var(--soft);line-height:1.6;margin-bottom:10px;">
+        ⚠️ <strong>sicgong.html</strong> 의 <code>DATA</code> 배열에 동일한<br>
+        공정이 미리 등록되어 있어야 앱에 표시됩니다.
+      </div>
+      <label>공정 ID (영문/숫자)</label>
+      <input id="mat-new-id" placeholder="예: vibration" autocomplete="off">
+      <label>한글 명칭</label>
+      <input id="mat-new-title" placeholder="예: 방진 공사" autocomplete="off">
+      <label>폴더명</label>
+      <input id="mat-new-folder" placeholder="예: 방진공사" autocomplete="off">
+      <button class="btn btn-purple" onclick="mat_applyNew()" style="margin-top:4px;">✓ 적용</button>
+    </div>
+
+    <!-- 공정 정보 -->
+    <div id="mat-info" style="display:none;background:var(--s2);border-radius:8px;padding:12px;margin-top:6px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px;">
+        <span style="color:var(--soft);">공정 ID</span>
+        <span id="mat-info-id" style="font-family:monospace;color:var(--blue);"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px;">
+        <span style="color:var(--soft);">명칭</span>
+        <span id="mat-info-title" style="font-family:monospace;"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;">
+        <span style="color:var(--soft);">업로드 경로</span>
+        <span id="mat-info-path" style="font-family:monospace;color:var(--green);font-size:10px;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 블록 B: 자료 정보 + 파일 업로드 (조건부) ── -->
+  <div class="card" id="mat-upload-card" style="display:none;">
+    <div class="card-title">📤 파일 업로드</div>
+
+    <label>자료명 (선택)</label>
+    <input type="text" id="mat-name" placeholder="비워두면 파일명 사용">
+
+    <label>부가 설명 (선택)</label>
+    <input type="text" id="mat-detail" placeholder="자료에 대한 짧은 설명">
+
+    <label>파일 (PDF / JPG / PNG · 다중 선택 가능)</label>
+    <div class="file-drop">
+      <input type="file" id="mat-files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" onchange="mat_onFileSelect(this)">
+      <div style="font-size:28px;margin-bottom:6px;">📄</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:3px;">파일 선택 또는 드래그</div>
+      <div style="font-size:10px;color:var(--soft);">사진은 자동 압축 (1600px JPEG 80%)<br>PDF는 25MB 이하 권장</div>
+    </div>
+
+    <div id="mat-file-list" style="margin-bottom:10px;"></div>
+
+    <div id="mat-progress-wrap" style="display:none;margin-bottom:10px;">
+      <div class="mat-prog"><div class="mat-prog-fill" id="mat-prog-fill"></div></div>
+      <div class="mat-prog-txt" id="mat-prog-txt">대기 중...</div>
+    </div>
+
+    <button class="btn btn-green" id="btn-mat-upload" onclick="mat_uploadAll()" disabled>🚀 GitHub에 업로드</button>
+    <div class="status" id="mat-status"></div>
+  </div>
+
+</div>
+<!-- ════════════════════════════════════════════════════ -->
+<!-- 📁 공정자료 탭 끝                                      -->
+<!-- ════════════════════════════════════════════════════ -->
+
 </div>
 <script>
 // ── 탭 전환 ──
 function switchTab(t){
-  ['upload','user','setting'].forEach((id,i)=>{
+  ['upload','user','setting','material'].forEach((id,i)=>{
     document.querySelectorAll('.tab-btn')[i].classList.toggle('active',id===t);
     document.getElementById('tab-'+id).classList.toggle('active',id===t);
   });
@@ -172,8 +284,6 @@ function saveSettings(){
     token:document.getElementById('token').value,
     repo:document.getElementById('repo').value,
     branch:document.getElementById('branch').value,
-    filepath:document.getElementById('filepath').value,
-    allowlistPath:document.getElementById('allowlist-path').value,
   }));
 }
 function loadSettings(){
@@ -182,17 +292,16 @@ function loadSettings(){
     if(s.token) document.getElementById('token').value=s.token;
     if(s.repo)  document.getElementById('repo').value=s.repo;
     if(s.branch)document.getElementById('branch').value=s.branch;
-    if(s.filepath)document.getElementById('filepath').value=s.filepath;
-    if(s.allowlistPath)document.getElementById('allowlist-path').value=s.allowlistPath;
   }catch(e){}
 }
 function cfg(){
+  const f = (typeof selFile!=='undefined' && selFile) ? selFile.name : 'sicgong.html';
   return{
     token:document.getElementById('token').value.trim(),
     repo:document.getElementById('repo').value.trim(),
     branch:document.getElementById('branch').value.trim(),
-    filepath:document.getElementById('filepath').value.trim(),
-    alPath:document.getElementById('allowlist-path').value.trim()||'allowlist.json',
+    filepath: f,                 // 자동: 선택한 파일명 (없으면 sicgong.html)
+    alPath: 'allowlist.json',    // 자동: 고정
   };
 }
 
@@ -271,6 +380,7 @@ function onFileSelect(input){
   selFile=file;
   document.getElementById('fi-name').textContent=file.name;
   document.getElementById('fi-size').textContent=(file.size/1024).toFixed(1)+'KB';
+  document.getElementById('fi-path').textContent=file.name;
   document.getElementById('file-info').style.display='block';
   document.getElementById('drop-title').textContent=file.name;
   document.getElementById('drop-sub').textContent=(file.size/1024).toFixed(1)+'KB';
@@ -449,6 +559,444 @@ drop.addEventListener('drop',e=>{
 });
 
 loadSettings();
+
+// ════════════════════════════════════════════════════
+// 📁 공정자료 블록 (신규 · prefix: mat_)
+// 다른 함수/변수와 충돌 없음. 다른 탭 영향 없음.
+// ════════════════════════════════════════════════════
+
+// sicgong.html DATA 배열에서 추출 (28개 공정)
+const MAT_PROCESSES = [
+  // [카테고리ID, 공정ID, 한글명, 폴더명, 아이콘]
+  ['design',     'design',     '도면 검토',         '도면검토',         '📐'],
+  ['structure',  'civil',      '토목 공사',         '토목공사',         '⛏️'],
+  ['structure',  'foundation', '기초 공사',         '기초공사',         '🧱'],
+  ['structure',  'frame',      '골조 공사',         '골조공사',         '🏗️'],
+  ['interior',   'interior',   '내장 공사',         '내장공사',         '🪟'],
+  ['exterior',   'exterior',   '외장 공사',         '외장공사',         '🏠'],
+  ['exterior',   'insulation', '단열 공사',         '단열공사',         '🌡️'],
+  ['exterior',   'metal',      '금속 공사',         '금속공사',         '🔧'],
+  ['exterior',   'roof',       '지붕 공사',         '지붕공사',         '🏡'],
+  ['interior',   'window',     '창호 공사',         '창호공사',         '🪟'],
+  ['mep',        'hvac',       '난방 설비',         '난방설비',         '🔥'],
+  ['mep',        'electric',   '전기·통신·소방',     '전기통신소방',     '⚡'],
+  ['interior',   'waterproof', '방수·타일',         '방수타일',         '💧'],
+  ['interior',   'painting',   '도장·도배·필름',     '도장도배필름',     '🎨'],
+  ['interior',   'furniture',  '가구 공사',         '가구공사',         '🪑'],
+  ['mgmt',       'cleanup',    '준공 청소',         '준공청소',         '🧹'],
+  ['mgmt',       'rain',       '우천시 관리',       '우천시 관리',      '🌧️'],
+  ['mgmt',       'winter',     '동절기 관리',       '동절기관리',       '❄️'],
+  ['mgmt',       'protection', '보양 관리',         '보양관리',         '🛡️'],
+  ['safety',     'thermal',    '열관류율',         '열관류율',         '📊'],
+  ['mgmt',       'site',       '현장 관리',         '현장관리',         '🏢'],
+  ['safety',     'safetycard', '안전 관리',         '안전관리',         '🦺'],
+  ['mgmt',       'material',   '자재·폐기물 관리',   '자재폐기물',       '📦'],
+  ['mgmt',       'penalty',    '패널티 기준',       '패널티',           '⚠️'],
+  ['safety',     'quality',    '품질시험계획',     '품질시험계획',     '✅'],
+  ['safety',     'railroad',   '철도인접지역 검토', '철도인접지역검토', '🚆'],
+  ['mgmt',       'education',  '소장 교육자료',     '소장교육',         '📚'],
+  ['mgmt',       'ending',     '엔딩',             '엔딩',             '🏁'],
+];
+
+const MAT_CAT_LABELS = {
+  'design':'📐 설계·도면', 'structure':'🏗️ 구조·골조', 'exterior':'🏠 외장·지붕',
+  'interior':'🪟 내장·마감', 'mep':'⚡ 설비·전기', 'mgmt':'📊 현장관리', 'safety':'🦺 안전·품질',
+};
+
+// ── 상태 ──
+let mat_current = null;       // {id, title, folder} 현재 선택된 공정
+let mat_files   = [];         // 처리된 파일 목록
+
+// ── 드롭다운 초기화 ──
+function mat_initDropdown(){
+  const sel = document.getElementById('mat-process');
+  if(!sel) return;
+  const order = ['design','structure','exterior','interior','mep','mgmt','safety'];
+  order.forEach(catId=>{
+    const items = MAT_PROCESSES.filter(p=>p[0]===catId);
+    if(!items.length) return;
+    const og = document.createElement('optgroup');
+    og.label = MAT_CAT_LABELS[catId] || catId;
+    items.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p[1];
+      opt.dataset.title = p[2];
+      opt.dataset.folder = p[3];
+      opt.textContent = p[4] + ' ' + p[2];
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  // 신규 공정 옵션
+  const ng = document.createElement('optgroup');
+  ng.label = '── 직접 입력 ──';
+  const nopt = document.createElement('option');
+  nopt.value = '__new__';
+  nopt.textContent = '➕ 신규 공정 직접 입력...';
+  ng.appendChild(nopt);
+  sel.appendChild(ng);
+}
+
+// ── 공정 선택 변경 ──
+function mat_onProcessChange(){
+  const sel = document.getElementById('mat-process');
+  const v = sel.value;
+  const newForm = document.getElementById('mat-new-form');
+  const info    = document.getElementById('mat-info');
+  const upCard  = document.getElementById('mat-upload-card');
+
+  // 초기화
+  newForm.style.display = 'none';
+  info.style.display = 'none';
+  upCard.style.display = 'none';
+  mat_current = null;
+
+  if(!v) return;
+
+  if(v === '__new__'){
+    newForm.style.display = 'block';
+    return;
+  }
+
+  // 일반 공정
+  const opt = sel.options[sel.selectedIndex];
+  mat_current = {
+    id: v,
+    title: opt.dataset.title,
+    folder: opt.dataset.folder,
+  };
+  mat_showInfo();
+}
+
+// ── 신규 공정 적용 ──
+function mat_applyNew(){
+  const id = document.getElementById('mat-new-id').value.trim();
+  const title = document.getElementById('mat-new-title').value.trim();
+  const folder = document.getElementById('mat-new-folder').value.trim();
+  if(!id || !title || !folder){
+    alert('공정 ID · 명칭 · 폴더명을 모두 입력하세요'); return;
+  }
+  if(!/^[a-zA-Z0-9_-]+$/.test(id)){
+    alert('공정 ID는 영문/숫자/하이픈/언더스코어만 사용하세요'); return;
+  }
+  mat_current = {id, title, folder, isNew:true};
+  mat_showInfo();
+}
+
+// ── 정보 카드 표시 ──
+function mat_showInfo(){
+  if(!mat_current) return;
+  document.getElementById('mat-info-id').textContent    = mat_current.id + (mat_current.isNew?' (신규)':'');
+  document.getElementById('mat-info-title').textContent = mat_current.title;
+  document.getElementById('mat-info-path').textContent  = 'files/' + mat_current.folder + '/';
+  document.getElementById('mat-info').style.display = 'block';
+  document.getElementById('mat-upload-card').style.display = 'block';
+}
+
+// ── 이미지 리사이즈 (1600px / JPEG 80%) ──
+function mat_resizeImage(file){
+  return new Promise((resolve,reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function(){
+      const MAX = 1600;
+      let w = img.width, h = img.height;
+      if(w > h){ if(w > MAX){ h = Math.round(h*MAX/w); w = MAX; } }
+      else     { if(h > MAX){ w = Math.round(w*MAX/h); h = MAX; } }
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+      cv.toBlob(b=>{
+        URL.revokeObjectURL(url);
+        if(b) resolve(b);
+        else reject(new Error('이미지 변환 실패'));
+      }, 'image/jpeg', 0.80);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('이미지 로드 실패')); };
+    img.src = url;
+  });
+}
+
+// ── 파일 선택 ──
+async function mat_onFileSelect(input){
+  const files = [...input.files];
+  if(!files.length) return;
+  mat_files = [];
+  const list = document.getElementById('mat-file-list');
+  list.innerHTML = '<div style="text-align:center;font-size:11px;color:var(--soft);padding:10px;">⏳ 파일 처리 중...</div>';
+
+  for(let i=0; i<files.length; i++){
+    const f = files[i];
+    const ext = (f.name.split('.').pop()||'').toLowerCase();
+    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext);
+    const isPdf   = ext === 'pdf';
+
+    const item = {origName:f.name, sizeOrig:f.size, ext:ext, type:null, blob:null, sizeNew:0, warn:'', err:''};
+
+    if(!isImage && !isPdf){
+      item.err = '지원하지 않는 형식';
+      mat_files.push(item); continue;
+    }
+
+    if(isImage){
+      try{
+        const blob = await mat_resizeImage(f);
+        item.type = 'image';
+        item.blob = blob;
+        item.sizeNew = blob.size;
+        // 압축 후 확장자는 .jpg 로 통일
+        const base = f.name.replace(/\.[^.]+$/,'');
+        item.finalName = base + '.jpg';
+      }catch(e){ item.err = '이미지 처리 실패: '+e.message; }
+    } else {
+      item.type = 'pdf';
+      item.blob = f;
+      item.sizeNew = f.size;
+      item.finalName = f.name;
+      if(f.size > 25*1024*1024) item.warn = '⚠️ 25MB 초과 (업로드 실패 가능)';
+    }
+    mat_files.push(item);
+  }
+  mat_renderFileList();
+  const okCount = mat_files.filter(x=>!x.err).length;
+  document.getElementById('btn-mat-upload').disabled = okCount === 0;
+  input.value = '';  // 같은 파일 재선택 가능
+}
+
+// ── 파일 목록 렌더링 ──
+function mat_renderFileList(){
+  const list = document.getElementById('mat-file-list');
+  if(!mat_files.length){ list.innerHTML=''; return; }
+  list.innerHTML = mat_files.map((it,idx)=>{
+    const sizeOrigKB = (it.sizeOrig/1024).toFixed(0);
+    const sizeNewKB  = (it.sizeNew/1024).toFixed(0);
+    const sizeNewMB  = (it.sizeNew/1024/1024).toFixed(1);
+    const sizeStr = it.err ? sizeOrigKB+'KB' :
+                    (it.type==='image' ? sizeOrigKB+'KB → '+sizeNewKB+'KB' : sizeNewMB+'MB');
+    const icon = it.type==='image' ? '🖼️' : (it.type==='pdf' ? '📄' : '❓');
+    return `<div class="mat-fitem">
+      <div class="mat-fthumb">${icon}</div>
+      <div class="mat-fbody">
+        <div class="mat-fname">${it.finalName||it.origName}</div>
+        <div class="mat-fmeta">${sizeStr}</div>
+        ${it.warn?`<div class="mat-fwarn">${it.warn}</div>`:''}
+        ${it.err?`<div class="mat-ferr">❌ ${it.err}</div>`:''}
+      </div>
+      <button class="mat-fdel" onclick="mat_removeFile(${idx})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function mat_removeFile(idx){
+  mat_files.splice(idx,1);
+  mat_renderFileList();
+  const okCount = mat_files.filter(x=>!x.err).length;
+  document.getElementById('btn-mat-upload').disabled = okCount === 0;
+}
+
+// ── Blob → base64 ──
+function mat_blobToBase64(blob){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ()=>{
+      const str = r.result; // data:xxx;base64,XXXX
+      const i = str.indexOf(',');
+      res(i>=0 ? str.slice(i+1) : str);
+    };
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+// ── 경로 안전 인코딩 (세그먼트별) ──
+function mat_encPath(p){
+  return p.split('/').map(encodeURIComponent).join('/');
+}
+
+// ── 폴더 내 파일명 목록 (중복 체크용) ──
+async function mat_listFolder(token, repo, branch, folder){
+  const [owner,name] = repo.split('/');
+  const path = 'files/' + folder;
+  const url = `https://api.github.com/repos/${owner}/${name}/contents/${mat_encPath(path)}?ref=${encodeURIComponent(branch)}`;
+  const r = await fetch(url, {headers:ghHdr(token)});
+  if(r.status === 404) return new Set(); // 폴더 없음
+  if(!r.ok) throw new Error('폴더 조회 실패 ('+r.status+')');
+  const arr = await r.json();
+  const set = new Set();
+  if(Array.isArray(arr)) arr.forEach(it=>{ if(it.type==='file') set.add(it.name); });
+  return set;
+}
+
+// ── 유니크 파일명 (_2, _3, ...) ──
+function mat_uniqueName(name, existSet){
+  if(!existSet.has(name)){ existSet.add(name); return name; }
+  const di = name.lastIndexOf('.');
+  const base = di>0 ? name.slice(0,di) : name;
+  const ext  = di>0 ? name.slice(di)   : '';
+  let n = 2;
+  while(existSet.has(base+'_'+n+ext)) n++;
+  const final = base+'_'+n+ext;
+  existSet.add(final);
+  return final;
+}
+
+// ── 바이너리 PUT (이미지/PDF) ──
+async function mat_putBinary(token, repo, branch, fullPath, base64, msg){
+  const [owner,name] = repo.split('/');
+  const url = `https://api.github.com/repos/${owner}/${name}/contents/${mat_encPath(fullPath)}`;
+  // 기존 파일이 있으면 sha 필요
+  let sha = null;
+  try{
+    const g = await fetch(url+'?ref='+encodeURIComponent(branch), {headers:ghHdr(token)});
+    if(g.ok){ const d = await g.json(); sha = d.sha; }
+  }catch(e){}
+  const body = {
+    message: msg+' ('+new Date().toLocaleString('ko-KR')+')',
+    content: base64,
+    branch: branch,
+  };
+  if(sha) body.sha = sha;
+  const r = await fetch(url, {method:'PUT', headers:ghHdr(token), body:JSON.stringify(body)});
+  if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.message||('업로드 실패 ('+r.status+')')); }
+  return r.json();
+}
+
+// ── index.json 갱신 ──
+async function mat_updateIndex(token, repo, branch, processId, newEntries){
+  // 기존 index.json 읽기
+  let indexObj = {};
+  let sha = null;
+  try{
+    const got = await ghGet(token, repo, 'index.json', branch);
+    if(got){
+      sha = got.sha;
+      try{ indexObj = JSON.parse(got.content) || {}; }catch(e){ indexObj = {}; }
+    }
+  }catch(e){
+    // 없으면 새로 생성
+  }
+  // 항목 병합 (이름 중복은 file 경로로 덮어쓰기)
+  if(!Array.isArray(indexObj[processId])) indexObj[processId] = [];
+  const arr = indexObj[processId];
+  newEntries.forEach(ne=>{
+    const found = arr.findIndex(x=>x.name===ne.name);
+    if(found>=0) arr[found] = ne;
+    else arr.push(ne);
+  });
+  // PUT
+  const content = JSON.stringify(indexObj, null, 2);
+  await ghPut(token, repo, 'index.json', branch, content, sha, '공정자료 index 갱신');
+}
+
+// ── 진행률 업데이트 ──
+function mat_setProgress(done, total, txt){
+  const wrap = document.getElementById('mat-progress-wrap');
+  wrap.style.display = 'block';
+  const pct = total>0 ? Math.round(done*100/total) : 0;
+  document.getElementById('mat-prog-fill').style.width = pct+'%';
+  document.getElementById('mat-prog-txt').textContent = txt || (done+'/'+total+' ('+pct+'%)');
+}
+
+// ── 메인 업로드 ──
+async function mat_uploadAll(){
+  const st = document.getElementById('mat-status');
+  const btn = document.getElementById('btn-mat-upload');
+
+  if(!mat_current){ showStatus(st,'❌ 공정을 선택하세요','err'); return; }
+  const okFiles = mat_files.filter(x=>!x.err && x.blob);
+  if(!okFiles.length){ showStatus(st,'❌ 업로드할 파일이 없습니다','err'); return; }
+
+  const {token, repo, branch} = cfg();
+  if(!token){ showStatus(st,'❌ 설정 탭에서 GitHub Token을 입력하세요','err'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> 업로드 중...';
+  showStatus(st,'⏳ 시작...','ing');
+
+  const userName   = document.getElementById('mat-name').value.trim();
+  const userDetail = document.getElementById('mat-detail').value.trim();
+
+  try{
+    // 1. 폴더 내 기존 파일 목록 (중복 체크용)
+    mat_setProgress(0, okFiles.length+1, '📂 폴더 조회 중...');
+    let existSet;
+    try{ existSet = await mat_listFolder(token, repo, branch, mat_current.folder); }
+    catch(e){ existSet = new Set(); }  // 새 폴더면 빈 집합
+
+    // 2. 파일별 순차 업로드
+    const newEntries = [];
+    const results = [];
+    for(let i=0; i<okFiles.length; i++){
+      const it = okFiles[i];
+      mat_setProgress(i, okFiles.length+1, `⬆️ (${i+1}/${okFiles.length}) ${it.finalName} 업로드 중...`);
+      try{
+        const finalName = mat_uniqueName(it.finalName, existSet);
+        const base64 = await mat_blobToBase64(it.blob);
+        const fullPath = 'files/' + mat_current.folder + '/' + finalName;
+        await mat_putBinary(token, repo, branch, fullPath, base64, '공정자료 추가: '+finalName);
+
+        // index.json 항목 (자료명 결정)
+        let entryName;
+        if(userName){
+          entryName = okFiles.length>1 ? userName+' ('+(i+1)+')' : userName;
+        } else {
+          entryName = finalName.replace(/\.[^.]+$/,'');  // 확장자 제외
+        }
+        newEntries.push({
+          name: entryName,
+          detail: userDetail || '',
+          file: mat_current.folder + '/' + finalName,
+        });
+        results.push({name:finalName, ok:true});
+      }catch(e){
+        results.push({name:it.finalName, ok:false, err:e.message});
+      }
+    }
+
+    // 3. index.json 갱신 (마지막 1회)
+    mat_setProgress(okFiles.length, okFiles.length+1, '📝 index.json 갱신 중...');
+    if(newEntries.length){
+      await mat_updateIndex(token, repo, branch, mat_current.id, newEntries);
+    }
+    mat_setProgress(okFiles.length+1, okFiles.length+1, '✅ 완료');
+
+    // 4. 결과 표시
+    const okN = results.filter(r=>r.ok).length;
+    const failN = results.length - okN;
+    let html = '<div style="font-weight:700;margin-bottom:6px;">'+
+               (failN===0?'✅ 전체 성공':'⚠️ 일부 실패')+
+               ' ('+okN+'/'+results.length+' · index.json 갱신됨)</div>';
+    html += results.map(r=>`<div class="mat-result ${r.ok?'ok':'err'}">
+      <span>${r.ok?'✓':'✗'} ${r.name}</span>
+      <span style="font-size:10px;">${r.ok?'OK':r.err||'실패'}</span>
+    </div>`).join('');
+    html += '<div style="margin-top:8px;font-size:10px;color:var(--soft);">⏱️ 1분 후 sicgong.html에서 자동 표시됩니다.</div>';
+    st.className = 'status '+(failN===0?'s-ok':'s-err');
+    st.style.display = 'block';
+    st.innerHTML = html;
+
+    // 5. 초기화 (성공한 파일들)
+    if(failN === 0){
+      mat_files = [];
+      mat_renderFileList();
+      document.getElementById('mat-name').value = '';
+      document.getElementById('mat-detail').value = '';
+      document.getElementById('btn-mat-upload').disabled = true;
+    }
+
+  }catch(e){
+    showStatus(st, '❌ 업로드 실패: '+e.message, 'err');
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = '🚀 GitHub에 업로드';
+    setTimeout(()=>{ document.getElementById('mat-progress-wrap').style.display='none'; }, 3000);
+  }
+}
+
+// 초기화
+mat_initDropdown();
 </script>
 </body>
 </html>
