@@ -894,7 +894,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
           </div>
           <!-- 측정 모드 버튼 -->
           <button id="sk-measure-btn" onclick="skToggleMeasureMode()" style="position:absolute;bottom:8px;right:8px;padding:5px 10px;background:rgba(0,0,0,.75);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:10px;cursor:pointer;font-family:inherit;transition:all .2s;">📏 거리측정</button>
-          <button id="sk-nearby-btn" onclick="if(window._skLoadNearby)window._skLoadNearby()" style="position:absolute;bottom:8px;left:8px;padding:5px 10px;background:rgba(0,0,0,.75);border:1px solid rgba(34,197,94,.4);border-radius:6px;color:#22c55e;font-size:10px;cursor:pointer;font-family:inherit;font-weight:700;">🗺 주변필지</button>
+          <button id="sk-nearby-btn" onclick="window._skNearbyBtnClick&&window._skNearbyBtnClick()" style="position:absolute;bottom:8px;left:8px;padding:5px 10px;background:rgba(0,0,0,.75);border:1px solid rgba(34,197,94,.4);border-radius:6px;color:#22c55e;font-size:10px;cursor:pointer;font-family:inherit;font-weight:700;">🗺 주변필지</button>
           <!-- 측정 결과 -->
           <div id="sk-measure-result" style="position:absolute;bottom:8px;left:90px;right:40px;background:rgba(0,0,0,.8);border:1px solid rgba(6,200,216,.4);border-radius:6px;padding:4px 8px;font-size:10px;color:#06c8d8;display:none;font-family:monospace;"></div>
         </div>
@@ -2876,6 +2876,43 @@ function switchTab(t){
     ctx.strokeStyle='rgba(255,255,255,.03)';ctx.lineWidth=1;
     for(let i=0;i<=12;i++){ctx.beginPath();ctx.moveTo(i*(W/12),0);ctx.lineTo(i*(W/12),H);ctx.stroke();}
     for(let i=0;i<=12;i++){ctx.beginPath();ctx.moveTo(0,i*(H/12));ctx.lineTo(W,i*(H/12));ctx.stroke();}
+
+    // 주변 건물 (배경)
+    if(window._showNearby !== false && window.skNearbyBldgs && window.skNearbyBldgs.length){
+      ctx.fillStyle='rgba(140,140,160,.18)';
+      ctx.strokeStyle='rgba(180,180,200,.4)'; ctx.lineWidth=0.8;
+      window.skNearbyBldgs.forEach(b=>{
+        if(!b.coords||b.coords.length<3) return;
+        ctx.beginPath();
+        b.coords.forEach((c,i)=>{
+          const[x,y]=toC(c[0],c[1]);
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        });
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      });
+    }
+    // 주변 필지 (얇은 회색선 + 지번)
+    if(window._showNearby !== false && window.skNearbyLots && window.skNearbyLots.length){
+      ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=0.7;
+      ctx.fillStyle='rgba(255,255,255,.4)'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      window.skNearbyLots.forEach(l=>{
+        if(!l.coords||l.coords.length<3) return;
+        ctx.beginPath();
+        let minX2=Infinity,maxX2=-Infinity,minY2=Infinity,maxY2=-Infinity;
+        l.coords.forEach((c,i)=>{
+          const[x,y]=toC(c[0],c[1]);
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+          if(x<minX2) minX2=x; if(x>maxX2) maxX2=x;
+          if(y<minY2) minY2=y; if(y>maxY2) maxY2=y;
+        });
+        ctx.closePath(); ctx.stroke();
+        const w2=maxX2-minX2, h2=maxY2-minY2;
+        if(w2>40 && h2>20 && l.jibun){
+          ctx.fillText(l.jibun, (minX2+maxX2)/2, (minY2+maxY2)/2+3);
+        }
+      });
+    }
 
     // 폴리곤
     ctx.beginPath();
@@ -5260,14 +5297,46 @@ function switchTab(t){
 
     function finalize(){
       _nearbyLoading = false;
-      const total = skNearbyLots.length + skNearbyBldgs.length;
-      if(total > 0){
-        showToast(`🗺 주변 필지 ${skNearbyLots.length}개, 건물 ${skNearbyBldgs.length}개`);
+      const lotN = skNearbyLots.length, bldgN = skNearbyBldgs.length;
+      if(lotN > 0 || bldgN > 0){
+        showToast(`🗺 주변 필지 ${lotN}개, 건물 ${bldgN}개 로드됨`);
+        _showNearby = true;
+        const btn = document.getElementById('sk-nearby-btn');
+        if(btn) btn.style.background = 'rgba(34,197,94,.2)';
+      } else {
+        showToast('⚠️ 주변 데이터 조회 실패 - 콘솔 확인');
       }
       if(window.skDrawRender) skDrawRender();
       if(window.skRegDrawCanvas) skRegDrawCanvas();
+      if(window.skDrawFsDraw) skDrawFsDraw();
     }
   }
+  // 주변필지 버튼 클릭 - 데이터 없으면 호출, 있으면 표시 토글
+  window._skNearbyBtnClick = function(){
+    if(_nearbyLoading){ showToast('⏳ 조회 중...'); return; }
+    if(!skPoints || skPoints.length<3){
+      showToast('⚠️ 먼저 경계점을 조회하세요'); return;
+    }
+    // 이미 데이터 있으면 토글
+    if((skNearbyLots && skNearbyLots.length) || (skNearbyBldgs && skNearbyBldgs.length)){
+      _showNearby = !_showNearby;
+      if(window.skDrawRender) skDrawRender();
+      if(window.skRegDrawCanvas) skRegDrawCanvas();
+      if(window.skDrawFsDraw) skDrawFsDraw();
+      // 버튼 상태 업데이트
+      const btn = document.getElementById('sk-nearby-btn');
+      if(btn){
+        btn.style.background = _showNearby ? 'rgba(34,197,94,.2)' : 'rgba(0,0,0,.75)';
+      }
+      showToast(_showNearby ? '🗺 주변 표시 ON ('+skNearbyLots.length+'필지/'+skNearbyBldgs.length+'건물)' : '🗺 주변 표시 OFF');
+      return;
+    }
+    // 데이터 없으면 새로 조회
+    showToast('🔍 주변 필지/건물 조회 중...');
+    _loadNearbyData();
+  };
+
+  // _skLoadNearby도 그대로 유지 (저장 시스템에서 호출 가능)
   window._skLoadNearby = _loadNearbyData;
 
   // 주변 필지/건물 표시 토글 (기본 표시)
