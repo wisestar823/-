@@ -5171,17 +5171,17 @@ function switchTab(t){
     if(_nearbyLoading) return;
     if(!skPoints || skPoints.length<3) return;
     if(typeof proj4 === 'undefined'){
-      console.warn('[주변] proj4 미로드'); return;
+      showToast('❌ proj4 미로드');
+      return;
     }
     _nearbyLoading = true;
     console.log('[주변] 데이터 조회 시작');
 
-    // 필지 중심점 + 반경 100m BOX 계산
+    // 필지 중심점 + 반경 BOX 계산
     const xs = skPoints.map(p=>p.x), ys = skPoints.map(p=>p.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
-    const radius = 80; // 80m 반경
-    // TM5186 박스 좌표 (X=북, Y=동)
+    const radius = 100;
     const boxMinX = minX - radius, boxMaxX = maxX + radius;
     const boxMinY = minY - radius, boxMaxY = maxY + radius;
     // WGS84로 변환
@@ -5190,57 +5190,62 @@ function switchTab(t){
       const sw = proj4('EPSG:5186','EPSG:4326',[boxMinY, boxMinX]);
       const ne = proj4('EPSG:5186','EPSG:4326',[boxMaxY, boxMaxX]);
       bboxWgs = `${sw[0]},${sw[1]},${ne[0]},${ne[1]}`;
+      console.log('[주변] BBOX:', bboxWgs);
     } catch(e){
-      console.error('[주변] 좌표변환 실패', e);
+      showToast('❌ 좌표변환 실패: '+e.message);
       _nearbyLoading = false; return;
     }
-    // BOX 형태: minLon,minLat,maxLon,maxLat,EPSG:4326
     const geomFilter = `BOX(${bboxWgs},EPSG:4326)`;
 
     let pendingLot = true, pendingBldg = true;
+    let lotErr = '', bldgErr = '';
 
-    // 1) 주변 필지 조회 (지적도)
-    const lotCb = '_lotsCb_'+Date.now();
+    // 콜백 이름 단순화 (영문+숫자만)
+    const ts = Date.now().toString(36);
+
+    // 1) 주변 필지 조회
+    const lotCb = 'cbLot' + ts;
     window[lotCb] = function(data){
       try {
+        console.log('[주변] 필지 응답:', data);
         skNearbyLots = [];
-        const features = data?.response?.result?.featureCollection?.features || [];
-        features.forEach(f=>{
-          const props = f.properties || {};
-          const geom = f.geometry || {};
-          let coordsArr = [];
-          if(geom.type === 'Polygon') coordsArr = [geom.coordinates[0]];
-          else if(geom.type === 'MultiPolygon') coordsArr = geom.coordinates.map(c=>c[0]);
-          coordsArr.forEach(coords=>{
-            if(!coords || coords.length<3) return;
-            // WGS84 → TM5186 변환
-            const tmCoords = coords.map(c=>{
-              try {
-                const tm = proj4('EPSG:4326','EPSG:5186',[c[0],c[1]]);
-                return [tm[1], tm[0]]; // [x=북, y=동]
-              } catch(e){ return null; }
-            }).filter(p=>p);
-            if(tmCoords.length<3) return;
-            // 현재 필지 PNU와 같으면 제외 (중복 방지)
-            if(props.pnu === skPNU) return;
-            skNearbyLots.push({
-              coords: tmCoords,
-              jibun: props.jibun || '',
-              pnu: props.pnu || ''
+        if(!data || !data.response){
+          lotErr = '응답 없음';
+        } else if(data.response.status !== 'OK'){
+          lotErr = '상태:'+(data.response.status||'?')+' '+(data.response.error?.text||'');
+        } else {
+          const features = data.response.result?.featureCollection?.features || [];
+          features.forEach(f=>{
+            const props = f.properties || {};
+            const geom = f.geometry || {};
+            let coordsArr = [];
+            if(geom.type === 'Polygon') coordsArr = [geom.coordinates[0]];
+            else if(geom.type === 'MultiPolygon') coordsArr = geom.coordinates.map(c=>c[0]);
+            coordsArr.forEach(coords=>{
+              if(!coords || coords.length<3) return;
+              const tmCoords = coords.map(c=>{
+                try { const tm = proj4('EPSG:4326','EPSG:5186',[c[0],c[1]]); return [tm[1], tm[0]]; }
+                catch(e){ return null; }
+              }).filter(p=>p);
+              if(tmCoords.length<3) return;
+              if(props.pnu === skPNU) return;
+              skNearbyLots.push({coords: tmCoords, jibun: props.jibun || '', pnu: props.pnu || ''});
             });
           });
-        });
-        console.log('[주변] 필지 '+skNearbyLots.length+'개 로드');
-      } catch(e){ console.warn('[주변] 필지 파싱 실패', e); }
+          console.log('[주변] 필지 '+skNearbyLots.length+'개');
+        }
+      } catch(e){ lotErr = '파싱:'+e.message; console.error(e); }
       delete window[lotCb];
       const s = document.getElementById(lotCb); if(s) s.remove();
       pendingLot = false;
       if(!pendingBldg) finalize();
     };
-    const lotUrl = `${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&geomFilter=${encodeURIComponent(geomFilter)}&format=json&size=200&geometry=true&attribute=true&domain=wisestar823.github.io&callback=${lotCb}`;
+    const lotUrl = `${SK_BASE}/req/data?service=data&request=GetFeature&data=LP_PA_CBND_BUBUN&key=${SK_KEY}&geomFilter=${encodeURIComponent(geomFilter)}&format=json&size=200&geometry=true&attribute=true&domain=${encodeURIComponent(location.hostname)}&callback=${lotCb}`;
+    console.log('[주변] 필지 URL:', lotUrl);
     const lotS = document.createElement('script');
     lotS.id = lotCb; lotS.src = lotUrl;
     lotS.onerror = ()=>{
+      lotErr = '스크립트 로드 실패';
       delete window[lotCb]; lotS.remove();
       pendingLot = false;
       if(!pendingBldg) finalize();
@@ -5248,63 +5253,72 @@ function switchTab(t){
     document.head.appendChild(lotS);
 
     // 2) 주변 건물 조회
-    const bldgCb = '_bldgCb_'+Date.now();
+    const bldgCb = 'cbBldg' + ts;
     window[bldgCb] = function(data){
       try {
+        console.log('[주변] 건물 응답:', data);
         skNearbyBldgs = [];
-        const features = data?.response?.result?.featureCollection?.features || [];
-        features.forEach(f=>{
-          const geom = f.geometry || {};
-          let coordsArr = [];
-          if(geom.type === 'Polygon') coordsArr = [geom.coordinates[0]];
-          else if(geom.type === 'MultiPolygon') coordsArr = geom.coordinates.map(c=>c[0]);
-          coordsArr.forEach(coords=>{
-            if(!coords || coords.length<3) return;
-            const tmCoords = coords.map(c=>{
-              try {
-                const tm = proj4('EPSG:4326','EPSG:5186',[c[0],c[1]]);
-                return [tm[1], tm[0]];
-              } catch(e){ return null; }
-            }).filter(p=>p);
-            if(tmCoords.length<3) return;
-            skNearbyBldgs.push({coords: tmCoords});
+        if(!data || !data.response){
+          bldgErr = '응답 없음';
+        } else if(data.response.status !== 'OK'){
+          bldgErr = '상태:'+(data.response.status||'?')+' '+(data.response.error?.text||'');
+        } else {
+          const features = data.response.result?.featureCollection?.features || [];
+          features.forEach(f=>{
+            const geom = f.geometry || {};
+            let coordsArr = [];
+            if(geom.type === 'Polygon') coordsArr = [geom.coordinates[0]];
+            else if(geom.type === 'MultiPolygon') coordsArr = geom.coordinates.map(c=>c[0]);
+            coordsArr.forEach(coords=>{
+              if(!coords || coords.length<3) return;
+              const tmCoords = coords.map(c=>{
+                try { const tm = proj4('EPSG:4326','EPSG:5186',[c[0],c[1]]); return [tm[1], tm[0]]; }
+                catch(e){ return null; }
+              }).filter(p=>p);
+              if(tmCoords.length<3) return;
+              skNearbyBldgs.push({coords: tmCoords});
+            });
           });
-        });
-        console.log('[주변] 건물 '+skNearbyBldgs.length+'개 로드');
-      } catch(e){ console.warn('[주변] 건물 파싱 실패', e); }
+          console.log('[주변] 건물 '+skNearbyBldgs.length+'개');
+        }
+      } catch(e){ bldgErr = '파싱:'+e.message; console.error(e); }
       delete window[bldgCb];
       const s = document.getElementById(bldgCb); if(s) s.remove();
       pendingBldg = false;
       if(!pendingLot) finalize();
     };
-    // LT_C_AGBDPLINE = 통합건물 폴리곤
-    const bldgUrl = `${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_AGBDPLINE&key=${SK_KEY}&geomFilter=${encodeURIComponent(geomFilter)}&format=json&size=200&geometry=true&attribute=false&domain=wisestar823.github.io&callback=${bldgCb}`;
+    const bldgUrl = `${SK_BASE}/req/data?service=data&request=GetFeature&data=LT_C_AGBDPLINE&key=${SK_KEY}&geomFilter=${encodeURIComponent(geomFilter)}&format=json&size=200&geometry=true&attribute=false&domain=${encodeURIComponent(location.hostname)}&callback=${bldgCb}`;
     const bldgS = document.createElement('script');
     bldgS.id = bldgCb; bldgS.src = bldgUrl;
     bldgS.onerror = ()=>{
+      bldgErr = '스크립트 로드 실패';
       delete window[bldgCb]; bldgS.remove();
       pendingBldg = false;
       if(!pendingLot) finalize();
     };
     document.head.appendChild(bldgS);
 
-    // 타임아웃 8초
+    // 타임아웃 10초
     setTimeout(()=>{
-      if(window[lotCb]){ delete window[lotCb]; const s=document.getElementById(lotCb); if(s)s.remove(); pendingLot=false; }
-      if(window[bldgCb]){ delete window[bldgCb]; const s=document.getElementById(bldgCb); if(s)s.remove(); pendingBldg=false; }
+      if(window[lotCb]){ lotErr='타임아웃'; delete window[lotCb]; const s=document.getElementById(lotCb); if(s)s.remove(); pendingLot=false; }
+      if(window[bldgCb]){ bldgErr='타임아웃'; delete window[bldgCb]; const s=document.getElementById(bldgCb); if(s)s.remove(); pendingBldg=false; }
       if(_nearbyLoading) finalize();
-    }, 8000);
+    }, 10000);
 
     function finalize(){
       _nearbyLoading = false;
       const lotN = skNearbyLots.length, bldgN = skNearbyBldgs.length;
       if(lotN > 0 || bldgN > 0){
-        showToast(`🗺 주변 필지 ${lotN}개, 건물 ${bldgN}개 로드됨`);
+        showToast(`🗺 필지 ${lotN}개, 건물 ${bldgN}개 로드`);
         _showNearby = true;
         const btn = document.getElementById('sk-nearby-btn');
         if(btn) btn.style.background = 'rgba(34,197,94,.2)';
       } else {
-        showToast('⚠️ 주변 데이터 조회 실패 - 콘솔 확인');
+        // 진단 메시지를 화면에 직접 표시
+        const msg = `❌ 필지: ${lotErr||'?'} / 건물: ${bldgErr||'?'}`;
+        showToast(msg);
+        // alert으로 길게 보여주기
+        setTimeout(()=>alert('주변 데이터 조회 실패\n\n필지 오류: '+(lotErr||'알 수 없음')+'\n건물 오류: '+(bldgErr||'알 수 없음')+'\n\n도메인: '+location.hostname+'\nAPI Key: '+SK_KEY.slice(0,12)+'...\n\n위 도메인이 vworld API 키에 등록되어야 합니다.'), 100);
       }
       if(window.skDrawRender) skDrawRender();
       if(window.skRegDrawCanvas) skRegDrawCanvas();
