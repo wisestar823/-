@@ -1926,7 +1926,7 @@ function _loadPdfJs(){
 function _renderPdfPages(pdf, loadingTxt){
   var sd = document.getElementById('v-scroll-img');
   sd.innerHTML = '';
-  sd.style.cssText = 'display:flex;flex-direction:column;align-items:center;overflow:auto;padding:8px;gap:10px;background:#1a1a1a;position:relative;';
+  sd.style.cssText = 'display:flex;flex-direction:column;align-items:center;overflow:auto;padding:8px;gap:10px;background:#1a1a1a;position:relative;overflow-anchor:none;';
   // v-iframe / v-notsup은 이미 숨겨진 상태 (앞서 showViewerPanel('v-loading') 호출됨)
   // v-loading은 그대로 오버레이로 유지하여 진행률 표시
   // v-scroll-img만 직접 켜기 (showViewerPanel 안 호출 — loading을 끄지 않도록)
@@ -1961,12 +1961,17 @@ function _renderPdfPages(pdf, loadingTxt){
           return page.render({canvasContext: ctx, viewport: scaledVp}).promise.then(function(){
             // 워터마크 Canvas 직접 번인 (캡처에도 포함됨)
             _burnPdfWatermark(ctx, canvas.width, canvas.height);
+            // 2025-05-11 추가: 첫 페이지 렌더 직후 스크롤을 맨 위로 초기화
+            if(pageNum === 1) sd.scrollTop = 0;
           });
         });
       });
     })(i);
   }
-  return chain;
+  // 2025-05-11 추가: 모든 페이지 렌더 완료 후 스크롤 위치 최종 초기화 (안전망)
+  return chain.then(function(){
+    sd.scrollTop = 0;
+  });
 }
 
 // Canvas에 워터마크 직접 그리기 (기존 buildWatermarkOverlay와 동일 톤)
