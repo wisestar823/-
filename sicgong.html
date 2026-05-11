@@ -704,6 +704,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
   <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;">
     <button class="sk-btn-sub" id="sk-sub-search" onclick="skSubTab('search')" style="background:var(--accent2);color:#000;border-color:transparent;">🔍 주소검색</button>
     <button class="sk-btn-sub" id="sk-sub-draw" onclick="skSubTab('draw')">📐 도면보기</button>
+    <button class="sk-btn-sub" id="sk-sub-eum" onclick="skSubTab('eum')">📋 토지이음</button>
     <button class="sk-btn-sub" id="sk-sub-hist" onclick="skSubTab('hist')">📁 이력</button>
   </div>
 
@@ -974,6 +975,44 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 
         <!-- 인쇄 -->
         <button onclick="skDrawPrint()" style="width:100%;margin-top:12px;padding:11px;border:none;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">🖨 도면 인쇄</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 서브탭: 토지이음 (2025-05-11 신설) -->
+  <div id="sk-panel-eum" style="display:none;padding:14px;">
+    <div class="sk-card">
+      <div class="sk-hdr"><span class="sk-dot" style="background:#10d98a;"></span>토지이용규제 정보 (토지이음)</div>
+
+      <!-- 필지 선택 안 됨 -->
+      <div id="sk-eum-empty" class="sk-empty" style="padding:30px 14px;">
+        <div class="sk-empty-icon">📋</div>
+        <div class="sk-empty-txt">
+          주소검색 탭에서 필지를 선택하면<br>토지이음 정보를 조회할 수 있습니다
+        </div>
+      </div>
+
+      <!-- 필지 선택됨 -->
+      <div id="sk-eum-content" style="display:none;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">현재 선택된 필지</div>
+          <div id="sk-eum-addr" style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">—</div>
+          <div id="sk-eum-pnu" style="font-size:10px;color:#4a9eff;font-family:monospace;">PNU: —</div>
+        </div>
+
+        <button onclick="skOpenEum()" style="width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#10d98a,#0ea96f);color:#000;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px;">
+          📋 토지이음에서 열기 (새 탭)
+        </button>
+
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.7;padding:12px;background:var(--surface);border-radius:8px;border:1px solid var(--border);">
+          💡 토지이음에서 다음 정보를 확인할 수 있습니다:<br>
+          • 용도지역·용도지구·용도구역<br>
+          • 도시계획시설 지정 현황<br>
+          • 행위제한·규제법령<br>
+          • 지형도면 고시 정보<br>
+          • 토지이용계획확인서 발급
+        </div>
       </div>
     </div>
   </div>
@@ -2040,7 +2079,7 @@ function switchTab(t){
 
   /* ── 서브탭 ── */
   window.skSubTab=function(t){
-    ['search','result','draw','gps','hist'].forEach(id=>{
+    ['search','result','draw','gps','eum','hist'].forEach(id=>{
       const el=document.getElementById('sk-panel-'+id);
       if(el) el.style.display=t===id?'block':'none';
       const btn=document.getElementById('sk-sub-'+id);
@@ -2048,6 +2087,7 @@ function switchTab(t){
     });
     if(t==='hist') skRenderHist();
     if(t==='draw') skDrawRender();
+    if(t==='eum') skRenderEum();
     if(t==='search' && window._skRenderSavedSites) window._skRenderSavedSites();
   };
 
@@ -2186,6 +2226,23 @@ function switchTab(t){
     showToast('📋 토지이음 새 탭 열림');
   };
 
+  /* ── 2025-05-11 추가: 토지이음 탭 렌더 ── */
+  function skRenderEum(){
+    const has = skPNU && skPNU.length >= 19;
+    const emptyEl = document.getElementById('sk-eum-empty');
+    const contentEl = document.getElementById('sk-eum-content');
+    if(!emptyEl || !contentEl) return;
+    if(has){
+      emptyEl.style.display='none';
+      contentEl.style.display='block';
+      document.getElementById('sk-eum-addr').textContent = (skLotMeta && skLotMeta.addr) || '—';
+      document.getElementById('sk-eum-pnu').textContent = 'PNU: '+skPNU;
+    } else {
+      emptyEl.style.display='block';
+      contentEl.style.display='none';
+    }
+  }
+
   /* ── 연속지적도 경계점 조회 (JSONP) ── */
   window.skFetchLot=function(){
     if(!skPNU){showToast('⚠️ 먼저 주소를 검색하고 선택하세요');return;}
@@ -2245,6 +2302,31 @@ function switchTab(t){
     skRenderPoints();
     document.getElementById('sk-pt-section').style.display='block';
     showToast('✅ '+skPoints.length+'개 경계점 조회 완료');
+
+    // 2025-05-11 추가: 자동조회 직후 이력에 좌표 저장 (계산 전, type:'fetch')
+    try {
+      const h = JSON.parse(localStorage.getItem('sk_hist')||'[]');
+      const nowTime = new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const ptsCopy = skPoints.map(p=>({...p}));
+      const existIdx = h.findIndex(x => x.pnu === skPNU);
+      if(existIdx >= 0){
+        // 같은 PNU 있으면 좌표·시간만 갱신 (계산 결과 보존)
+        h[existIdx].points = ptsCopy;
+        h[existIdx].time = nowTime;
+        h[existIdx].addr = skLotMeta.addr || h[existIdx].addr;
+      } else {
+        // 새 항목 (계산 안 한 상태)
+        h.unshift({
+          id: Date.now(),
+          addr: skLotMeta.addr,
+          pnu: skLotMeta.pnu || skPNU,
+          points: ptsCopy,
+          time: nowTime,
+          type: 'fetch'
+        });
+      }
+      localStorage.setItem('sk_hist', JSON.stringify(h.slice(0,30)));
+    } catch(e){ console.warn('이력 저장 실패', e); }
   }
 
   function skRenderPoints(){
@@ -2407,7 +2489,13 @@ function switchTab(t){
       el.innerHTML='<div class="sk-empty"><div class="sk-empty-icon">📁</div><div class="sk-empty-txt">저장된 이력이 없습니다<br><span style="font-size:11px;color:var(--text-muted);">주소 검색 후 자동 저장됩니다</span></div></div>';
       return;
     }
-    el.innerHTML=h.map(item=>`
+    el.innerHTML=h.map(item=>{
+      // 2025-05-11 추가: type:'fetch' (자동조회만 한 상태) 분기
+      const isFetchOnly = item.type === 'fetch' || !item.base;
+      const detailLine = isFetchOnly
+        ? `<div class="sk-hist-det" style="color:#f5a623;">📐 경계점 ${(item.points&&item.points.length)||0}개 조회 완료 (계산 전)</div>`
+        : `<div class="sk-hist-det">기지점 ${item.base}번 → 소실점 ${item.target}번 · 방위각 ${item.bearing}° · ${item.dist}m</div>`;
+      return `
       <div class="sk-hist-item" style="cursor:pointer;" onclick="skRestoreHist(${item.id})">
         <div class="sk-hist-top">
           <div class="sk-hist-name">📍 ${item.addr||item.pnu}</div>
@@ -2416,9 +2504,10 @@ function switchTab(t){
             <div class="sk-hist-del" onclick="event.stopPropagation();skDelHist(${item.id})">삭제</div>
           </div>
         </div>
-        <div class="sk-hist-det">기지점 ${item.base}번 → 소실점 ${item.target}번 · 방위각 ${item.bearing}° · ${item.dist}m</div>
+        ${detailLine}
         <div style="font-size:10px;color:var(--accent2);margin-top:4px;">탭하여 좌표 복원 →</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   window.skRestoreHist=function(id){
@@ -2430,6 +2519,25 @@ function switchTab(t){
       skPoints=item.points;
       skLotMeta={addr:item.addr,pnu:item.pnu};
       skPNU=item.pnu||'';
+      // 2025-05-11 추가: type:'fetch'(계산 전) 항목은 결과 영역 건너뜀
+      const isFetchOnly = item.type === 'fetch' || !item.base;
+      if(isFetchOnly){
+        skBase=null; skTarget=null;
+        // 경계점 목록만 다시 그림
+        skRenderPoints();
+        document.getElementById('sk-pt-section').style.display='block';
+        // 선택된 필지 헤더 표시 복원
+        if(item.addr){
+          document.getElementById('sk-sel-txt').textContent = item.addr;
+          document.getElementById('sk-sel-pnu').textContent = 'PNU: '+(item.pnu||'');
+          document.getElementById('sk-sel-addr').classList.add('show');
+          document.getElementById('sk-fetch-btn').disabled = false;
+        }
+        skDrawRender();
+        skSubTab('draw');
+        showToast('✅ '+(item.addr||'필지')+' 좌표 복원 (계산 전)');
+        return;
+      }
       skBase=item.base-1;
       skTarget=item.target-1;
       // 결과값 복원
