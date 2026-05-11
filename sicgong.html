@@ -735,6 +735,8 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
         <div class="sk-sel-addr-txt" id="sk-sel-txt">—</div>
         <div class="sk-sel-pnu" id="sk-sel-pnu">PNU: —</div>
         <span class="sk-sel-chg" onclick="skReset()">다시 검색</span>
+        <!-- 2025-05-11 추가: 토지이음 토지이용규제 바로가기 -->
+        <span class="sk-sel-chg" onclick="skOpenEum()" style="margin-left:10px;color:#10d98a;">📋 토지이용규제 보기</span>
       </div>
     </div>
 
@@ -2173,6 +2175,17 @@ function switchTab(t){
     document.getElementById('sk-pt-section').style.display='none';
   };
 
+  /* ── 2025-05-11 추가: 토지이음(eum.go.kr) 토지이용규제 바로가기 ── */
+  window.skOpenEum=function(){
+    if(!skPNU || skPNU.length<19){
+      showToast('⚠️ 먼저 주소를 검색하고 선택하세요');
+      return;
+    }
+    const url = 'https://www.eum.go.kr/web/ar/lu/luLandDet.jsp?pnu='+skPNU+'&mode=search';
+    window.open(url, '_blank');
+    showToast('📋 토지이음 새 탭 열림');
+  };
+
   /* ── 연속지적도 경계점 조회 (JSONP) ── */
   window.skFetchLot=function(){
     if(!skPNU){showToast('⚠️ 먼저 주소를 검색하고 선택하세요');return;}
@@ -2232,8 +2245,6 @@ function switchTab(t){
     skRenderPoints();
     document.getElementById('sk-pt-section').style.display='block';
     showToast('✅ '+skPoints.length+'개 경계점 조회 완료');
-    // 2025-05-11 추가: 지적도 조회 직후 인접 필지/건물 자동 로드
-    if(window._skLoadNearby) setTimeout(window._skLoadNearby, 300);
   }
 
   function skRenderPoints(){
@@ -2533,17 +2544,10 @@ function switchTab(t){
 
     // 주변 건물 (배경)
     if(window._showNearby !== false && window.skNearbyBldgs && window.skNearbyBldgs.length){
-      ctx.lineWidth=0.8;
+      ctx.fillStyle='rgba(140,140,160,.18)';
+      ctx.strokeStyle='rgba(180,180,200,.4)'; ctx.lineWidth=0.8;
       window.skNearbyBldgs.forEach(b=>{
         if(!b.coords||b.coords.length<3) return;
-        // 2025-05-11 추가: 내 필지 안 건물(isOurs)은 흐리게 표시
-        if(b.isOurs){
-          ctx.fillStyle='rgba(140,140,160,.07)';
-          ctx.strokeStyle='rgba(180,180,200,.18)';
-        } else {
-          ctx.fillStyle='rgba(140,140,160,.18)';
-          ctx.strokeStyle='rgba(180,180,200,.4)';
-        }
         ctx.beginPath();
         b.coords.forEach((c,i)=>{
           const[x,y]=toCanvas(c[0],c[1]);
@@ -2888,17 +2892,10 @@ function switchTab(t){
 
     // 주변 건물 (배경)
     if(window._showNearby !== false && window.skNearbyBldgs && window.skNearbyBldgs.length){
-      ctx.lineWidth=0.8;
+      ctx.fillStyle='rgba(140,140,160,.18)';
+      ctx.strokeStyle='rgba(180,180,200,.4)'; ctx.lineWidth=0.8;
       window.skNearbyBldgs.forEach(b=>{
         if(!b.coords||b.coords.length<3) return;
-        // 2025-05-11 추가: 내 필지 안 건물(isOurs)은 흐리게 표시
-        if(b.isOurs){
-          ctx.fillStyle='rgba(140,140,160,.07)';
-          ctx.strokeStyle='rgba(180,180,200,.18)';
-        } else {
-          ctx.fillStyle='rgba(140,140,160,.18)';
-          ctx.strokeStyle='rgba(180,180,200,.4)';
-        }
         ctx.beginPath();
         b.coords.forEach((c,i)=>{
           const[x,y]=toC(c[0],c[1]);
@@ -5181,67 +5178,6 @@ function switchTab(t){
   setTimeout(()=>_renderSavedSites(), 100);
 
   /* ═══════════════════════════════════════════════════════════════
-     인접 판정 헬퍼 (2025-05-11 추가) — 변/점 공유 + point-in-polygon
-     ═══════════════════════════════════════════════════════════════ */
-  const _ADJ_EPS_VERTEX = 0.5; // m, 점 일치 허용오차
-  const _ADJ_EPS_EDGE   = 0.3; // m, 변 거리 허용오차 (측량오차 보정)
-
-  function _adjDist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
-
-  function _adjPointToSegment(p, a, b){
-    const dx=b[0]-a[0], dy=b[1]-a[1];
-    const L2=dx*dx+dy*dy;
-    if(L2===0) return _adjDist(p,a);
-    let t=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L2;
-    t=Math.max(0,Math.min(1,t));
-    return _adjDist(p,[a[0]+t*dx,a[1]+t*dy]);
-  }
-
-  // 두 폴리곤이 변/점 공유하는가? (도로 건너편은 점·변 일치 없음 → 자동 제외)
-  function _isAdjacent(polyA, polyB){
-    if(!polyA || !polyB || polyA.length<3 || polyB.length<3) return false;
-    let shared = 0;
-    for(const pa of polyA){
-      for(const pb of polyB){
-        if(_adjDist(pa,pb) <= _ADJ_EPS_VERTEX){ shared++; break; }
-      }
-      if(shared >= 2) return true; // 변 공유 확정
-    }
-    if(shared >= 1) return true; // 점접도 인접으로 (사용자 요청: 점·변 공유)
-    // 점 일치 없어도 변이 거의 겹치면 (측량오차) 인접 처리
-    for(let i=0;i<polyA.length;i++){
-      const a1=polyA[i], a2=polyA[(i+1)%polyA.length];
-      for(let j=0;j<polyB.length;j++){
-        const b1=polyB[j], b2=polyB[(j+1)%polyB.length];
-        if(_adjPointToSegment(a1,b1,b2)<=_ADJ_EPS_EDGE && _adjPointToSegment(a2,b1,b2)<=_ADJ_EPS_EDGE) return true;
-        if(_adjPointToSegment(b1,a1,a2)<=_ADJ_EPS_EDGE && _adjPointToSegment(b2,a1,a2)<=_ADJ_EPS_EDGE) return true;
-      }
-    }
-    return false;
-  }
-
-  // 점이 폴리곤 안에 있는가? (ray casting)
-  function _pointInPolygon(p, poly){
-    if(!poly || poly.length<3) return false;
-    const x=p[0], y=p[1];
-    let inside=false;
-    for(let i=0, j=poly.length-1; i<poly.length; j=i++){
-      const xi=poly[i][0], yi=poly[i][1];
-      const xj=poly[j][0], yj=poly[j][1];
-      const intersect = ((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi) + xi);
-      if(intersect) inside=!inside;
-    }
-    return inside;
-  }
-
-  // 폴리곤 중심점
-  function _polyCenter(coords){
-    let cx=0, cy=0;
-    coords.forEach(c=>{cx+=c[0]; cy+=c[1];});
-    return [cx/coords.length, cy/coords.length];
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
      주변 필지 + 건물 현황 조회 (브이월드 데이터 API)
      ═══════════════════════════════════════════════════════════════ */
   function _loadNearbyData(){
@@ -5258,7 +5194,7 @@ function switchTab(t){
     const xs = skPoints.map(p=>p.x), ys = skPoints.map(p=>p.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
-    const radius = 30; // 2025-05-11 수정: 100 → 30 (변 공유 인접 필지 + 그 안 건물만 잡으면 충분)
+    const radius = 100;
     const boxMinX = minX - radius, boxMaxX = maxX + radius;
     const boxMinY = minY - radius, boxMaxY = maxY + radius;
     // WGS84로 변환
@@ -5384,29 +5320,6 @@ function switchTab(t){
 
     function finalize(){
       _nearbyLoading = false;
-
-      // 2025-05-11 추가: 인접 필터링 후처리
-      // - 필지: 변/점 공유 필지만 남김 (도로 건너편 자동 제외)
-      // - 건물: 인접 필지 안 건물만 + 내 필지 안 건물은 isOurs=true 태그 (흐리게 표시용)
-      if(skPoints && skPoints.length>=3){
-        const ourCoords = skPoints.map(p=>[p.x, p.y]);
-
-        // 1) 인접 필지만 남김
-        skNearbyLots = skNearbyLots.filter(lot => _isAdjacent(ourCoords, lot.coords));
-
-        // 2) 건물 필터링: 내 필지 안(흐리게) + 인접 필지 안(일반)
-        skNearbyBldgs = skNearbyBldgs.filter(b => {
-          if(!b.coords || b.coords.length<3) return false;
-          const c = _polyCenter(b.coords);
-          if(_pointInPolygon(c, ourCoords)){
-            b.isOurs = true; // 내 필지 안 건물 (흐리게)
-            return true;
-          }
-          // 인접 필지 안 건물만 통과
-          return skNearbyLots.some(lot => _pointInPolygon(c, lot.coords));
-        });
-      }
-
       const lotN = skNearbyLots.length, bldgN = skNearbyBldgs.length;
       if(lotN > 0 || bldgN > 0){
         showToast(`🗺 필지 ${lotN}개, 건물 ${bldgN}개 로드`);
@@ -7204,17 +7117,10 @@ initDB()
 
     // ── 0. 주변 건물 (배경 - 반투명 회색) ──
     if(window._showNearby !== false && window.skNearbyBldgs && window.skNearbyBldgs.length){
-      ctx.lineWidth=0.8;
+      ctx.fillStyle='rgba(140,140,160,.18)';
+      ctx.strokeStyle='rgba(180,180,200,.4)'; ctx.lineWidth=0.8;
       window.skNearbyBldgs.forEach(b=>{
         if(!b.coords||b.coords.length<3) return;
-        // 2025-05-11 추가: 내 필지 안 건물(isOurs)은 흐리게 표시
-        if(b.isOurs){
-          ctx.fillStyle='rgba(140,140,160,.07)';
-          ctx.strokeStyle='rgba(180,180,200,.18)';
-        } else {
-          ctx.fillStyle='rgba(140,140,160,.18)';
-          ctx.strokeStyle='rgba(180,180,200,.4)';
-        }
         ctx.beginPath();
         b.coords.forEach((c,i)=>{
           const[x,y]=tc(c[0],c[1]);
