@@ -1970,29 +1970,28 @@ function _renderPdfPages(pdf, loadingTxt){
       });
     })(i);
   }
-  // 2025-05-11 수정: 모든 페이지 렌더 완료 후 한 번에 표시 + scrollTop 초기화
-  // (점진 append로 인한 스크롤 흔들림을 사용자 시야 밖에서 처리)
+  // 2025-05-11 수정: 모든 페이지 렌더 완료 후 한 번에 표시 + 스크롤 잠금
+  // (사용자가 직접 스크롤하기 전까지 모든 자동 스크롤 이벤트를 0으로 강제)
   return chain.then(function(){
     sd.style.display = 'flex';
     sd.scrollTop = 0;
 
-    // 다단계 강제 초기화: 모바일 Chrome의 reflow/이미지디코드 후 자동 스크롤 대응
-    var firstCanvas = sd.querySelector('canvas');
-    var forceTop = function(){
-      sd.scrollTop = 0;
-      // scrollIntoView로 첫 페이지 명시 지정 (scroll-anchor와 무관하게 동작)
-      if(firstCanvas && firstCanvas.scrollIntoView){
-        try { firstCanvas.scrollIntoView({block:'start', inline:'nearest'}); } catch(e){}
-      }
+    // 스크롤 잠금: 어떤 자동 스크롤 이벤트도 0으로 되돌림
+    var unlocked = false;
+    var unlock = function(){ unlocked = true; };
+    var onScroll = function(){
+      if(!unlocked) sd.scrollTop = 0;
     };
-    requestAnimationFrame(function(){
-      forceTop();
-      requestAnimationFrame(forceTop);
+    sd.addEventListener('scroll', onScroll, {passive:true});
+    // 사용자가 직접 터치/휠 시 즉시 해제
+    ['touchstart','wheel','keydown','pointerdown'].forEach(function(ev){
+      sd.addEventListener(ev, unlock, {passive:true, once:true});
     });
-    // 이미지 디코드 완료 후 자동 스크롤 대응 (여러 시점)
-    setTimeout(forceTop, 50);
-    setTimeout(forceTop, 200);
-    setTimeout(forceTop, 500);
+    // 안전망: 2초 후 자동 해제 + 리스너 정리
+    setTimeout(function(){
+      unlocked = true;
+      setTimeout(function(){ sd.removeEventListener('scroll', onScroll); }, 300);
+    }, 2000);
   });
 }
 
