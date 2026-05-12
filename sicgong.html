@@ -1784,7 +1784,60 @@ function render(query=''){
     });
 
     let connCount=0;
-    const rows=vis.map((item)=>{
+
+    // 2025-05-11 추가: "이름 (N)" 패턴 자동 그룹핑
+    // 같은 확장자 + 모두 파일링크 있음 + 2개 이상일 때만 묶음
+    const _groupRe = /^(.+?)\s*\((\d+)\)\s*$/;
+    const _groups = {}; // prefix → [items]
+    const _ungrouped = []; // 묶지 않을 항목들 (원래 순서 유지용 placeholder 포함)
+    vis.forEach((item)=>{
+      const m = item.name.match(_groupRe);
+      if(m && item.ghUrl){
+        const prefix = m[1].trim();
+        if(!_groups[prefix]){ _groups[prefix] = []; _ungrouped.push({_groupKey: prefix}); }
+        _groups[prefix].push(item);
+      } else {
+        _ungrouped.push(item);
+      }
+    });
+    // 그룹 후처리: 조건 미달 시 (한 개 또는 확장자 혼재) 원래 항목으로 풀어줌
+    Object.keys(_groups).forEach(prefix=>{
+      const g = _groups[prefix];
+      const exts = new Set(g.map(it=>extOf(it.ghUrl||it.name||'')));
+      if(g.length < 2 || exts.size > 1){
+        // 그룹 해제: placeholder 자리에 원래 항목들 펼침
+        const idx = _ungrouped.findIndex(x=>x._groupKey===prefix);
+        if(idx >= 0) _ungrouped.splice(idx, 1, ...g);
+        delete _groups[prefix];
+      }
+    });
+
+    const rows=_ungrouped.map((slot)=>{
+      // 그룹 자리: 묶음 1행 렌더
+      if(slot._groupKey){
+        const g = _groups[slot._groupKey];
+        const ext = extOf(g[0].ghUrl||g[0].name||'');
+        const canView = IMG_EXTS.has(ext) || PDF_EXTS.has(ext);
+        // 그룹 내 모든 파일을 레지스트리에 추가하고 ri 인덱스 모음
+        const riList = g.map(it=>{
+          const ri = window.__FR__.length;
+          window.__FR__.push({url: it.ghUrl, name: it.name, ext: extOf(it.ghUrl||it.name||'')});
+          return ri;
+        });
+        connCount += g.length;
+        const btns = canView
+          ? `<button class="gh-file-btn view" onclick="ghOpenGroup('${riList.join(',')}')">▶ 모두 열기 (${g.length}장)</button>`
+          : `<button class="gh-file-btn dl" onclick="ghDl(${riList[0]})">⬇ 첫 파일</button>`;
+        return `<div class="ir-gh">
+          <div class="iname">
+            <div class="n">${hl(slot._groupKey, q)} <span style="font-size:10px;color:#10d98a;font-weight:700;">📚 ${g.length}장 묶음</span><span class="gh-badge">GH</span></div>
+            <div class="d" style="font-size:10px;">${g.map(it=>it.name.match(_groupRe)?.[2]||'').filter(Boolean).map(n=>'#'+n).join(' ')}</div>
+          </div>
+          <div class="ibtns">${btns}</div>
+        </div>`;
+      }
+
+      const item = slot;
       const hasLink=!!item.ghUrl;
       // 확장자는 URL(파일경로)에서 추출
       const ext=extOf(item.ghUrl||item.name||'');
@@ -1858,6 +1911,67 @@ function ghOpen(ri){
     window.open(enc,'_blank');
   }
 }
+
+// 2025-05-11 추가: 그룹 묶음 열기 (riList 콤마구분 문자열)
+// 첫 파일을 본문 뷰어로 + 모든 파일을 v-filetabs 탭으로 표시
+window.ghOpenGroup = function(riListStr){
+  var riList = String(riListStr).split(',').map(function(s){return parseInt(s,10);}).filter(function(n){return !isNaN(n);});
+  if(!riList.length) return;
+  // 첫 파일 열기
+  ghOpen(riList[0]);
+  // 잠시 후 탭 표시 (뷰어 패널 셋업 완료 대기)
+  setTimeout(function(){
+    var bar = document.getElementById('v-filetabs');
+    if(!bar) return;
+    bar.classList.add('show');
+    bar.innerHTML = riList.map(function(ri, idx){
+      var entry = window.__FR__[ri];
+      if(!entry) return '';
+      var icon = (PDF_EXTS.has(entry.ext) ? '📄' : (IMG_EXTS.has(entry.ext) ? '🖼' : '📎'));
+      return '<div class="vft'+(idx===0?' active':'')+'" onclick="ghOpenGroupTab('+ri+',this)">'
+        + '<span class="vft-icon">'+icon+'</span>'
+        + '<span class="vft-name" title="'+entry.name+'">'+entry.name+'</span>'
+        + '</div>';
+    }).join('');
+  }, 350);
+};
+
+// 그룹 묶음 탭 전환
+window.ghOpenGroupTab = function(ri, tabEl){
+  // 탭 active 갱신
+  if(tabEl && tabEl.parentNode){
+    var siblings = tabEl.parentNode.querySelectorAll('.vft');
+    siblings.forEach(function(s){ s.classList.remove('active'); });
+    tabEl.classList.add('active');
+  }
+  // 콘텐츠 전환 (탭바는 ghOpen이 지우지 않도록, 같은 그룹 내에서는 보존)
+  var entry = window.__FR__[ri];
+  if(!entry) return;
+  var enc = safeUrl(entry.url);
+  var ext = entry.ext;
+  // 탭바 상태 저장 (ghPdfViewer/ghImgViewer가 hide하므로)
+  var bar = document.getElementById('v-filetabs');
+  var barHtml = bar ? bar.innerHTML : '';
+  var barShown = bar ? bar.classList.contains('show') : false;
+  if(PDF_EXTS.has(ext)) ghPdfViewer(enc, entry.name);
+  else if(IMG_EXTS.has(ext)) ghImgViewer(enc, entry.name);
+  else { window.open(enc,'_blank'); return; }
+  // 탭바 복원
+  setTimeout(function(){
+    if(bar && barHtml){
+      bar.innerHTML = barHtml;
+      if(barShown) bar.classList.add('show');
+      // active 탭을 ri로 갱신
+      var tabs = bar.querySelectorAll('.vft');
+      tabs.forEach(function(t){
+        t.classList.remove('active');
+        if(t.getAttribute('onclick') && t.getAttribute('onclick').indexOf('('+ri+',')>=0){
+          t.classList.add('active');
+        }
+      });
+    }
+  }, 100);
+};
 
 // PDF 인앱 뷰어 (워터마크 포함)
 function ghPdfViewer(encodedUrl, name){
