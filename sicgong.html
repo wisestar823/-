@@ -1739,7 +1739,6 @@ function render(query=''){
 
   // 파일 URL 레지스트리 초기화 (숫자 인덱스로 한글 URL 안전 전달)
   window.__FR__ = [];
-  window.__PB__ = [];   // 사진대지 레지스트리 (신규)
 
   const allData=[...DATA,...(customProcesses||[]).map(p=>({...p,items:p.items.map((it,i)=>({...it,_origIdx:i}))}))];
 
@@ -1784,59 +1783,8 @@ function render(query=''){
       return i.name.toLowerCase().includes(q)||(i.detail&&i.detail.toLowerCase().includes(q))||d.title.toLowerCase().includes(q);
     });
 
-    // ── 사진 그룹화: "베이스명 (숫자)" 패턴 묶기 (신규) ──
-    const grouped = (function(items){
-      const out = [];
-      const used = new Set();
-      const re = /^(.+?)\s*\((\d+)\)\s*$/;
-      items.forEach((it, i)=>{
-        if(used.has(i)) return;
-        const m = it.name.match(re);
-        const ext = extOf(it.ghUrl||it.name||'');
-        if(!m || !it.ghUrl || !IMG_EXTS.has(ext)){
-          out.push({_g:false, item:it}); used.add(i); return;
-        }
-        const base = m[1].trim();
-        const members = [];
-        items.forEach((o, oi)=>{
-          if(used.has(oi)) return;
-          const om = o.name.match(re);
-          const oext = extOf(o.ghUrl||o.name||'');
-          if(om && om[1].trim()===base && o.ghUrl && IMG_EXTS.has(oext)){
-            members.push({item:o, idx:oi, num:parseInt(om[2])});
-          }
-        });
-        if(members.length >= 2){
-          members.sort((a,b)=>a.num-b.num);
-          members.forEach(mm=>used.add(mm.idx));
-          out.push({_g:true, baseName:base, items:members.map(mm=>mm.item), count:members.length, detail:members[0].item.detail||''});
-        } else {
-          out.push({_g:false, item:it}); used.add(i);
-        }
-      });
-      return out;
-    })(vis);
-
     let connCount=0;
-    const rows=grouped.map((g)=>{
-      // ── 그룹(사진대지) row (신규) ──
-      if(g._g){
-        connCount += g.count;
-        const pi = window.__PB__.length;
-        window.__PB__.push({
-          baseName: g.baseName,
-          items: g.items.map(it=>({url:it.ghUrl, name:it.name}))
-        });
-        return `<div class="ir-gh">
-          <div class="iname">
-            <div class="n">${hl(g.baseName,q)}<span class="gh-badge" style="background:rgba(245,158,11,.15);color:#f59e0b;">📷 ${g.count}장</span></div>
-            ${g.detail?`<div class="d">${hl(g.detail,q)}</div>`:''}
-          </div>
-          <div class="ibtns"><button class="gh-file-btn view" onclick="ghPhotoBoard(${pi})">▶ 사진대지</button></div>
-        </div>`;
-      }
-      // ── 단일 항목 row (기존 로직 동일) ──
-      const item = g.item;
+    const rows=vis.map((item)=>{
       const hasLink=!!item.ghUrl;
       // 확장자는 URL(파일경로)에서 추출
       const ext=extOf(item.ghUrl||item.name||'');
@@ -2025,10 +1973,26 @@ function _renderPdfPages(pdf, loadingTxt){
   // 2025-05-11 수정: 모든 페이지 렌더 완료 후 한 번에 표시 + scrollTop 초기화
   // (점진 append로 인한 스크롤 흔들림을 사용자 시야 밖에서 처리)
   return chain.then(function(){
-    sd.scrollTop = 0;
     sd.style.display = 'flex';
-    // display 전환 직후에도 한 번 더 (브라우저 렌더 사이클 차이 대비)
-    requestAnimationFrame(function(){ sd.scrollTop = 0; });
+    sd.scrollTop = 0;
+
+    // 다단계 강제 초기화: 모바일 Chrome의 reflow/이미지디코드 후 자동 스크롤 대응
+    var firstCanvas = sd.querySelector('canvas');
+    var forceTop = function(){
+      sd.scrollTop = 0;
+      // scrollIntoView로 첫 페이지 명시 지정 (scroll-anchor와 무관하게 동작)
+      if(firstCanvas && firstCanvas.scrollIntoView){
+        try { firstCanvas.scrollIntoView({block:'start', inline:'nearest'}); } catch(e){}
+      }
+    };
+    requestAnimationFrame(function(){
+      forceTop();
+      requestAnimationFrame(forceTop);
+    });
+    // 이미지 디코드 완료 후 자동 스크롤 대응 (여러 시점)
+    setTimeout(forceTop, 50);
+    setTimeout(forceTop, 200);
+    setTimeout(forceTop, 500);
   });
 }
 
@@ -2140,61 +2104,6 @@ function ghImgViewer(encodedUrl, name){
       fallbackImgViewer(encodedUrl, sd);
     }
   }, 3000);
-}
-
-// ─── 사진대지 뷰어 (신규) ─────────────────────────────
-// 같은 베이스명을 가진 GitHub 이미지들을 세로 스크롤로 한 화면에 표시
-function ghPhotoBoard(pi){
-  var pb = window.__PB__[pi];
-  if(!pb) return;
-
-  document.getElementById('viewer').classList.add('open');
-  document.body.style.overflow='hidden';
-  document.getElementById('v-name').textContent = pb.baseName;
-  document.getElementById('v-meta').textContent = '📷 사진대지 · ' + pb.items.length + '장';
-  document.getElementById('v-filetabs').classList.remove('show');
-  document.getElementById('v-filetabs').innerHTML='';
-  var printBtn = document.getElementById('v-print-btn');
-  if(printBtn) printBtn.style.display = 'none';
-
-  // 워터마크 (전체 화면 오버레이)
-  var wm = document.getElementById('v-wm');
-  if(wm){
-    wm.style.display = 'block';
-    wm.innerHTML = '';
-    if(typeof buildWatermarkOverlay === 'function'){
-      try{ buildWatermarkOverlay(wm); }catch(e){}
-    }
-  }
-
-  // 사진 HTML 생성 (각 카드는 width:100%, flex-shrink:0 으로 세로 배치)
-  var sd = document.getElementById('v-scroll-img');
-  var html = '';
-  pb.items.forEach(function(it, i){
-    var encUrl = safeUrl(it.url);
-    html += '<div style="margin-bottom:14px;background:#1a1d23;border-radius:8px;overflow:hidden;border:1px solid #2d3139;width:100%;flex-shrink:0;box-sizing:border-box;">'
-         +    '<div style="padding:7px 11px;font-size:10px;color:#9ca3af;font-family:monospace;border-bottom:1px solid #2d3139;display:flex;justify-content:space-between;align-items:center;">'
-         +      '<span style="color:#f59e0b;font-weight:700;">📷 ' + (i+1) + ' / ' + pb.items.length + '</span>'
-         +      '<span style="opacity:.7;font-size:9px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + it.name + '</span>'
-         +    '</div>'
-         +    '<img src="' + encUrl + '" style="display:block;width:100%;height:auto;" alt="' + it.name + '" loading="lazy">'
-         +  '</div>';
-  });
-  sd.innerHTML = html;
-
-  // showViewerPanel 호출 (이게 display:flex 로 강제 설정함)
-  showViewerPanel('v-scroll-img');
-
-  // ⚠️ 중요: showViewerPanel 이후에 세로 방향으로 강제 덮어쓰기
-  // (기존 CSS는 align-items:center; justify-content:center 라서 자식들이 가로로 늘어남)
-  sd.style.setProperty('display', 'flex', 'important');
-  sd.style.setProperty('flex-direction', 'column', 'important');
-  sd.style.setProperty('align-items', 'stretch', 'important');
-  sd.style.setProperty('justify-content', 'flex-start', 'important');
-  sd.style.setProperty('overflow-y', 'auto', 'important');
-  sd.style.setProperty('overflow-x', 'hidden', 'important');
-  sd.style.setProperty('padding', '10px', 'important');
-  sd.style.setProperty('background', '#0d0f14', 'important');
 }
 
 // 폴백: img 태그 + DOM 오버레이 워터마크
