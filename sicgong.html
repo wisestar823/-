@@ -1926,7 +1926,9 @@ function _loadPdfJs(){
 function _renderPdfPages(pdf, loadingTxt){
   var sd = document.getElementById('v-scroll-img');
   sd.innerHTML = '';
-  sd.style.cssText = 'display:flex;flex-direction:column;align-items:center;overflow:auto;padding:8px;gap:10px;background:#1a1a1a;position:relative;overflow-anchor:none;';
+  // 2025-05-11 수정: 렌더 중에는 display:none — 페이지 동적 append를 사용자 시야 밖에서 처리
+  //                  모든 페이지 렌더 완료 후 마지막에 display:flex로 전환하면서 scrollTop=0
+  sd.style.cssText = 'display:none;flex-direction:column;align-items:center;overflow:auto;padding:8px;gap:10px;background:#1a1a1a;position:relative;overflow-anchor:none;width:100%;height:100%;'
   // v-iframe / v-notsup은 이미 숨겨진 상태 (앞서 showViewerPanel('v-loading') 호출됨)
   // v-loading은 그대로 오버레이로 유지하여 진행률 표시
   // v-scroll-img만 직접 켜기 (showViewerPanel 안 호출 — loading을 끄지 않도록)
@@ -1968,9 +1970,13 @@ function _renderPdfPages(pdf, loadingTxt){
       });
     })(i);
   }
-  // 2025-05-11 추가: 모든 페이지 렌더 완료 후 스크롤 위치 최종 초기화 (안전망)
+  // 2025-05-11 수정: 모든 페이지 렌더 완료 후 한 번에 표시 + scrollTop 초기화
+  // (점진 append로 인한 스크롤 흔들림을 사용자 시야 밖에서 처리)
   return chain.then(function(){
     sd.scrollTop = 0;
+    sd.style.display = 'flex';
+    // display 전환 직후에도 한 번 더 (브라우저 렌더 사이클 차이 대비)
+    requestAnimationFrame(function(){ sd.scrollTop = 0; });
   });
 }
 
