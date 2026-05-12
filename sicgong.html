@@ -1944,7 +1944,8 @@ window.ghOpenGroup = function(riListStr){
 
   var sd = document.getElementById('v-scroll-img');
   sd.innerHTML = '';
-  sd.style.cssText = 'display:none;flex-direction:column;align-items:center;overflow:auto;padding:8px;gap:10px;background:#1a1a1a;position:relative;overflow-anchor:none;width:100%;height:100%;';
+  // justify-content:flex-start 명시 (stylesheet의 :center 덮어쓰기 — 콘텐츠를 위에서부터 배치)
+  sd.style.cssText = 'display:none;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;padding:16px 8px;gap:10px;background:#1a1a1a;position:relative;overflow-anchor:none;width:100%;height:100%;';
 
   var maxWidth = Math.min(window.innerWidth, 1200) - 16;
 
@@ -2118,7 +2119,8 @@ function _renderPdfPages(pdf, loadingTxt){
   sd.innerHTML = '';
   // 2025-05-11 수정: 렌더 중에는 display:none — 페이지 동적 append를 사용자 시야 밖에서 처리
   //                  모든 페이지 렌더 완료 후 마지막에 display:flex로 전환하면서 scrollTop=0
-  sd.style.cssText = 'display:none;flex-direction:column;align-items:center;overflow:auto;padding:8px;gap:10px;background:#1a1a1a;position:relative;overflow-anchor:none;width:100%;height:100%;'
+  //                  핵심: justify-content:flex-start 명시 (stylesheet의 :center가 콘텐츠를 세로 가운데 정렬해서 위가 잘리던 문제 해결)
+  sd.style.cssText = 'display:none;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;padding:16px 8px;gap:10px;background:#1a1a1a;position:relative;overflow-anchor:none;width:100%;height:100%;'
   // v-iframe / v-notsup은 이미 숨겨진 상태 (앞서 showViewerPanel('v-loading') 호출됨)
   // v-loading은 그대로 오버레이로 유지하여 진행률 표시
   // v-scroll-img만 직접 켜기 (showViewerPanel 안 호출 — loading을 끄지 않도록)
