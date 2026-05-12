@@ -2167,15 +2167,12 @@ function ghPhotoBoard(pi){
     }
   }
 
-  // 스크롤 영역에 모든 사진 세로 나열
+  // 사진 HTML 생성 (각 카드는 width:100%, flex-shrink:0 으로 세로 배치)
   var sd = document.getElementById('v-scroll-img');
-  sd.innerHTML = '';
-  sd.style.cssText = 'display:block;overflow:auto;padding:10px;position:relative;height:100%;background:#0d0f14;';
-
   var html = '';
   pb.items.forEach(function(it, i){
     var encUrl = safeUrl(it.url);
-    html += '<div style="margin-bottom:14px;background:#1a1d23;border-radius:8px;overflow:hidden;border:1px solid #2d3139;">'
+    html += '<div style="margin-bottom:14px;background:#1a1d23;border-radius:8px;overflow:hidden;border:1px solid #2d3139;width:100%;flex-shrink:0;box-sizing:border-box;">'
          +    '<div style="padding:7px 11px;font-size:10px;color:#9ca3af;font-family:monospace;border-bottom:1px solid #2d3139;display:flex;justify-content:space-between;align-items:center;">'
          +      '<span style="color:#f59e0b;font-weight:700;">📷 ' + (i+1) + ' / ' + pb.items.length + '</span>'
          +      '<span style="opacity:.7;font-size:9px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + it.name + '</span>'
@@ -2185,7 +2182,19 @@ function ghPhotoBoard(pi){
   });
   sd.innerHTML = html;
 
+  // showViewerPanel 호출 (이게 display:flex 로 강제 설정함)
   showViewerPanel('v-scroll-img');
+
+  // ⚠️ 중요: showViewerPanel 이후에 세로 방향으로 강제 덮어쓰기
+  // (기존 CSS는 align-items:center; justify-content:center 라서 자식들이 가로로 늘어남)
+  sd.style.setProperty('display', 'flex', 'important');
+  sd.style.setProperty('flex-direction', 'column', 'important');
+  sd.style.setProperty('align-items', 'stretch', 'important');
+  sd.style.setProperty('justify-content', 'flex-start', 'important');
+  sd.style.setProperty('overflow-y', 'auto', 'important');
+  sd.style.setProperty('overflow-x', 'hidden', 'important');
+  sd.style.setProperty('padding', '10px', 'important');
+  sd.style.setProperty('background', '#0d0f14', 'important');
 }
 
 // 폴백: img 태그 + DOM 오버레이 워터마크
