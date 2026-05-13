@@ -903,8 +903,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
             <button onclick="skDrawZoom(0.8)" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:14px;cursor:pointer;">−</button>
             <button onclick="skDrawReset()" style="width:28px;height:28px;background:rgba(0,0,0,.7);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:10px;cursor:pointer;">⟳</button>
           </div>
-          <!-- 측정 모드 버튼 -->
-          <button id="sk-measure-btn" onclick="skToggleMeasureMode()" style="position:absolute;bottom:8px;right:8px;padding:5px 10px;background:rgba(0,0,0,.75);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:10px;cursor:pointer;font-family:inherit;transition:all .2s;">📏 거리측정</button>
+          <!-- 2025-05-12 제거: 거리측정 버튼 (사용자 요청) - 기능은 기본 활성, 탭만으로 측정 -->
           <!-- 2025-05-11 제거: 🗺 주변필지 버튼 (사용자 요청) -->
           <!-- 측정 결과 -->
           <div id="sk-measure-result" style="position:absolute;bottom:8px;left:90px;right:40px;background:rgba(0,0,0,.8);border:1px solid rgba(6,200,216,.4);border-radius:6px;padding:4px 8px;font-size:10px;color:#06c8d8;display:none;font-family:monospace;"></div>
@@ -1219,11 +1218,7 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
         <button onclick="skDrawOvZoom(0.8)" style="width:30px;height:30px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-size:16px;cursor:pointer;">−</button>
         <button onclick="skDrawOvReset()" style="width:30px;height:30px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-size:11px;cursor:pointer;">⟳</button>
       </div>
-      <!-- 탭 안내 -->
-      <div style="position:absolute;bottom:44px;left:8px;display:flex;gap:5px;">
-        <button id="sk-fs-measure-btn" onclick="skToggleMeasureMode()" style="padding:3px 8px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.15);border-radius:4px;color:#fff;font-size:9px;cursor:pointer;font-family:inherit;">📏 거리측정</button>
-        <div style="font-size:9px;color:#06c8d8;background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2);border-radius:4px;padding:3px 6px;">📍 탭 → 노드</div>
-      </div>
+      <!-- 2025-05-12 제거: 거리측정 버튼 + 📍 탭→노드 라벨 (사용자 요청) - 기능은 기본 활성 -->
       <!-- 탭 결과 -->
       <div id="sk-fs-tap-result" style="position:absolute;bottom:44px;left:50%;transform:translateX(-50%);font-size:10px;color:#f59e0b;background:rgba(0,0,0,.85);border:1px solid rgba(245,158,11,.25);border-radius:4px;padding:3px 8px;font-family:monospace;display:none;white-space:nowrap;z-index:10;"></div>
     </div>
@@ -3172,7 +3167,8 @@ function switchTab(t){
           const dy=e.changedTouches[0].clientY-_drawTapStart.y;
           const dt=Date.now()-_drawTapStart.t;
           const moved=Math.sqrt(dx*dx+dy*dy);
-          if(dt<400&&moved<15){
+          // 2025-05-12 민감도 향상: dt 400→800ms, moved 15→30px (모바일 터치 인식 개선)
+          if(dt<800&&moved<30){
             e.preventDefault();
             const rect=canvas.getBoundingClientRect();
             skDrawHandleTap(e.changedTouches[0].clientX-rect.left,e.changedTouches[0].clientY-rect.top,false);
@@ -3481,8 +3477,8 @@ function switchTab(t){
         const dx=e.changedTouches[0].clientX-_fsTapStart.x;
         const dy=e.changedTouches[0].clientY-_fsTapStart.y;
         const dt=Date.now()-_fsTapStart.t;
-        // 300ms 이내 & 10px 이내 이동 = 탭
-        if(dt<300&&Math.sqrt(dx*dx+dy*dy)<10){
+        // 2025-05-12 민감도 향상: dt 300→800ms, moved 10→30px (모바일 터치 인식 개선)
+        if(dt<800&&Math.sqrt(dx*dx+dy*dy)<30){
           const rect=canvas.getBoundingClientRect();
           skDrawHandleTap(e.changedTouches[0].clientX-rect.left,e.changedTouches[0].clientY-rect.top,true);
         }
@@ -3959,17 +3955,22 @@ function switchTab(t){
 
     if(skMeasurePts.length === 0){
       skMeasurePts = [node];
+      // 2025-05-12 추가: 첫 번째 점 선택 토스트
+      try { if(window.showToast) window.showToast('📍 첫 번째 점: ' + node.label + ' — 두 번째 점 선택', 1500); } catch(e){}
     } else {
       const a = skMeasurePts[0];
       const b = node;
       if(a.x===b.x && a.y===b.y){
         // 같은 노드 탭 → 취소
         skMeasurePts = [];
+        try { if(window.showToast) window.showToast('측정 취소', 1000); } catch(e){}
       } else {
         const d = Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2);
         skMeasureSegs.push({a,b,d,id:skMeasureSegId++});
-        skMeasurePts = [];
+        skMeasurePts = []; // ✅ 두 점 측정 완료 → 다음 측정은 새 첫 점부터 시작 (연속 X)
         skRenderSegList();
+        // 2025-05-12 추가: 측정 완료 명확한 안내 (다음 측정은 새 두 점이라는 점 강조)
+        try { if(window.showToast) window.showToast('✓ ' + a.label + ' → ' + b.label + ': ' + d.toFixed(2) + 'm  (다음 측정: 새로 첫 점 선택)', 2200); } catch(e){}
       }
     }
 
