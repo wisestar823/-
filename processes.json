@@ -8,18 +8,7 @@
       "category": "design",
       "folder": "도면검토",
       "order": 0,
-      "items": [
-        {
-          "name": "관련참고자료",
-          "detail": "2024 건축공사부 현장이슈 결산",
-          "isGh": false
-        },
-        {
-          "name": "현장도면 샘플",
-          "detail": "샘플도면",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "civil",
@@ -28,18 +17,7 @@
       "category": "structure",
       "folder": "토목공사",
       "order": 1,
-      "items": [
-        {
-          "name": "토목공사",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "조경공사",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "foundation",
@@ -48,13 +26,7 @@
       "category": "structure",
       "folder": "기초공사",
       "order": 2,
-      "items": [
-        {
-          "name": "기초공사",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "frame",
@@ -63,18 +35,7 @@
       "category": "structure",
       "folder": "골조공사",
       "order": 3,
-      "items": [
-        {
-          "name": "목골조공사",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "RC골조공사",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "interior",
@@ -83,58 +44,7 @@
       "category": "interior",
       "folder": "내장공사",
       "order": 4,
-      "items": [
-        {
-          "name": "내장공사",
-          "detail": "일반 내장",
-          "isGh": false
-        },
-        {
-          "name": "실링전산볼트 보강예시",
-          "detail": "경간 넓은 곳",
-          "isGh": false
-        },
-        {
-          "name": "파워바 시방서",
-          "detail": "원주산업",
-          "isGh": false
-        },
-        {
-          "name": "파워바 도면",
-          "detail": "도면 이미지",
-          "isGh": false
-        },
-        {
-          "name": "파워바 상세도면",
-          "detail": "상세도면",
-          "isGh": false
-        },
-        {
-          "name": "이중스터드내화",
-          "detail": "차음내화벽",
-          "isGh": false
-        },
-        {
-          "name": "바닥내화",
-          "detail": "차음내화벽",
-          "isGh": false
-        },
-        {
-          "name": "내화구조인정서",
-          "detail": "인정서",
-          "isGh": false
-        },
-        {
-          "name": "차음구조인정서",
-          "detail": "인정서",
-          "isGh": false
-        },
-        {
-          "name": "층간소음 완충재 소닉스",
-          "detail": "층간소음 완화",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "exterior",
@@ -143,38 +53,7 @@
       "category": "exterior",
       "folder": "외장공사",
       "order": 5,
-      "items": [
-        {
-          "name": "세라믹사이딩",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "조적벽돌",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "조적(앵글) 시공상세도",
-          "detail": "앵글보강상세",
-          "isGh": false
-        },
-        {
-          "name": "파벽돌",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "스터코",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "석재",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "insulation",
@@ -183,48 +62,7 @@
       "category": "exterior",
       "folder": "단열공사",
       "order": 6,
-      "items": [
-        {
-          "name": "단열공사 전반",
-          "detail": "인슐레이션·R7내단열",
-          "isGh": false
-        },
-        {
-          "name": "연질폼",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "경질폼",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "스카이텍",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "PF보드",
-          "detail": "PF보드 단열",
-          "isGh": false
-        },
-        {
-          "name": "PF보드 프라이머 시공",
-          "detail": "파벽시공시",
-          "isGh": false
-        },
-        {
-          "name": "PF보드 화스너 시공기준",
-          "detail": "화스너시공",
-          "isGh": false
-        },
-        {
-          "name": "실위데크 시공사례",
-          "detail": "시공 사례",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "metal",
@@ -233,38 +71,7 @@
       "category": "exterior",
       "folder": "금속공사",
       "order": 7,
-      "items": [
-        {
-          "name": "후레슁공사·금속작업",
-          "detail": "금속공사 전반",
-          "isGh": false
-        },
-        {
-          "name": "징크공사",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "세면기하지",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "커튼월",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "난간공사",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "잡철공사",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "roof",
@@ -273,33 +80,7 @@
       "category": "exterior",
       "folder": "지붕공사",
       "order": 8,
-      "items": [
-        {
-          "name": "슁글",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "징크",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "세라믹슁글",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "기와 시공지침서",
-          "detail": "기와 시공",
-          "isGh": false
-        },
-        {
-          "name": "기와 시공사진",
-          "detail": "시공사진집",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "window",
@@ -308,38 +89,7 @@
       "category": "interior",
       "folder": "창호공사",
       "order": 9,
-      "items": [
-        {
-          "name": "창호시공기준",
-          "detail": "일반 창호",
-          "isGh": false
-        },
-        {
-          "name": "살라만더 시방서",
-          "detail": "창호 시방서",
-          "isGh": false
-        },
-        {
-          "name": "삼익 디크닉 시방서",
-          "detail": "시공매뉴얼",
-          "isGh": false
-        },
-        {
-          "name": "LX창호 시방서",
-          "detail": "LX창호",
-          "isGh": false
-        },
-        {
-          "name": "RC창호 시공기준",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "천창 시공",
-          "detail": "천창 시공",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "hvac",
@@ -348,28 +98,7 @@
       "category": "mep",
       "folder": "난방설비",
       "order": 10,
-      "items": [
-        {
-          "name": "보일러설치·난방배관",
-          "detail": "난방공사 전반",
-          "isGh": false
-        },
-        {
-          "name": "수도배관",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "외부수도",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "소방설비",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "electric",
@@ -378,43 +107,7 @@
       "category": "mep",
       "folder": "전기통신소방",
       "order": 11,
-      "items": [
-        {
-          "name": "임시전기",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "지중전기",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "내선공사",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "통신공사",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "IOT공사",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "3상전기",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "욕실 미러 미디어 관리",
-          "detail": "설치관리",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "waterproof",
@@ -423,33 +116,7 @@
       "category": "interior",
       "folder": "방수타일",
       "order": 12,
-      "items": [
-        {
-          "name": "타일·실내방수·실외방수",
-          "detail": "방수타일 전반",
-          "isGh": false
-        },
-        {
-          "name": "RC외벽방수",
-          "detail": "",
-          "isGh": false
-        },
-        {
-          "name": "조적욕조",
-          "detail": "조적욕조 시공",
-          "isGh": false
-        },
-        {
-          "name": "폴리우레아 시공 소개서",
-          "detail": "J&J 폴리우레아",
-          "isGh": false
-        },
-        {
-          "name": "폴리우레아 규격서",
-          "detail": "자재규격",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "painting",
@@ -458,18 +125,7 @@
       "category": "interior",
       "folder": "도장도배필름",
       "order": 13,
-      "items": [
-        {
-          "name": "필름공사·도배공사",
-          "detail": "도배 필름공사",
-          "isGh": false
-        },
-        {
-          "name": "도장공사",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "furniture",
@@ -478,13 +134,7 @@
       "category": "interior",
       "folder": "가구공사",
       "order": 14,
-      "items": [
-        {
-          "name": "가구공사",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "rain",
@@ -493,13 +143,7 @@
       "category": "mgmt",
       "folder": "우천시 관리",
       "order": 15,
-      "items": [
-        {
-          "name": "우천시 메뉴얼",
-          "detail": "우천시관리 지침서",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "winter",
@@ -508,23 +152,7 @@
       "category": "mgmt",
       "folder": "동절기관리",
       "order": 16,
-      "items": [
-        {
-          "name": "동절기 온도관리 기록지",
-          "detail": "PDF",
-          "isGh": false
-        },
-        {
-          "name": "동절기 온도관리 기록지 (엑셀)",
-          "detail": "Excel",
-          "isGh": false
-        },
-        {
-          "name": "동절기공사관리요령",
-          "detail": "관리요령",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "protection",
@@ -533,13 +161,7 @@
       "category": "mgmt",
       "folder": "보양관리",
       "order": 17,
-      "items": [
-        {
-          "name": "마감재 보양방법 사진",
-          "detail": "2023.11.30",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "thermal",
@@ -548,18 +170,7 @@
       "category": "safety",
       "folder": "열관류율",
       "order": 18,
-      "items": [
-        {
-          "name": "위치별 열관류율표",
-          "detail": "이미지",
-          "isGh": false
-        },
-        {
-          "name": "지역별 열관류율표",
-          "detail": "이미지",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "site",
@@ -568,43 +179,7 @@
       "category": "mgmt",
       "folder": "현장관리",
       "order": 19,
-      "items": [
-        {
-          "name": "현장관리 자료",
-          "detail": "현장관리 전반",
-          "isGh": false
-        },
-        {
-          "name": "CS·갈등관리 교육자료",
-          "detail": "현장소장 교육",
-          "isGh": false
-        },
-        {
-          "name": "시공지침서 공통공사",
-          "detail": "더존하우징 2022.04",
-          "isGh": false
-        },
-        {
-          "name": "협력업체 리스트",
-          "detail": "2025.01.17",
-          "isGh": false
-        },
-        {
-          "name": "더존종합건설 사업자등록증",
-          "detail": "종건 사업자",
-          "isGh": false
-        },
-        {
-          "name": "더존종합건설 통장사본",
-          "detail": "종건 통장",
-          "isGh": false
-        },
-        {
-          "name": "더존하우징 통장사본",
-          "detail": "하우징 통장",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "safetycard",
@@ -613,13 +188,7 @@
       "category": "safety",
       "folder": "안전관리",
       "order": 20,
-      "items": [
-        {
-          "name": "안전사고사례",
-          "detail": "안전사고 사례집",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "material",
@@ -628,23 +197,7 @@
       "category": "mgmt",
       "folder": "자재폐기물",
       "order": 21,
-      "items": [
-        {
-          "name": "자재관리요령",
-          "detail": "자재관리",
-          "isGh": false
-        },
-        {
-          "name": "자재 등급표",
-          "detail": "자재 등급",
-          "isGh": false
-        },
-        {
-          "name": "폐기물관리요령",
-          "detail": "",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "penalty",
@@ -653,23 +206,7 @@
       "category": "mgmt",
       "folder": "패널티",
       "order": 22,
-      "items": [
-        {
-          "name": "직영·관리 패널티 기준표",
-          "detail": "2025.01.10",
-          "isGh": false
-        },
-        {
-          "name": "책임 패널티 기준표",
-          "detail": "2025.01.10",
-          "isGh": false
-        },
-        {
-          "name": "업체 패널티 기준표",
-          "detail": "2025.03.11",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "quality",
@@ -678,18 +215,7 @@
       "category": "safety",
       "folder": "품질시험계획",
       "order": 23,
-      "items": [
-        {
-          "name": "품질시험계획서",
-          "detail": "곤지암읍 삼리 612-47",
-          "isGh": false
-        },
-        {
-          "name": "소규모 건설공사 품질관리 가이드",
-          "detail": "리플릿",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "railroad",
@@ -698,13 +224,7 @@
       "category": "safety",
       "folder": "철도인접지역검토",
       "order": 24,
-      "items": [
-        {
-          "name": "철도지역 허가시 검토사항",
-          "detail": "인허가 검토",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "education",
@@ -722,13 +242,7 @@
       "category": "mgmt",
       "folder": "준공청소",
       "order": 26,
-      "items": [
-        {
-          "name": "준공청소",
-          "detail": "준공청소 관련자료",
-          "isGh": false
-        }
-      ]
+      "items": []
     },
     {
       "id": "ending",
@@ -737,18 +251,7 @@
       "category": "mgmt",
       "folder": "엔딩",
       "order": 27,
-      "items": [
-        {
-          "name": "공사완료보고서",
-          "detail": "준공 후 최종 보고",
-          "isGh": false
-        },
-        {
-          "name": "엔딩 체크리스트",
-          "detail": "준공 전 최종 점검",
-          "isGh": false
-        }
-      ]
+      "items": []
     }
   ]
 }
