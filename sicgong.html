@@ -3571,6 +3571,8 @@ function switchTab(t){
   // skMeasureSegs: 완성된 구간 목록 [{a:{x,y}, b:{x,y}, d:float, id:int}]
   let skMeasureSegs = [];
   let skMeasureSegId = 0;
+  // 2025-05-12 추가: 의도치 않은 연속 측정 방지용 디바운스 마커
+  let _lastMeasureCompleteAt = 0;
 
   // 탭 → TM 좌표 역변환
   function skCanvasToTM(canvasX, canvasY, isFs){
@@ -3954,9 +3956,12 @@ function switchTab(t){
     if(!node) return;
 
     if(skMeasurePts.length === 0){
+      // 2025-05-12 수정: 디바운스 300ms — 손가락 떨림에 의한 더블탭만 차단 (정상 흐름은 즉시 작동)
+      if(_lastMeasureCompleteAt && Date.now() - _lastMeasureCompleteAt < 300){
+        return; // 같은 점 더블탭 등 의도치 않은 추가 탭 무시
+      }
       skMeasurePts = [node];
-      // 2025-05-12 추가: 첫 번째 점 선택 토스트
-      try { if(window.showToast) window.showToast('📍 첫 번째 점: ' + node.label + ' — 두 번째 점 선택', 1500); } catch(e){}
+      try { if(window.showToast) window.showToast('📍 첫 번째 점: ' + node.label, 1200); } catch(e){}
     } else {
       const a = skMeasurePts[0];
       const b = node;
@@ -3967,10 +3972,10 @@ function switchTab(t){
       } else {
         const d = Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2);
         skMeasureSegs.push({a,b,d,id:skMeasureSegId++});
-        skMeasurePts = []; // ✅ 두 점 측정 완료 → 다음 측정은 새 첫 점부터 시작 (연속 X)
+        skMeasurePts = []; // ✅ 두 점 측정 완료 → 자동으로 다음 첫 점부터 다시 시작
+        _lastMeasureCompleteAt = Date.now();
         skRenderSegList();
-        // 2025-05-12 추가: 측정 완료 명확한 안내 (다음 측정은 새 두 점이라는 점 강조)
-        try { if(window.showToast) window.showToast('✓ ' + a.label + ' → ' + b.label + ': ' + d.toFixed(2) + 'm  (다음 측정: 새로 첫 점 선택)', 2200); } catch(e){}
+        try { if(window.showToast) window.showToast('✓ ' + a.label + ' → ' + b.label + ': ' + d.toFixed(2) + 'm', 1800); } catch(e){}
       }
     }
 
@@ -3981,6 +3986,7 @@ function switchTab(t){
   // 구간 삭제
   window.skDeleteSeg = function(id){
     skMeasureSegs = skMeasureSegs.filter(s=>s.id!==id);
+    _lastMeasureCompleteAt = 0; // 2025-05-12 추가: 삭제 직후 즉시 새 측정 가능
     skRenderSegList();
     skDrawDraw();
     if(document.getElementById('sk-draw-overlay').classList.contains('open')) skDrawFsDraw();
@@ -3989,6 +3995,7 @@ function switchTab(t){
   // 전체 구간 삭제
   window.skClearSegs = function(){
     skMeasureSegs=[];skMeasurePts=[];
+    _lastMeasureCompleteAt = 0; // 2025-05-12 추가: 삭제 직후 즉시 새 측정 가능
     skRenderSegList();
     skDrawDraw();
     if(document.getElementById('sk-draw-overlay').classList.contains('open')) skDrawFsDraw();
