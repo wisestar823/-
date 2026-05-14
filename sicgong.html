@@ -1610,7 +1610,7 @@ const SHEET_META={
 };
 const BASE_COUNTS={'도면검토':2,'토목공사':2,'기초공사':1,'골조공사':2,'내장공사':10,'외장공사':6,'단열공사':8,'금속공사':6,'지붕공사':5,'창호공사':6,'난방설비':4,'전기통신소방':7,'방수타일':5,'도장도배필름':2,'가구공사':1,'준공청소':1,'우천시 관리':1,'동절기관리':3,'보양관리':1,'열관류율':2,'현장관리':7,'안전관리':1,'자재폐기물':3,'패널티':3,'품질시험계획':2,'철도인접지역검토':1};
 
-const DATA=[
+let DATA=[
   {id:'design',cat:'design',title:'도면 검토',icon:'📐',color:'#4a9eff20',iconBg:'#4a9eff',sheet:'도면검토',items:[
     {name:'관련참고자료',detail:'2024 건축공사부 현장이슈 결산'},
     {name:'현장도면 샘플',detail:'샘플도면'}]},
@@ -1702,6 +1702,75 @@ const DATA=[
     {name:'공사완료보고서',detail:'준공 후 최종 보고'},
     {name:'엔딩 체크리스트',detail:'준공 전 최종 점검'}]},
 ];
+
+// ════════════════════════════════════════════════════════════════
+// 2025-05-12 추가: processes.json 비동기 로더 (외부 공정 관리 연동)
+// ────────────────────────────────────────────────────────────────
+// 정책:
+//   1. 페이지 로드 시 하드코딩 DATA로 즉시 표시 (오프라인 안전망)
+//   2. localStorage 캐시가 있으면 즉시 교체 (이전에 로드한 최신본 사용)
+//   3. 백그라운드에서 processes.json fetch
+//   4. 성공 시 DATA 교체 + 캐시 갱신 + 화면 재렌더
+//   5. 실패 시 fallback 유지 (조용히)
+// ════════════════════════════════════════════════════════════════
+(function(){
+  var CACHE_KEY = 'sic_processes_cache_v1';
+
+  // step 1: localStorage 캐시 즉시 적용
+  try {
+    var cached = localStorage.getItem(CACHE_KEY);
+    if(cached){
+      var parsed = JSON.parse(cached);
+      if(parsed && Array.isArray(parsed.processes) && parsed.processes.length > 0){
+        DATA = _processesToData(parsed.processes);
+      }
+    }
+  } catch(e){}
+
+  // step 2: 백그라운드 fetch (캐시 무효화 위해 timestamp 추가)
+  function load(){
+    fetch('processes.json?t=' + Date.now(), {cache: 'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('fetch failed'); return r.json(); })
+      .then(function(json){
+        if(!json || !Array.isArray(json.processes)) return;
+        DATA = _processesToData(json.processes);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(json)); } catch(e){}
+        // 화면 재렌더 (자료보기 탭이 현재 활성일 때)
+        try { if(typeof render === 'function') render(); } catch(e){}
+      })
+      .catch(function(){ /* 조용히 무시 - fallback 유지 */ });
+  }
+
+  // processes.json → DATA 변환 (구조 호환)
+  function _processesToData(processes){
+    // order로 정렬
+    var sorted = processes.slice().sort(function(a,b){
+      return (a.order||0) - (b.order||0);
+    });
+    return sorted.map(function(p){
+      return {
+        id: p.id,
+        title: p.title,
+        icon: p.icon || '📦',
+        category: p.category || 'structure',
+        folder: p.folder || '',
+        items: (p.items || []).map(function(it){
+          var r = { name: it.name, detail: it.detail || '' };
+          if(it.isGh) r.isGh = true;
+          return r;
+        })
+      };
+    });
+  }
+
+  // DOM 준비 후 또는 즉시 실행
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', load);
+  } else {
+    load();
+  }
+})();
+// ════════════════════════════════════════════════════════════════
 
 const CATS=[
   {id:'all',label:'전체 보기',icon:'📋'},{id:'design',label:'설계·도면',icon:'📐'},
