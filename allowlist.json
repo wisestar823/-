@@ -166,5 +166,11 @@
     "role": "viewer",
     "memo": "이인수소장",
     "addedAt": "2026-05-14"
+  },
+  {
+    "id": "efribuyc",
+    "role": "viewer",
+    "memo": "강성준소장",
+    "addedAt": "2026-05-14"
   }
 ]
