@@ -214,5 +214,11 @@
     "role": "admin",
     "memo": "이영빈차장",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "q5s97zct",
+    "role": "admin",
+    "memo": "엄재현 부장",
+    "addedAt": "2026-05-15"
   }
 ]
