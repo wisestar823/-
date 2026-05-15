@@ -178,5 +178,11 @@
     "role": "admin",
     "memo": "김동완차장",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "zzbmj3a1",
+    "role": "viewer",
+    "memo": "조준행소장",
+    "addedAt": "2026-05-15"
   }
 ]
