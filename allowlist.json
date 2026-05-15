@@ -220,5 +220,11 @@
     "role": "admin",
     "memo": "엄재현 부장",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "wmfbw9d8",
+    "role": "viewer",
+    "memo": "손석현소장",
+    "addedAt": "2026-05-15"
   }
 ]
