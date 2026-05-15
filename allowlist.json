@@ -286,5 +286,11 @@
     "role": "admin",
     "memo": "엄재현2",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "kgipnlir",
+    "role": "viewer",
+    "memo": "하태우소장",
+    "addedAt": "2026-05-15"
   }
 ]
