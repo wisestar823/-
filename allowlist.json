@@ -280,5 +280,11 @@
     "role": "viewer",
     "memo": "정강모 소장",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "mrit7hnb",
+    "role": "admin",
+    "memo": "엄재현2",
+    "addedAt": "2026-05-15"
   }
 ]
