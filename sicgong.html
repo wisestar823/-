@@ -383,6 +383,12 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 .gh-file-btn.dl{background:rgba(46,216,160,.12);color:#2ed8a0;border:1px solid rgba(46,216,160,.22);}
 .gh-file-btn.dl:hover{background:rgba(46,216,160,.25);}
 .gh-badge{font-size:9px;background:rgba(74,158,255,.15);color:#4a9eff;border-radius:3px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+/* 2026-05-14 추가: NEW 배지 (신규 업로드 60일 이내 반짝임) */
+.new-badge{display:inline-block;font-size:9px;font-weight:900;color:#fff;background:linear-gradient(135deg,#ef4444 0%,#f97316 100%);border-radius:4px;padding:2px 6px;margin-left:5px;vertical-align:middle;letter-spacing:.5px;animation:newPulse 1.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(239,68,68,.55);}
+@keyframes newPulse{
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.55);}
+  50%{transform:scale(1.1);box-shadow:0 0 0 5px rgba(239,68,68,0);}
+}
 .ir-gh{display:flex;align-items:flex-start;gap:6px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
 .ir-gh:last-child{border-bottom:none;}
 .ir-gh .iname{flex:1;min-width:0;}
@@ -1828,12 +1834,13 @@ function render(query=''){
     const ghFiles=ghIndex[d.id]||[];
     if(!ghFiles.length) return d;
     const existNames=new Set(d.items.map(i=>i.name));
+    // 2026-05-14 추가: addedAt 필드 전달 (시공탭 NEW 배지용)
     const newItems=ghFiles
       .filter(f=>!existNames.has(f.name))
-      .map((f,i)=>({name:f.name,detail:f.detail||'',ghUrl:GHBASE+f.file,isGh:true,_origIdx:d.items.length+i}));
+      .map((f,i)=>({name:f.name,detail:f.detail||'',ghUrl:GHBASE+f.file,isGh:true,addedAt:f.addedAt||'',_origIdx:d.items.length+i}));
     const updatedItems=d.items.map(it=>{
       const match=ghFiles.find(f=>f.name===it.name);
-      return match?{...it,ghUrl:GHBASE+match.file}:it;
+      return match?{...it,ghUrl:GHBASE+match.file,addedAt:match.addedAt||''}:it;
     });
     return{...d,items:[...updatedItems,...newItems]};
   });
@@ -1930,9 +1937,19 @@ function render(query=''){
         btns=`<span style="font-size:10px;color:var(--text-muted);opacity:.3;">—</span>`;
       }
 
+      // 2026-05-14 추가: NEW 배지 - 업로드 후 60일 이내
+      let newBadge='';
+      if(item.addedAt){
+        const added=Date.parse(item.addedAt);
+        if(!isNaN(added)){
+          const days=(Date.now()-added)/(86400000);
+          if(days>=0 && days<60) newBadge='<span class="new-badge">NEW</span>';
+        }
+      }
+
       return `<div class="ir-gh">
         <div class="iname">
-          <div class="n">${hl(item.name,q)}${item.isGh?'<span class=\"gh-badge\">GH</span>':''}</div>
+          <div class="n">${hl(item.name,q)}${item.isGh?'<span class=\"gh-badge\">GH</span>':''}${newBadge}</div>
           ${item.detail?`<div class="d">${hl(item.detail,q)}</div>`:''}
         </div>
         <div class="ibtns">${btns}</div>
