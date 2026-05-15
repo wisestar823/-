@@ -172,5 +172,11 @@
     "role": "viewer",
     "memo": "강성준소장",
     "addedAt": "2026-05-14"
+  },
+  {
+    "id": "ldp1w9ep",
+    "role": "admin",
+    "memo": "김동완차장",
+    "addedAt": "2026-05-15"
   }
 ]
