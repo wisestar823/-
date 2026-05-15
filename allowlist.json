@@ -208,5 +208,11 @@
     "role": "admin",
     "memo": "유시열대리폰",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "17kuve88",
+    "role": "admin",
+    "memo": "이영빈차장",
+    "addedAt": "2026-05-15"
   }
 ]
