@@ -190,5 +190,11 @@
     "role": "viewer",
     "memo": "이계상소장",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "cujgc9fm",
+    "role": "admin",
+    "memo": "최현균과장",
+    "addedAt": "2026-05-15"
   }
 ]
