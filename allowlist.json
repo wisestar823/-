@@ -340,5 +340,11 @@
     "role": "admin",
     "memo": "이용문부사장님",
     "addedAt": "2026-05-15"
+  },
+  {
+    "id": "pb22bcp7",
+    "role": "viewer",
+    "memo": "한명희소장",
+    "addedAt": "2026-05-15"
   }
 ]
