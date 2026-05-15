@@ -2,12 +2,30 @@
   "version": "2026-05-15",
   "processes": [
     {
+      "id": "education",
+      "title": "소장 교육자료",
+      "icon": "📚",
+      "category": "mgmt",
+      "folder": "소장교육",
+      "order": 0,
+      "items": []
+    },
+    {
+      "id": "safetycard",
+      "title": "안전 관리",
+      "icon": "🦺",
+      "category": "safety",
+      "folder": "안전관리",
+      "order": 1,
+      "items": []
+    },
+    {
       "id": "design",
       "title": "도면 검토",
       "icon": "📐",
       "category": "design",
       "folder": "도면검토",
-      "order": 0,
+      "order": 2,
       "items": []
     },
     {
@@ -16,7 +34,7 @@
       "icon": "⛏️",
       "category": "structure",
       "folder": "토목공사",
-      "order": 1,
+      "order": 3,
       "items": []
     },
     {
@@ -25,61 +43,25 @@
       "icon": "🧱",
       "category": "structure",
       "folder": "기초공사",
-      "order": 2,
-      "items": []
-    },
-    {
-      "id": "frame",
-      "title": "골조 공사",
-      "icon": "🏗️",
-      "category": "structure",
-      "folder": "골조공사",
-      "order": 3,
-      "items": []
-    },
-    {
-      "id": "interior",
-      "title": "내장 공사",
-      "icon": "🪟",
-      "category": "interior",
-      "folder": "내장공사",
       "order": 4,
       "items": []
     },
     {
-      "id": "exterior",
-      "title": "외장 공사",
-      "icon": "🏠",
-      "category": "exterior",
-      "folder": "외장공사",
+      "id": "frame",
+      "title": "목조 공사",
+      "icon": "🏗️",
+      "category": "structure",
+      "folder": "목골공사",
       "order": 5,
       "items": []
     },
     {
-      "id": "insulation",
-      "title": "단열 공사",
-      "icon": "🌡️",
-      "category": "exterior",
-      "folder": "단열공사",
+      "id": "Steel",
+      "title": "철골공사",
+      "icon": "📦",
+      "category": "structure",
+      "folder": "철골공사",
       "order": 6,
-      "items": []
-    },
-    {
-      "id": "metal",
-      "title": "금속 공사",
-      "icon": "🔧",
-      "category": "exterior",
-      "folder": "금속공사",
-      "order": 7,
-      "items": []
-    },
-    {
-      "id": "roof",
-      "title": "지붕 공사",
-      "icon": "🏡",
-      "category": "exterior",
-      "folder": "지붕공사",
-      "order": 8,
       "items": []
     },
     {
@@ -88,6 +70,24 @@
       "icon": "🪟",
       "category": "interior",
       "folder": "창호공사",
+      "order": 7,
+      "items": []
+    },
+    {
+      "id": "insulation",
+      "title": "단열 공사",
+      "icon": "🌡️",
+      "category": "exterior",
+      "folder": "단열공사",
+      "order": 8,
+      "items": []
+    },
+    {
+      "id": "electric",
+      "title": "전기·통신·소방",
+      "icon": "⚡",
+      "category": "mep",
+      "folder": "전기통신소방",
       "order": 9,
       "items": []
     },
@@ -101,11 +101,11 @@
       "items": []
     },
     {
-      "id": "electric",
-      "title": "전기·통신·소방",
-      "icon": "⚡",
-      "category": "mep",
-      "folder": "전기통신소방",
+      "id": "interior",
+      "title": "내장 공사",
+      "icon": "🪟",
+      "category": "interior",
+      "folder": "내장공사",
       "order": 11,
       "items": []
     },
@@ -128,12 +128,39 @@
       "items": []
     },
     {
+      "id": "roof",
+      "title": "지붕 공사",
+      "icon": "🏡",
+      "category": "exterior",
+      "folder": "지붕공사",
+      "order": 14,
+      "items": []
+    },
+    {
+      "id": "exterior",
+      "title": "외장 공사",
+      "icon": "🏠",
+      "category": "exterior",
+      "folder": "외장공사",
+      "order": 15,
+      "items": []
+    },
+    {
+      "id": "metal",
+      "title": "금속 공사",
+      "icon": "🔧",
+      "category": "exterior",
+      "folder": "금속공사",
+      "order": 16,
+      "items": []
+    },
+    {
       "id": "furniture",
       "title": "가구 공사",
       "icon": "🪑",
       "category": "interior",
       "folder": "가구공사",
-      "order": 14,
+      "order": 17,
       "items": []
     },
     {
@@ -142,7 +169,7 @@
       "icon": "🌧️",
       "category": "mgmt",
       "folder": "우천시 관리",
-      "order": 15,
+      "order": 18,
       "items": []
     },
     {
@@ -151,7 +178,7 @@
       "icon": "❄️",
       "category": "mgmt",
       "folder": "동절기관리",
-      "order": 16,
+      "order": 19,
       "items": []
     },
     {
@@ -160,7 +187,7 @@
       "icon": "🛡️",
       "category": "mgmt",
       "folder": "보양관리",
-      "order": 17,
+      "order": 20,
       "items": []
     },
     {
@@ -169,7 +196,7 @@
       "icon": "📊",
       "category": "safety",
       "folder": "열관류율",
-      "order": 18,
+      "order": 21,
       "items": []
     },
     {
@@ -178,16 +205,7 @@
       "icon": "🏢",
       "category": "mgmt",
       "folder": "현장관리",
-      "order": 19,
-      "items": []
-    },
-    {
-      "id": "safetycard",
-      "title": "안전 관리",
-      "icon": "🦺",
-      "category": "safety",
-      "folder": "안전관리",
-      "order": 20,
+      "order": 22,
       "items": []
     },
     {
@@ -196,7 +214,7 @@
       "icon": "📦",
       "category": "mgmt",
       "folder": "자재폐기물",
-      "order": 21,
+      "order": 23,
       "items": []
     },
     {
@@ -205,7 +223,7 @@
       "icon": "⚠️",
       "category": "mgmt",
       "folder": "패널티",
-      "order": 22,
+      "order": 24,
       "items": []
     },
     {
@@ -214,7 +232,7 @@
       "icon": "✅",
       "category": "safety",
       "folder": "품질시험계획",
-      "order": 23,
+      "order": 25,
       "items": []
     },
     {
@@ -223,16 +241,7 @@
       "icon": "🚆",
       "category": "safety",
       "folder": "철도인접지역검토",
-      "order": 24,
-      "items": []
-    },
-    {
-      "id": "education",
-      "title": "소장 교육자료",
-      "icon": "📚",
-      "category": "mgmt",
-      "folder": "소장교육",
-      "order": 25,
+      "order": 26,
       "items": []
     },
     {
@@ -241,7 +250,7 @@
       "icon": "🧹",
       "category": "mgmt",
       "folder": "준공청소",
-      "order": 26,
+      "order": 27,
       "items": []
     },
     {
@@ -250,7 +259,7 @@
       "icon": "🏁",
       "category": "mgmt",
       "folder": "엔딩",
-      "order": 27,
+      "order": 28,
       "items": []
     }
   ]
