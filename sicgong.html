@@ -383,11 +383,11 @@ mark{background:rgba(232,160,32,.3);color:var(--accent);border-radius:2px;paddin
 .gh-file-btn.dl{background:rgba(46,216,160,.12);color:#2ed8a0;border:1px solid rgba(46,216,160,.22);}
 .gh-file-btn.dl:hover{background:rgba(46,216,160,.25);}
 .gh-badge{font-size:9px;background:rgba(74,158,255,.15);color:#4a9eff;border-radius:3px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
-/* 2026-05-14 추가: NEW 배지 (신규 업로드 60일 이내 반짝임) */
-.new-badge{display:inline-block;font-size:9px;font-weight:900;color:#fff;background:linear-gradient(135deg,#ef4444 0%,#f97316 100%);border-radius:4px;padding:2px 6px;margin-left:5px;vertical-align:middle;letter-spacing:.5px;animation:newPulse 1.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(239,68,68,.55);}
+/* 2026-05-14 축소: N 한 글자 미니 원형 배지 (펄스 애니메이션) — 사이즈 14→18 */
+.new-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:11px;font-weight:900;color:#fff;background:linear-gradient(135deg,#ef4444 0%,#f97316 100%);border-radius:50%;margin-left:5px;vertical-align:middle;line-height:1;animation:newPulse 1.4s ease-in-out infinite;box-shadow:0 0 0 0 rgba(239,68,68,.55);}
 @keyframes newPulse{
   0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.55);}
-  50%{transform:scale(1.1);box-shadow:0 0 0 5px rgba(239,68,68,0);}
+  50%{transform:scale(1.15);box-shadow:0 0 0 5px rgba(239,68,68,0);}
 }
 .ir-gh{display:flex;align-items:flex-start;gap:6px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
 .ir-gh:last-child{border-bottom:none;}
@@ -1943,7 +1943,7 @@ function render(query=''){
         const added=Date.parse(item.addedAt);
         if(!isNaN(added)){
           const days=(Date.now()-added)/(86400000);
-          if(days>=0 && days<60) newBadge='<span class="new-badge">NEW</span>';
+          if(days>=0 && days<60) newBadge='<span class="new-badge" title="새로 추가됨">N</span>';
         }
       }
 
