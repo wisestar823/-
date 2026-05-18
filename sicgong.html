@@ -2014,6 +2014,8 @@ window.ghOpenGroup = function(riListStr){
   var groupName = firstName.replace(/\s*\(\d+\)\s*$/, '').trim() || firstName;
   var title = groupName + ' (' + entries.length + '장)';
 
+  // 2026-05-15 추가: history에 가짜 state push (뒤로가기로 앱 종료 방지)
+  _pushViewerHistory();
   // 뷰어 패널 열기
   document.getElementById('viewer').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -2141,6 +2143,8 @@ function _renderImageToContainer(encodedUrl, container, maxWidth){
 
 // PDF 인앱 뷰어 (워터마크 포함)
 function ghPdfViewer(encodedUrl, name){
+  // 2026-05-15 추가: history push (뒤로가기로 앱 종료 방지)
+  _pushViewerHistory();
   document.getElementById('viewer').classList.add('open');
   document.body.style.overflow='hidden';
   document.getElementById('v-name').textContent=name;
@@ -2332,6 +2336,8 @@ function ghDl(ri){
   window.open(safeUrl(entry.url),'_blank');
 }
 function ghImgViewer(encodedUrl, name){
+  // 2026-05-15 추가: history push (뒤로가기로 앱 종료 방지)
+  _pushViewerHistory();
   document.getElementById('viewer').classList.add('open');
   document.body.style.overflow='hidden';
   document.getElementById('v-name').textContent=name;
@@ -6650,7 +6656,22 @@ function viewerPrint(){
   }
 }
 
-function closeViewer(){
+// 2026-05-15 추가: 뷰어 history 관리 (Android 뒤로가기로 앱 종료 방지)
+//   - 뷰어 열림 시 history.pushState로 가짜 state 추가
+//   - 뒤로가기 또는 ✕ 닫기 누르면 popstate 발생 → 뷰어만 닫힘 (앱 유지)
+let _viewerHistoryPushed = false;
+
+function _pushViewerHistory(){
+  if(!_viewerHistoryPushed){
+    try {
+      history.pushState({viewer: true, t: Date.now()}, '', '');
+      _viewerHistoryPushed = true;
+    } catch(e){ /* 일부 환경에서 pushState 실패 시 무시 */ }
+  }
+}
+
+// 실제 뷰어 닫기 로직 (history 조작 없음)
+function _closeViewerInternal(){
   document.getElementById('viewer').classList.remove('open');
   document.body.style.overflow='';
   document.getElementById('v-iframe').src='about:blank';
@@ -6660,7 +6681,28 @@ function closeViewer(){
   document.getElementById('v-filetabs').innerHTML='';
   if(viewerBlobUrl){ URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl=null; }
   viewerRecs=[]; viewerCurIdx=0;
+  _viewerHistoryPushed = false;
 }
+
+// 공개 closeViewer: ✕ 버튼 / ESC / 코드에서 호출 시 사용
+// → history.back()으로 위임 → popstate에서 실제 닫기 (Android 뒤로가기와 동일 흐름)
+function closeViewer(){
+  if(_viewerHistoryPushed){
+    // history에 가짜 state가 있으면 back() 호출 → popstate가 _closeViewerInternal 호출
+    try { history.back(); return; } catch(e){}
+  }
+  // pushState 실패했거나 _viewerHistoryPushed가 이미 false인 경우 직접 닫기
+  _closeViewerInternal();
+}
+
+// popstate: Android 뒤로가기 또는 history.back() 호출 시
+window.addEventListener('popstate', function(e){
+  const v = document.getElementById('viewer');
+  if(v && v.classList.contains('open')){
+    _viewerHistoryPushed = false; // 이미 history에서 빠져나옴
+    _closeViewerInternal();
+  }
+});
 
 // ESC 키로 뷰어 닫기
 document.addEventListener('keydown', e=>{
