@@ -3565,44 +3565,71 @@ function switchTab(t){
     });
     canvas.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaY<0?1.1:0.9;_fsScale*=f;_fsScale=Math.max(0.3,Math.min(_fsScale,20));skDrawFsDraw();},{passive:false});
     // 터치
-    // 2026-05-15 민감도 개선: 30px 데드존 추가 — 손가락 떨림은 panning 안 함, tap 인식률 향상
-    let _fsTouchPanStarted = false; // 실제 panning이 시작됐는지
+    // 2026-05-15: long press 1초 패턴 — 1초 꾹 눌러야 노드 선택, 짧은 탭은 무시
+    let _fsTouchPanStarted = false;     // 실제 panning이 시작됐는지
+    let _fsLongPressTimer = null;       // long press 타이머
+    let _fsLongPressFired = false;      // 1초 long press가 발동됐는지 (touchend에서 중복 방지)
+    const FS_LONGPRESS_MS = 1000;       // long press 임계 시간
+
+    function _fsCancelLongPress(){
+      if(_fsLongPressTimer){ clearTimeout(_fsLongPressTimer); _fsLongPressTimer=null; }
+    }
+
     canvas.addEventListener('touchstart',e=>{
       if(e.touches.length===1){
         _fsDragging=true;_fsLastX=e.touches[0].clientX;_fsLastY=e.touches[0].clientY;
         _fsTapStart={x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()};
-        _fsTouchPanStarted=false; // 새 터치 → 아직 panning 안 시작
-      } else if(e.touches.length===2){_fsDragging=false;const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;_fsLastPinch=Math.sqrt(dx*dx+dy*dy);}
+        _fsTouchPanStarted=false;
+        _fsLongPressFired=false;
+        // 1초 후 자동으로 노드 선택 트리거 (long press)
+        const startClientX = e.touches[0].clientX;
+        const startClientY = e.touches[0].clientY;
+        _fsCancelLongPress();
+        _fsLongPressTimer = setTimeout(()=>{
+          if(_fsTouchPanStarted) return; // 그 사이 panning 시작됐으면 무시
+          _fsLongPressFired=true;
+          // 진동 피드백 (지원 폰만)
+          try { if(navigator.vibrate) navigator.vibrate(50); } catch(e){}
+          const rect=canvas.getBoundingClientRect();
+          skDrawHandleTap(startClientX-rect.left, startClientY-rect.top, true);
+        }, FS_LONGPRESS_MS);
+      } else if(e.touches.length===2){
+        _fsDragging=false;
+        _fsCancelLongPress(); // 핀치 시작 → long press 취소
+        const dx=e.touches[0].clientX-e.touches[1].clientX;
+        const dy=e.touches[0].clientY-e.touches[1].clientY;
+        _fsLastPinch=Math.sqrt(dx*dx+dy*dy);
+      }
     },{passive:true});
+
     canvas.addEventListener('touchmove',e=>{
       e.preventDefault();
       if(e.touches.length===1&&_fsDragging){
-        // 2026-05-15: 시작점에서 30px 이상 이동했을 때만 panning 시작 (데드존)
+        // 시작점에서 30px 이상 이동했을 때만 panning 시작 (데드존)
         if(!_fsTouchPanStarted){
           const totalDx=e.touches[0].clientX-_fsTapStart.x;
           const totalDy=e.touches[0].clientY-_fsTapStart.y;
-          if(Math.sqrt(totalDx*totalDx+totalDy*totalDy)<30) return; // 임계값 미달 → 무시
-          _fsTouchPanStarted=true; // 임계값 넘음 → panning 시작
-          _fsLastX=e.touches[0].clientX;_fsLastY=e.touches[0].clientY; // 시작점 다시 잡기
+          if(Math.sqrt(totalDx*totalDx+totalDy*totalDy)<30) return; // 임계값 미달
+          _fsTouchPanStarted=true;
+          _fsCancelLongPress(); // 움직이기 시작 → long press 취소
+          _fsLastX=e.touches[0].clientX;_fsLastY=e.touches[0].clientY;
         }
         _fsOffX+=e.touches[0].clientX-_fsLastX;_fsOffY+=e.touches[0].clientY-_fsLastY;_fsLastX=e.touches[0].clientX;_fsLastY=e.touches[0].clientY;skDrawFsDraw();
       }
       else if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX;const dy=e.touches[0].clientY-e.touches[1].clientY;const dist=Math.sqrt(dx*dx+dy*dy);if(_fsLastPinch>0){const f=dist/_fsLastPinch;_fsScale*=f;_fsScale=Math.max(0.3,Math.min(_fsScale,20));}_fsLastPinch=dist;skDrawFsDraw();}
     },{passive:false});
+
     canvas.addEventListener('touchend',e=>{
-      if(e.changedTouches.length===1){
-        const dx=e.changedTouches[0].clientX-_fsTapStart.x;
-        const dy=e.changedTouches[0].clientY-_fsTapStart.y;
-        const dt=Date.now()-_fsTapStart.t;
-        // 2025-05-12 민감도 향상: dt 300→800ms, moved 10→30px
-        // 2026-05-15 추가: panning이 시작 안 됐으면 tap으로 인정 (조건 OR로 완화)
-        const isTap = (dt<800 && Math.sqrt(dx*dx+dy*dy)<30) || !_fsTouchPanStarted;
-        if(isTap && dt<1500){
-          const rect=canvas.getBoundingClientRect();
-          skDrawHandleTap(e.changedTouches[0].clientX-rect.left,e.changedTouches[0].clientY-rect.top,true);
-        }
-        _fsDragging=false;_fsLastPinch=0;_fsTouchPanStarted=false;
-      }
+      _fsCancelLongPress(); // 손 떼면 타이머 무조건 취소
+      _fsDragging=false;_fsLastPinch=0;_fsTouchPanStarted=false;
+      // ※ long press가 1초 완성된 경우는 이미 setTimeout 안에서 skDrawHandleTap 호출했음
+      // ※ 짧은 탭(1초 미만)은 의도적으로 무시 — 노드 선택 안 됨
+    });
+
+    // touchcancel(다른 앱 호출 등)에서도 안전하게 정리
+    canvas.addEventListener('touchcancel',()=>{
+      _fsCancelLongPress();
+      _fsDragging=false;_fsLastPinch=0;_fsTouchPanStarted=false;
     });
   }
 
@@ -6790,6 +6817,19 @@ async function loadGhIndex(){
 }
 
 // ══ 기기ID 인증 ═════════════════════════════════════════════════
+// 2026-05-15 추가: standalone 모드(홈 화면 아이콘으로 진입) 감지
+// 일반 브라우저 탭 → device ID 안 만들고 안내 화면만 표시
+// standalone(홈 화면 아이콘) → device ID 표시 + 정상 인증 흐름
+function isStandaloneMode(){
+  try {
+    // Android Chrome / 일반: matchMedia
+    if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+    // iOS Safari
+    if(window.navigator && window.navigator.standalone === true) return true;
+  } catch(e){}
+  return false;
+}
+
 function getDeviceId(){
   var id=localStorage.getItem('sic_device_id');
   if(!id){id=Math.random().toString(36).slice(2,6)+Math.random().toString(36).slice(2,6);localStorage.setItem('sic_device_id',id);}
@@ -6807,6 +6847,16 @@ function retryAuth(){
   setTimeout(checkDeviceAuth,500);
 }
 async function checkDeviceAuth(){
+  // 2026-05-15: 분기 정책
+  //   - 기존 사용자 (localStorage에 device ID 이미 있음) → standalone 여부 무관, 정상 인증 진행
+  //   - 신규 사용자 (ID 없음) + 일반 브라우저 탭 → "홈 화면에 추가" 안내만 (ID 안 생성)
+  //   - 신규 사용자 + standalone 모드 → 새 ID 생성 + 정상 인증 진행
+  var existingId = localStorage.getItem('sic_device_id');
+  if(!existingId && !isStandaloneMode()){
+    // 신규 사용자가 브라우저 탭에서 진입 → 안내만
+    showAddToHomeScreenGuide();
+    return;
+  }
   var deviceId=getDeviceId();
   document.getElementById('auth-device-id').textContent=deviceId;
   if(sessionStorage.getItem('sic_auth')===deviceId){grantAccess();return;}
@@ -6829,6 +6879,45 @@ async function checkDeviceAuth(){
     document.getElementById('auth-err-txt').textContent='오류: '+err.message;
     document.getElementById('auth-err-box').classList.add('show');
   }
+}
+
+// 2026-05-15 추가: standalone 모드 아닐 때 "홈 화면에 추가" 안내 화면 표시
+function showAddToHomeScreenGuide(){
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  var auth = document.getElementById('auth-screen');
+  if(!auth) return;
+  // 기존 인증 화면 내용을 안내로 교체
+  auth.innerHTML =
+    '<div style="max-width:480px;margin:0 auto;padding:24px 20px;color:#e8edf5;">' +
+      '<div style="text-align:center;margin-bottom:20px;">' +
+        '<div style="font-size:48px;margin-bottom:8px;">📱</div>' +
+        '<div style="font-size:18px;font-weight:800;color:#c9a84c;margin-bottom:6px;">홈 화면에 앱 추가 필요</div>' +
+        '<div style="font-size:12px;color:#a6b0c2;line-height:1.6;">이 페이지를 홈 화면에 추가한 후<br>홈 화면의 <b style="color:#c9a84c;">시공관리 아이콘</b>으로 다시 열어주세요.</div>' +
+      '</div>' +
+      '<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:14px;margin-bottom:14px;">' +
+        '<div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:8px;">📌 ' + (isIOS ? 'iOS Safari' : 'Android Chrome') + ' 사용법</div>' +
+        (isIOS
+          ? '<div style="font-size:11px;line-height:1.8;color:#e8edf5;">' +
+              '① 하단 <b>공유</b> 버튼 <span style="display:inline-block;background:#1e293b;border-radius:4px;padding:1px 8px;font-size:14px;">⬆️</span> 탭<br>' +
+              '② 메뉴 스크롤 → <b>홈 화면에 추가</b> 선택<br>' +
+              '③ <b>추가</b> 버튼 탭<br>' +
+              '④ 홈 화면의 <b>시공관리</b> 아이콘을 열기<br>' +
+            '</div>'
+          : '<div style="font-size:11px;line-height:1.8;color:#e8edf5;">' +
+              '① 크롬 우상단 <b>⋮</b> 메뉴 탭<br>' +
+              '② <b>홈 화면에 추가</b> 또는 <b>앱 설치</b> 선택<br>' +
+              '③ <b>추가</b> 버튼 탭<br>' +
+              '④ 홈 화면의 <b>시공관리</b> 아이콘을 열기<br>' +
+            '</div>'
+        ) +
+      '</div>' +
+      '<div style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-radius:10px;padding:14px;font-size:11px;color:#a6b0c2;line-height:1.7;">' +
+        '💡 홈 화면 아이콘으로 진입하면 그때 <b style="color:#4a9eff;">기기 ID</b>가 표시됩니다.<br>' +
+        '그 ID를 관리자에게 카톡으로 보내서 보안키 등록을 요청하세요.<br>' +
+        '<span style="color:#f59e0b;">⚠️ 지금 이 브라우저 탭에서는 ID가 생성되지 않습니다.</span>' +
+      '</div>' +
+    '</div>';
 }
 function grantAccess(){
   document.getElementById('auth-screen').classList.add('hidden');
