@@ -270,6 +270,15 @@
       "folder": "엔딩",
       "order": 29,
       "items": []
+    },
+    {
+      "id": "Brick",
+      "title": "조적공사",
+      "icon": "📦",
+      "category": "structure",
+      "folder": "조적공사시방",
+      "order": 30,
+      "items": []
     }
   ]
 }
