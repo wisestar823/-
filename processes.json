@@ -83,12 +83,21 @@
       "items": []
     },
     {
+      "id": "Brick",
+      "title": "조적공사",
+      "icon": "📦",
+      "category": "structure",
+      "folder": "조적공사시방",
+      "order": 9,
+      "items": []
+    },
+    {
       "id": "window",
       "title": "창호 공사",
       "icon": "🪟",
       "category": "interior",
       "folder": "창호공사",
-      "order": 9,
+      "order": 10,
       "items": []
     },
     {
@@ -97,7 +106,7 @@
       "icon": "🌡️",
       "category": "exterior",
       "folder": "단열공사",
-      "order": 10,
+      "order": 11,
       "items": []
     },
     {
@@ -106,7 +115,7 @@
       "icon": "⚡",
       "category": "mep",
       "folder": "전기통신소방",
-      "order": 11,
+      "order": 12,
       "items": []
     },
     {
@@ -115,7 +124,7 @@
       "icon": "🔥",
       "category": "mep",
       "folder": "난방설비",
-      "order": 12,
+      "order": 13,
       "items": []
     },
     {
@@ -124,7 +133,7 @@
       "icon": "🪟",
       "category": "interior",
       "folder": "내장공사",
-      "order": 13,
+      "order": 14,
       "items": []
     },
     {
@@ -133,7 +142,7 @@
       "icon": "💧",
       "category": "interior",
       "folder": "방수타일",
-      "order": 14,
+      "order": 15,
       "items": []
     },
     {
@@ -142,7 +151,7 @@
       "icon": "🎨",
       "category": "interior",
       "folder": "도장도배필름",
-      "order": 15,
+      "order": 16,
       "items": []
     },
     {
@@ -151,7 +160,7 @@
       "icon": "🏡",
       "category": "exterior",
       "folder": "지붕공사",
-      "order": 16,
+      "order": 17,
       "items": []
     },
     {
@@ -160,7 +169,7 @@
       "icon": "🏠",
       "category": "exterior",
       "folder": "외장공사",
-      "order": 17,
+      "order": 18,
       "items": []
     },
     {
@@ -169,7 +178,7 @@
       "icon": "🔧",
       "category": "exterior",
       "folder": "금속공사",
-      "order": 18,
+      "order": 19,
       "items": []
     },
     {
@@ -178,7 +187,7 @@
       "icon": "🪑",
       "category": "interior",
       "folder": "가구공사",
-      "order": 19,
+      "order": 20,
       "items": []
     },
     {
@@ -187,7 +196,7 @@
       "icon": "🌧️",
       "category": "mgmt",
       "folder": "우천시 관리",
-      "order": 20,
+      "order": 21,
       "items": []
     },
     {
@@ -196,7 +205,7 @@
       "icon": "❄️",
       "category": "mgmt",
       "folder": "동절기관리",
-      "order": 21,
+      "order": 22,
       "items": []
     },
     {
@@ -205,7 +214,7 @@
       "icon": "🛡️",
       "category": "mgmt",
       "folder": "보양관리",
-      "order": 22,
+      "order": 23,
       "items": []
     },
     {
@@ -214,7 +223,7 @@
       "icon": "📊",
       "category": "safety",
       "folder": "열관류율",
-      "order": 23,
+      "order": 24,
       "items": []
     },
     {
@@ -223,7 +232,7 @@
       "icon": "📦",
       "category": "mgmt",
       "folder": "자재폐기물",
-      "order": 24,
+      "order": 25,
       "items": []
     },
     {
@@ -232,7 +241,7 @@
       "icon": "⚠️",
       "category": "mgmt",
       "folder": "패널티",
-      "order": 25,
+      "order": 26,
       "items": []
     },
     {
@@ -241,7 +250,7 @@
       "icon": "✅",
       "category": "safety",
       "folder": "품질시험계획",
-      "order": 26,
+      "order": 27,
       "items": []
     },
     {
@@ -250,7 +259,7 @@
       "icon": "🚆",
       "category": "safety",
       "folder": "철도인접지역검토",
-      "order": 27,
+      "order": 28,
       "items": []
     },
     {
@@ -259,7 +268,7 @@
       "icon": "🧹",
       "category": "mgmt",
       "folder": "준공청소",
-      "order": 28,
+      "order": 29,
       "items": []
     },
     {
@@ -268,15 +277,6 @@
       "icon": "🏁",
       "category": "mgmt",
       "folder": "엔딩",
-      "order": 29,
-      "items": []
-    },
-    {
-      "id": "Brick",
-      "title": "조적공사",
-      "icon": "📦",
-      "category": "structure",
-      "folder": "조적공사시방",
       "order": 30,
       "items": []
     }
