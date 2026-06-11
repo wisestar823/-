@@ -1138,31 +1138,5 @@
       "file": "조적공사시방/조적.pdf",
       "addedAt": "2026-06-07"
     }
-  ],
-  "Concrete": [
-    {
-      "name": "거푸집 및 동바리 일반공사 (1)",
-      "detail": "동바리 설치기준",
-      "file": "콘크리트공사/Screenshot_20251229_133051_NAVER.jpg",
-      "addedAt": "2026-06-10"
-    },
-    {
-      "name": "거푸집 및 동바리 일반공사 (2)",
-      "detail": "동바리 설치기준",
-      "file": "콘크리트공사/Screenshot_20251229_133033_NAVER.jpg",
-      "addedAt": "2026-06-10"
-    },
-    {
-      "name": "거푸집 및 동바리 일반공사 (3)",
-      "detail": "동바리 설치기준",
-      "file": "콘크리트공사/Screenshot_20251229_132939_NAVER.jpg",
-      "addedAt": "2026-06-10"
-    },
-    {
-      "name": "거푸집 및 동바리 일반공사 (4)",
-      "detail": "동바리 설치기준",
-      "file": "콘크리트공사/Screenshot_20251229_132748_NAVER.jpg",
-      "addedAt": "2026-06-10"
-    }
   ]
 }
