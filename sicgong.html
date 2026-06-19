@@ -4496,7 +4496,12 @@ function switchTab(t){
   /* ══ 건물 배치 모듈 ══════════════════════════════════════════════ */
   let skBuilding = null;
   let skBldgCoordPts = [];
-  Object.defineProperty(window,'skBldgCoordPts',{get:()=>skBldgCoordPts,configurable:true});
+  // 2026-05-15: setter 추가 — skLoadSaved에서 window.skBldgCoordPts = [...] 할당이 실제 내부 변수에 반영되도록
+  Object.defineProperty(window,'skBldgCoordPts',{
+    get:()=>skBldgCoordPts,
+    set:(v)=>{ skBldgCoordPts = Array.isArray(v) ? v : []; },
+    configurable:true
+  });
 
   /* ── 수동 입력 폼 토글 ── */
   function skBldgFillRefSelect(){
@@ -5771,6 +5776,14 @@ function switchTab(t){
     if(window.skRegDrawCanvas) skRegDrawCanvas();
     if(window.skUpdateCoordDistTable) skUpdateCoordDistTable();
     if(window._skRenderRoadBtns) _skRenderRoadBtns();
+
+    // 2026-05-15: 건물 외곽선 복원 시 배지 + 거리표 영역 표시
+    if(data.bldgCorners && data.bldgCorners.length){
+      const badge = document.getElementById('sk-bldg-badge');
+      if(badge){ badge.textContent = data.bldgCorners.length+'개 모서리'; badge.style.display='inline-block'; }
+      const distWrap = document.getElementById('sk-corner-dist-wrap');
+      if(distWrap) distWrap.style.display='block';
+    }
 
     // 도면보기 탭으로 전환
     if(window.skSubTab) skSubTab('draw');
