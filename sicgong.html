@@ -6865,8 +6865,12 @@ async function checkDeviceAuth(){
   //   - 신규 사용자 (ID 없음) + 일반 브라우저 탭 → "홈 화면에 추가" 안내만 (ID 안 생성)
   //   - 신규 사용자 + standalone 모드 → 새 ID 생성 + 정상 인증 진행
   var existingId = localStorage.getItem('sic_device_id');
-  if(!existingId && !isStandaloneMode()){
-    // 신규 사용자가 브라우저 탭에서 진입 → 안내만
+  // 2026-05-15: standalone 안내는 "모바일 브라우저 탭의 신규 사용자"에게만 표시
+  //   - PC/데스크탑/아이패드는 홈 화면 추가 개념이 다르므로 안내 건너뛰고 바로 device ID 인증
+  //   - 이렇게 안 하면 PC에서 모바일용 안내 화면이 떠서 화면이 비정상(검은 화면)으로 보임
+  var isMobileUA = /Android|iPhone|iPod/i.test(navigator.userAgent);
+  if(!existingId && isMobileUA && !isStandaloneMode()){
+    // 신규 사용자가 모바일 브라우저 탭에서 진입 → 안내만
     showAddToHomeScreenGuide();
     return;
   }
