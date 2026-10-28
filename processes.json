@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-16",
+  "version": "2026-10-28",
   "processes": [
     {
       "id": "education",
@@ -102,7 +102,7 @@
     },
     {
       "id": "Brick",
-      "title": "조적공사",
+      "title": "조적 석재공사",
       "icon": "📦",
       "category": "structure",
       "folder": "조적공사시방",
